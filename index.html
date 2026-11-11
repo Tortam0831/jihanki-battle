@@ -5,39 +5,38 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#14110f">
-<meta name="description" content="学校の自動販売機の裏で、虫たちが10円玉を奪い合う3D物理アクション陣取りゲーム">
+<meta name="description" content="学校の自動販売機の裏で、虫たちが硬貨を奪い合う3D物理アクション陣取りゲーム">
 <title>自販機の裏の戦い</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#14110f;--panel:rgba(30,23,18,.9);--panel2:rgba(48,37,28,.92);--line:rgba(255,196,120,.28);
-  --accent:#ffb547;--accent2:#ff7a3d;--text:#fff6e8;--sub:#d4c2aa;--good:#6fe39a;--bad:#ff6b6b;
+  --accent:#ffb547;--accent2:#ff7a3d;--text:#fff6e8;--sub:#d4c2aa;--good:#6fe39a;--bad:#ff6b6b;--red:#ff6a5f;--blue:#5aaaff;
   --safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px);
   --safe-l:env(safe-area-inset-left,0px);--safe-r:env(safe-area-inset-right,0px);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--text);
-  font-family:"M PLUS Rounded 1c","Hiragino Maru Gothic ProN","Hiragino Sans","Meiryo","Yu Gothic",sans-serif;
+  font-family:"Hiragino Maru Gothic ProN","Hiragino Sans","Meiryo","Yu Gothic",sans-serif;
   touch-action:none;overscroll-behavior:none}
 canvas#game{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
 .hidden{display:none!important}
 button{font-family:inherit;cursor:pointer;border:none;color:inherit;touch-action:manipulation}
 
 /* ---------- 画面共通 ---------- */
-.screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:calc(16px + var(--safe-t)) 16px calc(16px + var(--safe-b));z-index:20;overflow-y:auto;touch-action:pan-y}
+.screen{position:fixed;inset:0;display:flex;align-items:flex-start;justify-content:center;padding:calc(16px + var(--safe-t)) 16px calc(16px + var(--safe-b));z-index:20;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
 .screen.dim{background:rgba(10,7,5,.62);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
-.panel{background:var(--panel);border:2px solid var(--line);border-radius:22px;padding:22px 22px 18px;box-shadow:0 20px 60px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06);width:min(520px,100%);margin:auto}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:54px;padding:10px 18px;border-radius:16px;font-size:18px;font-weight:800;
-  background:linear-gradient(#5a4535,#3d2e23);border:2px solid rgba(255,210,150,.25);box-shadow:0 4px 0 #1d150f;transition:transform .08s,filter .15s;width:100%}
+.panel{background:var(--panel);border:2px solid var(--line);border-radius:22px;padding:22px 22px 18px;box-shadow:0 20px 60px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06);width:min(540px,100%);margin:auto}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:54px;padding:10px 16px;border-radius:16px;font-size:18px;font-weight:800;
+  background:linear-gradient(#5a4535,#3d2e23);border:2px solid rgba(255,210,150,.25);box-shadow:0 4px 0 #1d150f;transition:transform .08s,filter .15s;width:100%;line-height:1.25}
 .btn:active{transform:translateY(3px);box-shadow:0 1px 0 #1d150f}
 .btn:hover{filter:brightness(1.12)}
 .btn.primary{background:linear-gradient(#ffc75a,#ff8a3d);color:#3a1d05;border-color:#ffe0a0;box-shadow:0 5px 0 #a84a14}
-.btn.big{min-height:68px;font-size:24px}
+.btn.team{background:linear-gradient(#6fb8ff,#3a7bd5);color:#fff;border-color:#bfe0ff;box-shadow:0 5px 0 #1d4a8a}
+.btn.big{min-height:66px;font-size:21px;flex-direction:column;gap:0}
+.btn.big small{font-size:12px;font-weight:500;opacity:.85}
 .btn[disabled]{filter:grayscale(.8) brightness(.7);cursor:not-allowed}
 .row{display:flex;gap:12px;margin-top:12px}
-.mini{background:none;color:var(--sub);font-size:15px;padding:10px;margin-top:8px;min-height:44px}
+.mini{background:none;color:var(--sub);font-size:15px;padding:10px;margin-top:6px;min-height:44px}
 
 /* ---------- タイトル ---------- */
 .title-panel{text-align:center;background:linear-gradient(180deg,rgba(40,29,21,.9),rgba(22,16,12,.92))}
@@ -46,10 +45,11 @@ button{font-family:inherit;cursor:pointer;border:none;color:inherit;touch-action
   background:linear-gradient(180deg,#fff4d0,#ffb547 55%,#ff7a3d);-webkit-background-clip:text;background-clip:text;color:transparent;
   filter:drop-shadow(0 3px 0 #5a2708) drop-shadow(0 0 18px rgba(255,150,60,.35))}
 .logo span{font-size:1.2em}
-.title-coin{font-size:14px;color:var(--sub);margin-bottom:12px}
-.title-stats{display:flex;gap:10px;justify-content:center;margin:12px 0 16px;flex-wrap:wrap}
-.title-stats div{background:rgba(0,0,0,.3);border:1px solid var(--line);border-radius:12px;padding:8px 14px;font-size:15px}
-.title-stats b{color:var(--accent);font-size:20px;margin:0 2px}
+.title-coin{font-size:14px;color:var(--sub);margin-bottom:8px}
+.title-stats{display:flex;gap:8px;justify-content:center;margin:10px 0 14px;flex-wrap:wrap}
+.title-stats div{background:rgba(0,0,0,.3);border:1px solid var(--line);border-radius:12px;padding:6px 12px;font-size:14px}
+.title-stats b{color:var(--accent);font-size:19px;margin:0 2px}
+.ver{font-size:11px;color:rgba(255,255,255,.35);margin-top:4px}
 
 /* ---------- HUD ---------- */
 #hud{position:fixed;inset:0;pointer-events:none;z-index:10}
@@ -72,6 +72,14 @@ button{font-family:inherit;cursor:pointer;border:none;color:inherit;touch-action
 #board .r .nm{flex:1}
 #board .r .sc{font-weight:800;font-variant-numeric:tabular-nums}
 #board .r.me{color:#ffe2b0}
+#board .vs{display:flex;align-items:center;gap:8px;font-weight:800;font-size:28px;justify-content:center;font-variant-numeric:tabular-nums}
+#board .vs .rd{color:var(--red)} #board .vs .bl{color:var(--blue)}
+#board .vs small{font-size:13px;color:var(--sub)}
+#board .tm{font-size:12px;color:var(--sub);text-align:center}
+#minimap{position:absolute;right:calc(10px + var(--safe-r));top:calc(84px + var(--safe-t));border:2px solid var(--line);border-radius:12px;background:rgba(20,15,12,.75);width:156px;height:auto}
+#buffs{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(46px + var(--safe-b));display:flex;gap:6px}
+.buff{background:var(--panel);border:2px solid var(--accent);border-radius:12px;padding:4px 10px;font-size:16px;font-weight:800;white-space:nowrap}
+.buff small{font-size:12px;color:var(--sub);margin-left:3px}
 #pcHint{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(10px + var(--safe-b));font-size:13px;color:var(--sub);background:rgba(0,0,0,.45);padding:6px 12px;border-radius:10px;white-space:nowrap}
 #btnDash{pointer-events:auto;position:absolute;right:calc(22px + var(--safe-r));bottom:calc(26px + var(--safe-b));width:112px;height:112px;border-radius:50%;
   background:radial-gradient(circle at 40% 35%,#ffd27a,#ff7a3d 70%);border:4px solid #ffe7b8;box-shadow:0 6px 0 #9c3e10,0 10px 30px rgba(0,0,0,.5);
@@ -83,27 +91,28 @@ button{font-family:inherit;cursor:pointer;border:none;color:inherit;touch-action
 #joy{position:fixed;width:140px;height:140px;margin:-70px 0 0 -70px;border-radius:50%;background:rgba(255,255,255,.08);border:3px solid rgba(255,220,170,.4);z-index:11;pointer-events:none}
 #joyKnob{position:absolute;left:50%;top:50%;width:62px;height:62px;margin:-31px 0 0 -31px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#fff3d6,#ffb547);box-shadow:0 4px 12px rgba(0,0,0,.5)}
 #joyHint{position:fixed;left:calc(24px + var(--safe-l));bottom:calc(30px + var(--safe-b));z-index:9;pointer-events:none;color:var(--sub);font-size:14px;background:rgba(0,0,0,.4);padding:8px 12px;border-radius:12px}
-#centerMsg{position:fixed;left:0;right:0;top:36%;text-align:center;z-index:12;pointer-events:none;font-size:clamp(42px,11vw,92px);font-weight:800;
-  color:#fff3d0;text-shadow:0 5px 0 #8a3a0c,0 0 30px rgba(255,140,50,.6);opacity:0;transform:scale(.6);transition:opacity .2s,transform .25s cubic-bezier(.2,1.6,.4,1)}
+#centerMsg{position:fixed;left:0;right:0;top:34%;text-align:center;z-index:12;pointer-events:none;font-size:clamp(42px,11vw,92px);font-weight:800;
+  color:#fff3d0;text-shadow:0 5px 0 #8a3a0c,0 0 30px rgba(255,140,50,.6);opacity:0;transform:scale(.6);transition:opacity .2s,transform .25s cubic-bezier(.2,1.6,.4,1);padding:0 10px}
 #centerMsg.show{opacity:1;transform:scale(1)}
 #centerMsg.smallmsg{font-size:clamp(24px,6vw,44px)}
 #floats{position:fixed;inset:0;pointer-events:none;z-index:9;overflow:hidden}
-.float{position:absolute;left:0;top:0;font-weight:800;font-size:26px;white-space:nowrap;text-shadow:0 3px 0 rgba(0,0,0,.6);will-change:transform,opacity}
+.float{position:absolute;left:0;top:0;font-weight:800;font-size:24px;white-space:nowrap;text-shadow:0 3px 0 rgba(0,0,0,.6);will-change:transform,opacity}
+.float.small{font-size:17px}
 
 /* ---------- リザルト ---------- */
 .res-rank{text-align:center;font-size:20px;color:var(--sub)}
-.res-rank b{display:block;font-size:64px;line-height:1;color:var(--accent);text-shadow:0 4px 0 #6b2e08}
-.res-new{text-align:center;color:#fff;background:linear-gradient(90deg,#ff5f6d,#ffc371);border-radius:10px;padding:4px;margin:8px auto;width:fit-content;padding:4px 16px;font-weight:800;animation:pulse .6s infinite alternate}
+.res-rank b{display:block;font-size:60px;line-height:1.05;color:var(--accent);text-shadow:0 4px 0 #6b2e08}
+.res-new{text-align:center;color:#fff;background:linear-gradient(90deg,#ff5f6d,#ffc371);border-radius:10px;margin:8px auto;width:fit-content;padding:4px 16px;font-weight:800;animation:pulse .6s infinite alternate}
 .res-table{width:100%;border-collapse:collapse;margin:10px 0;font-size:16px}
 .res-table td{padding:7px 6px;border-bottom:1px dashed rgba(255,210,150,.18)}
 .res-table td:last-child{text-align:right;font-weight:800;font-variant-numeric:tabular-nums}
 .res-table tr.total td{color:var(--accent);font-size:20px;border-bottom:none}
 .res-board{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0}
-.res-board div{background:rgba(0,0,0,.28);border-radius:10px;padding:6px 10px;font-size:14px;display:flex;justify-content:space-between}
+.res-board div{background:rgba(0,0,0,.28);border-radius:10px;padding:6px 10px;font-size:14px;display:flex;justify-content:space-between;gap:6px}
 h2{margin:0 0 10px;text-align:center;font-size:26px}
 
 /* ---------- スキルツリー ---------- */
-.skill-panel{width:min(720px,100%)}
+.skill-panel{width:min(740px,100%)}
 .money-bar{display:flex;justify-content:center;margin-bottom:12px}
 .money-bar div{background:rgba(0,0,0,.35);border:2px solid var(--accent);border-radius:14px;padding:6px 18px;font-size:18px}
 .money-bar b{color:var(--accent);font-size:24px}
@@ -116,7 +125,7 @@ h2{margin:0 0 10px;text-align:center;font-size:26px}
 .conn-top::before{content:"";position:absolute;left:25%;right:25%;bottom:0;height:4px;background:var(--accent);border-radius:2px}
 .conn-top::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:4px;margin-left:-2px;background:var(--accent)}
 .node{background:var(--panel2);border:2px solid var(--line);border-radius:18px;padding:12px;text-align:center;display:flex;flex-direction:column;gap:5px}
-.node .n-icon{font-size:34px;line-height:1}
+.node .n-icon{font-size:32px;line-height:1}
 .node .n-name{font-weight:800;font-size:18px}
 .node .n-desc{font-size:12.5px;color:var(--sub);min-height:2.6em}
 .node .n-eff{font-size:13px;background:rgba(0,0,0,.3);border-radius:8px;padding:4px}
@@ -133,15 +142,21 @@ h2{margin:0 0 10px;text-align:center;font-size:26px}
 .how p{margin:6px 0;line-height:1.7;font-size:15px}
 .how .k{display:inline-block;background:#4a382b;border:1px solid var(--line);border-radius:6px;padding:0 7px;margin:0 2px;font-weight:800}
 .how h3{margin:12px 0 4px;color:var(--accent);font-size:17px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:13px}
+.grid2 div{background:rgba(0,0,0,.28);border-radius:10px;padding:6px 8px;line-height:1.4}
+.grid2 b{font-size:14px}
 #loadErr{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;z-index:50;background:var(--bg)}
 #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:40;background:var(--bg);font-size:20px;color:var(--sub)}
-@media (max-width:600px){
+@media (max-width:640px){
   .chip{padding:4px 10px}.chip .val{font-size:22px}
   #board{top:auto;bottom:calc(150px + var(--safe-b));font-size:12px;min-width:120px}
+  #board .vs{font-size:22px}
+  #minimap{width:112px}
   #btnDash{width:96px;height:96px;font-size:17px}
+  #buffs{bottom:calc(130px + var(--safe-b))}
   .tree{gap:0 8px}.node{padding:9px}.node .n-name{font-size:15px}
 }
-@media (hover:none),(pointer:coarse){#pcHint{display:none}}
+@media (hover:none),(pointer:coarse){#pcHint{display:none}#buffs{bottom:calc(14px + var(--safe-b))}}
 @media (hover:hover) and (pointer:fine){#joyHint{display:none}}
 </style>
 </head>
@@ -153,11 +168,13 @@ h2{margin:0 0 10px;text-align:center;font-size:26px}
 <div id="hud" class="hidden">
   <div class="hud-top">
     <div class="chip timer" id="chipTime"><span class="lbl">残り時間</span><span class="val" id="hTime">90</span><span class="unit">秒</span></div>
-    <div class="chip score"><span class="lbl">スコア</span><span class="val" id="hScore">0</span><span class="unit">円</span><span class="sub" id="hCount">10円玉 0枚</span></div>
+    <div class="chip score"><span class="lbl" id="hScoreLbl">スコア</span><span class="val" id="hScore">0</span><span class="unit">円</span><span class="sub" id="hCount">硬貨 0枚</span></div>
     <div class="chip"><span class="lbl">ハイスコア</span><span class="val" id="hHigh">0</span><span class="unit">円</span></div>
     <button class="icon-btn" id="btnPause" aria-label="一時停止">⏸</button>
   </div>
   <div id="board"></div>
+  <canvas id="minimap" width="312" height="212"></canvas>
+  <div id="buffs"></div>
   <div id="pcHint">WASD／矢印キー：移動　　スペース：タックル　　P：一時停止</div>
   <div id="joyHint">画面をドラッグして移動</div>
   <button id="btnDash" aria-label="タックル">
@@ -174,17 +191,20 @@ h2{margin:0 0 10px;text-align:center;font-size:26px}
   <div class="panel title-panel">
     <div class="logo-sub">〜 ミクロな魔境の陣取り合戦 〜</div>
     <h1 class="logo">自販機の<span>裏</span>の戦い</h1>
-    <div class="title-coin">落ちている10円玉を、自分の陣地（ふせん）まで押して運べ！</div>
+    <div class="title-coin">落ちている硬貨を押して運べ！ アイテムを拾って逆転しよう！</div>
     <div class="title-stats">
-      <div>🏆 ハイスコア <b id="tHigh">0</b>円</div>
+      <div>🏆 個人戦 <b id="tHigh">0</b>円</div>
+      <div>⚽ チーム戦 <b id="tHighT">0</b>円</div>
       <div>🪙 おこづかい <b id="tMoney">0</b></div>
     </div>
-    <button class="btn big primary" id="btnStart">▶ スタート</button>
+    <button class="btn big primary" id="btnStartFFA">🐞 個人戦（陣取り）<small>4匹で硬貨を自分の陣地に集める</small></button>
+    <button class="btn big team" id="btnStartTeam" style="margin-top:12px">⚽ チーム戦（サッカー）<small>2対2！ 相手のゴールに硬貨を入れろ</small></button>
     <div class="row">
       <button class="btn" id="btnSkillT">🌳 スキルツリー</button>
       <button class="btn" id="btnHow">❓ 遊び方</button>
     </div>
     <button class="mini" id="btnMute">🔊 音：オン</button>
+    <div class="ver">ver 2.0</div>
   </div>
 </div>
 
@@ -192,15 +212,23 @@ h2{margin:0 0 10px;text-align:center;font-size:26px}
 <div id="scrHow" class="screen dim hidden">
   <div class="panel how">
     <h2>❓ 遊び方</h2>
-    <h3>🎯 目的</h3>
-    <p>自販機の取り出し口のあたり（中央）から<b>10円玉</b>が落ちてくるよ。体で押して、<b style="color:#ff7a70">赤いふせん（あなたの陣地）</b>まで運ぼう！制限時間<b>90秒</b>で一番たくさん集めた虫の勝ち。</p>
-    <p>ときどき出てくる銀色の<b>100円玉</b>は大チャンス！残り20秒の<b>ラストスパート</b>では硬貨がどんどん増えるよ。</p>
+    <h3>🐞 個人戦（陣取り）</h3>
+    <p>硬貨を体で押して、<b style="color:#ff7a70">赤いふせん（あなたの陣地）</b>まで運ぼう！ 90秒で一番たくさん集めた虫の勝ち。</p>
+    <h3>⚽ チーム戦（サッカー）</h3>
+    <p>あなたとダンゴムシの<b style="color:var(--red)">赤チーム</b> 対 クモとホコリンの<b style="color:var(--blue)">青チーム</b>。硬貨を<b>右側の青いゴール</b>に入れると得点！ 左の赤いゴールは守ろう。</p>
+    <h3>🪙 硬貨の種類</h3>
+    <div class="grid2">
+      <div><b>1円玉</b>（1円）軽くてよく飛ぶ</div><div><b>5円玉</b>（5円）穴あき</div>
+      <div><b>10円玉</b>（10円）いちばん多い</div><div><b>50円玉</b>（50円）ちょっとレア</div>
+      <div><b>100円玉</b>（100円）光の柱が目印</div><div><b>500円玉</b>（500円）ラストスパートに1枚だけ！重い！</div>
+    </div>
+    <h3>🎁 アイテム（ガチャのカプセル）</h3>
+    <div class="grid2" id="howItems"></div>
     <h3>🎮 操作</h3>
-    <p>💻 パソコン：<span class="k">W</span><span class="k">A</span><span class="k">S</span><span class="k">D</span> または <span class="k">矢印キー</span> で移動、<span class="k">スペース</span> でタックル</p>
-    <p>📱 iPad・スマホ：画面のどこかを指でドラッグすると仮想パッドが出るよ。右下のボタンでタックル！</p>
+    <p>💻 パソコン：<span class="k">W</span><span class="k">A</span><span class="k">S</span><span class="k">D</span> / <span class="k">矢印キー</span> で移動、<span class="k">スペース</span> でタックル</p>
+    <p>📱 iPad：画面をドラッグすると仮想パッドが出るよ。右下のボタンでタックル！</p>
     <h3>💥 コツ</h3>
-    <p>タックルで敵にぶつかると吹っ飛ばして<b>気絶</b>させられる。10円玉にタックルすると<b>シュート</b>になるよ。灰色の<b>ホコリだまり</b>では足が遅くなるので注意！</p>
-    <p>ゲームが終わると<b>おこづかい</b>がもらえる。スキルツリーで永久にパワーアップしよう（自動でセーブされます）。</p>
+    <p>タックルで敵を吹っ飛ばして<b>気絶</b>させよう。硬貨にタックルすると<b>シュート</b>！ <b>ホコリだまり</b>では足が遅くなるよ。右上のミニマップで硬貨（●）とアイテム（◆）を探そう。</p>
     <button class="btn primary" id="btnHowClose" style="margin-top:12px">わかった！</button>
   </div>
 </div>
@@ -221,14 +249,7 @@ h2{margin:0 0 10px;text-align:center;font-size:26px}
     <div class="res-rank"><span id="rRankLbl">あなたの順位</span><b id="rRank">1位</b></div>
     <div id="rNew" class="res-new hidden">🎉 ハイスコア更新！</div>
     <div class="res-board" id="rBoard"></div>
-    <table class="res-table">
-      <tr><td>スコア</td><td id="rScore">0円</td></tr>
-      <tr><td>集めた硬貨</td><td id="rCount">0枚</td></tr>
-      <tr><td>基本おこづかい</td><td id="rBase">0</td></tr>
-      <tr><td>順位ボーナス</td><td id="rRankB">×1.0</td></tr>
-      <tr><td>スキル「ボーナス獲得率」</td><td id="rSkillB">+0%</td></tr>
-      <tr class="total"><td>獲得おこづかい</td><td id="rGain">🪙 0</td></tr>
-    </table>
+    <table class="res-table" id="rTable"></table>
     <button class="btn big primary" id="btnRetry">↻ もう一度遊ぶ</button>
     <div class="row"><button class="btn" id="btnSkillR">🌳 スキルツリー</button><button class="btn" id="btnTitleR">🏠 タイトルへ</button></div>
   </div>
@@ -248,6 +269,10 @@ h2{margin:0 0 10px;text-align:center;font-size:26px}
       <div class="conn" id="conn-magnet"></div>
       <div class="node" id="node-bonus"></div>
       <div class="node" id="node-magnet"></div>
+      <div class="conn" id="conn-dash"></div>
+      <div class="conn" id="conn-item"></div>
+      <div class="node" id="node-dash"></div>
+      <div class="node" id="node-item"></div>
     </div>
     <div class="skill-note">※ あなたが強くなると、ライバルの虫たちも少しだけ強くなります。</div>
     <button class="btn primary" id="btnSkillClose" style="margin-top:12px">閉じる</button>
@@ -276,13 +301,17 @@ const lerp = (a,b,t) => a+(b-a)*t;
 const rand = (a,b) => a+Math.random()*(b-a);
 const TAU = Math.PI*2;
 function angLerp(a,b,t){ let d=((b-a+Math.PI)%TAU+TAU)%TAU-Math.PI; return a+d*t; }
+function pickWeighted(obj, key='w'){ let s=0; for(const k in obj) s+=obj[k][key]; let r=Math.random()*s; for(const k in obj){ r-=obj[k][key]; if(r<=0) return k; } return Object.keys(obj)[0]; }
 const JP_FONT = '"Hiragino Maru Gothic ProN","Hiragino Sans","Meiryo","Yu Gothic",sans-serif';
+const EMOJI_FONT = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+const IS_TOUCH = matchMedia('(hover:none),(pointer:coarse)').matches;
 
 /* =========================================================
    セーブデータ（LocalStorage 自動セーブ）
    ========================================================= */
 const SAVE_KEY = 'jihankiUraNoTatakai_v1';
-const DEFAULT_SAVE = { money:0, high:0, games:0, totalCoins:0, muted:false, seenHow:false, skills:{power:0,speed:0,magnet:0,bonus:0} };
+const DEFAULT_SAVE = { money:0, high:0, highTeam:0, games:0, wins:0, totalCoins:0, muted:false, seenHow:false,
+  skills:{power:0,speed:0,magnet:0,bonus:0,dash:0,item:0} };
 function loadSave(){
   try{
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
@@ -290,7 +319,7 @@ function loadSave(){
       const d = JSON.parse(JSON.stringify(DEFAULT_SAVE));
       Object.assign(d, s); d.skills = Object.assign({}, DEFAULT_SAVE.skills, s.skills||{});
       for(const k in d.skills) d.skills[k] = clamp(d.skills[k]|0, 0, 10);
-      d.money = Math.max(0, d.money|0); d.high = Math.max(0, d.high|0);
+      d.money = Math.max(0, d.money|0); d.high = Math.max(0, d.high|0); d.highTeam = Math.max(0, d.highTeam|0);
       return d;
     }
   }catch(e){}
@@ -304,21 +333,46 @@ function writeSave(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save));
    ========================================================= */
 const SKILLS = {
   power:  { name:'パワーUP',       icon:'💪', max:10, base:8,  growth:1.42, req:null,
-            desc:'10円玉を押し出す力と、敵を吹っ飛ばす力が強くなる。',
-            eff:l=>`パワー ×${(1+0.12*l).toFixed(2)}` },
+            desc:'硬貨を押し出す力と、敵を吹っ飛ばす力が強くなる。', eff:l=>`パワー ×${(1+0.12*l).toFixed(2)}` },
   speed:  { name:'移動速度UP',     icon:'👟', max:10, base:8,  growth:1.42, req:null,
-            desc:'キャラクターの移動スピードが上がる。タックルの回復も早くなる。',
-            eff:l=>`速さ ×${(1+0.06*l).toFixed(2)}` },
+            desc:'キャラクターの移動スピードが上がる。', eff:l=>`速さ ×${(1+0.06*l).toFixed(2)}` },
   bonus:  { name:'ボーナス獲得率', icon:'💰', max:10, base:14, growth:1.42, req:{power:2},
-            desc:'ゲーム終了時にもらえるおこづかいが増える。',
-            eff:l=>`獲得量 +${15*l}%` },
+            desc:'ゲーム終了時にもらえるおこづかいが増える。', eff:l=>`獲得量 +${15*l}%` },
   magnet: { name:'磁石の力',       icon:'🧲', max:10, base:14, growth:1.42, req:{speed:2},
-            desc:'近くにある10円玉が、少しずつ自分に引き寄せられる。',
-            eff:l=>l===0?'効果なし':`範囲 ${(2.4+0.42*l).toFixed(1)}・吸引 ${l}` },
+            desc:'近くにある硬貨が、少しずつ自分に引き寄せられる。', eff:l=>l===0?'効果なし':`範囲 ${(2.4+0.42*l).toFixed(1)}・吸引 ${l}` },
+  dash:   { name:'タックル強化',   icon:'💨', max:10, base:18, growth:1.42, req:{power:4},
+            desc:'タックルの回復が早くなり、威力も上がる。', eff:l=>`回復 -${4*l}%・威力 +${6*l}%` },
+  item:   { name:'アイテム名人',   icon:'🎁', max:10, base:18, growth:1.42, req:{speed:4},
+            desc:'拾ったアイテムの効果時間が長くなる。', eff:l=>`効果時間 +${10*l}%` },
 };
 const skillCost = k => Math.round(SKILLS[k].base*Math.pow(SKILLS[k].growth, save.skills[k]));
 function isUnlocked(k){ const r=SKILLS[k].req; if(!r) return true; for(const q in r) if(save.skills[q]<r[q]) return false; return true; }
 function totalSkillLv(){ let t=0; for(const k in save.skills) t+=save.skills[k]; return t; }
+
+/* =========================================================
+   硬貨・アイテム定義（ゲームバランス）
+   ========================================================= */
+const COIN_TYPES = {
+  1:   { w:16, r:0.82, m:0.45, hole:false, txt:'1',   jp:'一円', grad:['#ffffff','#cfd4dc','#8f96a3'], ink:'rgba(70,75,90,.85)',  side:0xd8dce2, glow:0xdfe8ff, fr:1.5 },
+  5:   { w:15, r:0.9,  m:0.8,  hole:true,  txt:'',    jp:'五円', grad:['#fff3b0','#e2bb4c','#9c7a20'], ink:'rgba(110,80,10,.85)', side:0xdcb24a, glow:0xffe080, fr:1.3 },
+  10:  { w:54, r:0.95, m:0.9,  hole:false, txt:'10',  jp:'十円', grad:['#ffcf9a','#d98545','#9a4f22'], ink:'rgba(100,40,10,.85)', side:0xc8763c, glow:0xffb050, fr:1.2 },
+  50:  { w:9,  r:0.9,  m:0.85, hole:true,  txt:'50',  jp:'五十円', grad:['#ffffff','#d0d3da','#8d919b'], ink:'rgba(70,72,82,.85)', side:0xcfd2d9, glow:0xd8f0ff, fr:1.2 },
+  100: { w:6,  r:0.97, m:1.1,  hole:false, txt:'100', jp:'百円', grad:['#ffffff','#c9ccd4','#8d919b'], ink:'rgba(70,72,82,.85)',  side:0xc9ccd4, glow:0xbfe6ff, fr:1.2, beam:0x9fd8ff },
+  500: { w:0,  r:1.22, m:1.8,  hole:false, txt:'500', jp:'五百円', grad:['#fff6cc','#d8c27a','#8f7a3a'], ink:'rgba(90,70,20,.85)', side:0xd6c07a, glow:0xffe9a0, fr:1.0, beam:0xffd860 },
+};
+const ITEMS = {
+  speed:   { icon:'🍬', name:'アメ玉',         desc:'6秒間 移動スピード1.4倍',           dur:6,  w:14, color:0xff7eb6 },
+  power:   { icon:'🥛', name:'プロテイン',     desc:'6秒間 押す力・吹っ飛ばす力1.8倍',   dur:6,  w:12, color:0xffffff },
+  magnet:  { icon:'🧲', name:'強力マグネット', desc:'7秒間 まわりの硬貨を強く引き寄せる', dur:7,  w:10, color:0xff4d4d },
+  shield:  { icon:'🛡️', name:'消しゴムの盾',   desc:'8秒間 気絶しない・飛ばされにくい',  dur:8,  w:10, color:0x7fd0ff },
+  battery: { icon:'🔋', name:'乾電池',         desc:'6秒間 タックルが連続で使える',       dur:6,  w:10, color:0x9cff6b },
+  giant:   { icon:'🎈', name:'風船ガム',       desc:'7秒間 体が大きく・重くなる',         dur:7,  w:9,  color:0xff9de2 },
+  double:  { icon:'👛', name:'がま口さいふ',   desc:'10秒間 入れた硬貨の得点が2倍',       dur:10, w:6,  color:0xffd54a },
+  wave:    { icon:'💥', name:'かんしゃく玉',   desc:'まわりの敵を吹っ飛ばして気絶させる', dur:0,  w:7,  color:0xffa040 },
+  freeze:  { icon:'🧊', name:'保冷剤',         desc:'敵全員の足が4秒間遅くなる',          dur:0,  w:7,  color:0x9be7ff },
+  mystery: { icon:'🎁', name:'びっくり箱',     desc:'何が出るかはお楽しみ！',             dur:0,  w:8,  color:0xc58bff },
+};
+const BUFF_KEYS = ['speed','power','magnet','shield','battery','giant','double','freeze'];
 
 /* =========================================================
    レンダラー・シーン
@@ -337,15 +391,14 @@ const MAX_ANISO = Math.min(4, renderer.capabilities.getMaxAnisotropy());
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x120e0b);
-scene.fog = new THREE.Fog(0x120e0b, 38, 80);
-const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.5, 160);
-camera.position.set(0, 24, 22);
+scene.fog = new THREE.Fog(0x120e0b, 45, 95);
+const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.5, 200);
+camera.position.set(0, 30, 28);
 
 // 簡易環境マップ（金属の映り込み用）
 {
   const env = new THREE.Scene();
-  const box = new THREE.Mesh(new THREE.BoxGeometry(20,20,20), new THREE.MeshBasicMaterial({color:0x2a2420, side:THREE.BackSide}));
-  env.add(box);
+  env.add(new THREE.Mesh(new THREE.BoxGeometry(20,20,20), new THREE.MeshBasicMaterial({color:0x2a2420, side:THREE.BackSide})));
   const addPanel=(c,x,y,z,w,h,ry=0,rx=0)=>{ const p=new THREE.Mesh(new THREE.PlaneGeometry(w,h), new THREE.MeshBasicMaterial({color:c, side:THREE.DoubleSide})); p.position.set(x,y,z); p.rotation.set(rx,ry,0); env.add(p); };
   addPanel(0xffd9a8, 0,9.5,0, 12,12, 0, Math.PI/2);
   addPanel(0xff9a40, 0,2,-9.5, 14,4);
@@ -355,17 +408,25 @@ camera.position.set(0, 24, 22);
   pm.dispose();
 }
 
+/* =========================================================
+   ステージ定数
+   ========================================================= */
+const W = 28, H = 19;             // フィールド半径（x, z）
+const NEST_R = 3.3;
+const GOAL_R = 4.6;
+const ROUND_TIME = 90;
+
 // ライト
-const hemi = new THREE.HemisphereLight(0xcfdcff, 0x3b2a1c, 0.55); scene.add(hemi);
+const hemi = new THREE.HemisphereLight(0xcfdcff, 0x3b2a1c, 0.6); scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xfff0dd, 2.0);
-sun.position.set(-12, 30, 16);
+sun.position.set(-16, 40, 22);
 sun.castShadow = true;
-sun.shadow.mapSize.set(1024,1024);
-Object.assign(sun.shadow.camera, { left:-25, right:25, top:20, bottom:-20, near:5, far:70 });
-sun.shadow.bias = -0.0008; sun.shadow.normalBias = 0.03;
+sun.shadow.mapSize.set(IS_TOUCH?1024:2048, IS_TOUCH?1024:2048);
+Object.assign(sun.shadow.camera, { left:-34, right:34, top:27, bottom:-27, near:5, far:95 });
+sun.shadow.bias = -0.0008; sun.shadow.normalBias = 0.04;
 scene.add(sun); scene.add(sun.target);
-const machineLight = new THREE.PointLight(0xff9440, 45, 34, 1.1); machineLight.position.set(0, 3.5, -12); scene.add(machineLight);
-const blueLight = new THREE.PointLight(0x6fa8ff, 18, 22, 1.2); blueLight.position.set(16, 4, -11); scene.add(blueLight);
+const machineLight = new THREE.PointLight(0xff9440, 60, 46, 1.1); machineLight.position.set(0, 4, -H+1.5); scene.add(machineLight);
+const blueLight = new THREE.PointLight(0x6fa8ff, 24, 30, 1.2); blueLight.position.set(W-4, 5, -H+2); scene.add(blueLight);
 
 /* =========================================================
    テクスチャ生成（Canvas）
@@ -377,16 +438,17 @@ function canvasTex(w,h,draw,rep){
   if(rep){ t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(rep[0],rep[1]); }
   return t;
 }
-function softTex(inner='rgba(255,255,255,1)'){
-  return canvasTex(64,64,(g)=>{ const gr=g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0,inner); gr.addColorStop(.4,'rgba(255,255,255,.45)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,64,64); });
-}
-const TEX_SOFT = softTex();
+const TEX_SOFT = canvasTex(64,64,(g)=>{ const gr=g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(.4,'rgba(255,255,255,.45)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,64,64); });
 const TEX_STAR = canvasTex(64,64,(g)=>{
   g.translate(32,32); const gr=g.createRadialGradient(0,0,0,0,0,30); gr.addColorStop(0,'#fff'); gr.addColorStop(1,'rgba(255,255,255,0)');
   g.fillStyle=gr; for(let i=0;i<4;i++){ g.rotate(Math.PI/4); g.beginPath(); g.moveTo(0,-30); g.lineTo(3,0); g.lineTo(0,30); g.lineTo(-3,0); g.fill(); }
   g.beginPath(); g.arc(0,0,6,0,TAU); g.fill();
 });
-
+const emojiCache={};
+function emojiTex(e){
+  if(emojiCache[e]) return emojiCache[e];
+  return emojiCache[e]=canvasTex(128,128,(g)=>{ g.textAlign='center'; g.textBaseline='middle'; g.font=`96px ${EMOJI_FONT}`; g.fillText(e,64,70); });
+}
 const TEX_FLOOR = canvasTex(512,512,(g,w,h)=>{
   g.fillStyle='#7d766c'; g.fillRect(0,0,w,h);
   for(let i=0;i<14;i++){ const x=Math.random()*w,y=Math.random()*h,r=rand(40,140); const gr=g.createRadialGradient(x,y,0,x,y,r); gr.addColorStop(0,`rgba(${rand(40,70)|0},${rand(30,55)|0},20,${rand(.08,.22)})`); gr.addColorStop(1,'rgba(0,0,0,0)'); g.fillStyle=gr; g.fillRect(0,0,w,h); }
@@ -394,23 +456,20 @@ const TEX_FLOOR = canvasTex(512,512,(g,w,h)=>{
   g.strokeStyle='rgba(30,25,20,.18)'; g.lineWidth=1;
   for(let i=0;i<10;i++){ g.beginPath(); let x=Math.random()*w,y=Math.random()*h; g.moveTo(x,y); for(let j=0;j<6;j++){ x+=rand(-30,30); y+=rand(-30,30); g.lineTo(x,y);} g.stroke(); }
 }, [14,14]);
-
 const TEX_MACHINE = canvasTex(1024,320,(g,w,h)=>{
   const gr=g.createLinearGradient(0,0,0,h); gr.addColorStop(0,'#4a4f56'); gr.addColorStop(1,'#2c3035'); g.fillStyle=gr; g.fillRect(0,0,w,h);
   g.strokeStyle='rgba(0,0,0,.5)'; g.lineWidth=3; for(let x=0;x<=w;x+=256){ g.beginPath(); g.moveTo(x,0); g.lineTo(x,h); g.stroke(); }
   g.fillStyle='rgba(255,255,255,.08)'; for(let x=10;x<w;x+=256){ for(let y=14;y<h;y+=60){ g.beginPath(); g.arc(x+8,y,4,0,TAU); g.arc(x+234,y,4,0,TAU); g.fill(); } }
-  // 注意ステッカー
   g.save(); g.translate(470,60); g.fillStyle='#f5c400'; g.fillRect(0,0,90,62); g.fillStyle='#111'; g.font=`bold 20px ${JP_FONT}`; g.textAlign='center';
   g.fillText('⚡ 危険',45,26); g.font=`bold 15px ${JP_FONT}`; g.fillText('高電圧注意',45,50); g.restore();
   g.fillStyle='rgba(240,240,230,.75)'; g.fillRect(600,70,120,38); g.fillStyle='#333'; g.font=`13px ${JP_FONT}`; g.fillText('製造番号 JH-1024',610,86); g.fillText('冷却ファン 背面',610,102);
-  // 汚れ
   const d=g.createLinearGradient(0,h*.6,0,h); d.addColorStop(0,'rgba(60,45,30,0)'); d.addColorStop(1,'rgba(60,45,30,.55)'); g.fillStyle=d; g.fillRect(0,0,w,h);
 });
 const TEX_CONCRETE = canvasTex(256,256,(g,w,h)=>{
   g.fillStyle='#9a958c'; g.fillRect(0,0,w,h);
   for(let i=0;i<4000;i++){ const v=Math.random()<.5?60:220; g.fillStyle=`rgba(${v},${v},${v},${rand(.04,.12)})`; g.fillRect(Math.random()*w,Math.random()*h,2,2); }
   g.fillStyle='rgba(50,40,30,.25)'; g.fillRect(0,h-40,w,40);
-}, [6,1]);
+}, [8,1]);
 function canTex(bg, fg, jp, en){
   return canvasTex(512,256,(g,w,h)=>{
     g.fillStyle=bg; g.fillRect(0,0,w,h);
@@ -426,10 +485,16 @@ const TEX_PAPER = canvasTex(512,512,(g,w,h)=>{
   g.fillStyle='rgba(60,60,60,.5)'; for(let y=110;y<h-20;y+=26){ let x=40; while(x<w-40){ const l=rand(20,70); g.fillRect(x,y,l,9); x+=l+rand(6,14);} }
   g.strokeStyle='#c33'; g.lineWidth=3; g.strokeRect(330,260,140,100); g.fillStyle='#c33'; g.font=`bold 26px ${JP_FONT}`; g.fillText('提出',360,320);
 });
-const TEX_RULER = canvasTex(1024,64,(g,w,h)=>{
+const TEX_RULER = canvasTex(2048,64,(g,w,h)=>{
   g.fillStyle='#f6dc6a'; g.fillRect(0,0,w,h); g.fillStyle='#333';
-  for(let i=0;i<=200;i++){ const x=12+i*5; const l=i%10===0?26:i%5===0?18:10; g.fillRect(x,0,1.5,l); if(i%10===0){ g.font='12px sans-serif'; g.fillText(String(i/10),x+2,40);} }
-  g.font=`bold 14px ${JP_FONT}`; g.fillText('30cm 定規　6年2組',820,56);
+  for(let i=0;i<=400;i++){ const x=12+i*5; const l=i%10===0?26:i%5===0?18:10; g.fillRect(x,0,1.5,l); if(i%10===0){ g.font='12px sans-serif'; g.fillText(String(i/10),x+2,40);} }
+  g.font=`bold 14px ${JP_FONT}`; g.fillText('50cm 定規　6年2組',1800,56);
+});
+const TEX_MILK = canvasTex(256,256,(g,w,h)=>{
+  g.fillStyle='#f7f7f2'; g.fillRect(0,0,w,h); g.fillStyle='#2f7de1'; g.fillRect(0,h*.55,w,h*.45);
+  g.fillStyle='#2f7de1'; g.font=`bold 54px ${JP_FONT}`; g.textAlign='center'; g.fillText('牛乳',w/2,90);
+  g.fillStyle='#fff'; g.font=`bold 22px ${JP_FONT}`; g.fillText('学校給食用',w/2,h*.72); g.font=`18px ${JP_FONT}`; g.fillText('200ml',w/2,h*.86);
+  g.fillStyle='#fff'; for(let i=0;i<5;i++){ g.beginPath(); g.arc(40+i*44,h*.55,16,Math.PI,0); g.fill(); }
 });
 function stickyTex(css, text){
   return canvasTex(256,256,(g,w,h)=>{
@@ -440,27 +505,34 @@ function stickyTex(css, text){
     g.strokeStyle='rgba(255,255,255,.55)'; g.setLineDash([10,8]); g.lineWidth=5; g.beginPath(); g.arc(w/2,h/2-6,90,0,TAU); g.stroke();
   });
 }
-function coinFaceTex(silver){
-  return canvasTex(256,256,(g,w,h)=>{
+function coinFaceTex(type){
+  const d=COIN_TYPES[type];
+  return canvasTex(256,256,(g)=>{
     const gr=g.createRadialGradient(110,100,10,128,128,128);
-    if(silver){ gr.addColorStop(0,'#ffffff'); gr.addColorStop(.6,'#c9ccd4'); gr.addColorStop(1,'#8d919b'); }
-    else { gr.addColorStop(0,'#ffcf9a'); gr.addColorStop(.6,'#d98545'); gr.addColorStop(1,'#9a4f22'); }
-    g.fillStyle=gr; g.fillRect(0,0,w,h);
-    g.strokeStyle=silver?'rgba(90,90,100,.7)':'rgba(110,50,15,.7)'; g.lineWidth=6; g.beginPath(); g.arc(128,128,118,0,TAU); g.stroke();
+    gr.addColorStop(0,d.grad[0]); gr.addColorStop(.6,d.grad[1]); gr.addColorStop(1,d.grad[2]);
+    g.fillStyle=gr; g.fillRect(0,0,256,256);
+    g.strokeStyle=d.ink; g.fillStyle=d.ink; g.lineWidth=6; g.beginPath(); g.arc(128,128,118,0,TAU); g.stroke();
     g.lineWidth=2; g.beginPath(); g.arc(128,128,100,0,TAU); g.stroke();
-    for(let i=0;i<36;i++){ const a=i/36*TAU; g.fillStyle=g.strokeStyle; g.beginPath(); g.arc(128+Math.cos(a)*109,128+Math.sin(a)*109,2.2,0,TAU); g.fill(); }
-    g.fillStyle=silver?'rgba(70,72,82,.85)':'rgba(100,40,10,.85)'; g.textAlign='center';
-    g.font=`bold ${silver?78:96}px sans-serif`; g.fillText(silver?'100':'10',128,158);
-    g.font=`bold 24px ${JP_FONT}`; g.fillText('日本国',128,64); g.fillText(silver?'百円':'十円',128,214);
+    g.textAlign='center'; g.textBaseline='middle';
+    if(d.hole){
+      // 穴あき硬貨：穴のまわりの模様
+      g.lineWidth=3; g.beginPath(); g.arc(128,128,42,0,TAU); g.stroke();
+      for(let i=0;i<16;i++){ const a=i/16*TAU; g.beginPath(); g.moveTo(128+Math.cos(a)*44,128+Math.sin(a)*44); g.lineTo(128+Math.cos(a)*62,128+Math.sin(a)*62); g.stroke(); }
+      g.font=`bold 28px ${JP_FONT}`; g.fillText(type===5?'五円':'50',128,type===5?210:52);
+      g.font=`bold 22px ${JP_FONT}`; g.fillText('日本国',128,type===5?46:206);
+    } else {
+      if(type!==1) for(let i=0;i<36;i++){ const a=i/36*TAU; g.beginPath(); g.arc(128+Math.cos(a)*109,128+Math.sin(a)*109,2.2,0,TAU); g.fill(); }
+      g.font=`bold ${d.txt.length>=3?76:96}px sans-serif`; g.fillText(d.txt,128,134);
+      g.font=`bold 22px ${JP_FONT}`; g.fillText('日本国',128,60); g.fillText(d.jp,128,204);
+    }
   });
 }
 function labelTex(text, bg, fg){
-  const t=canvasTex(256,96,(g,w,h)=>{
+  return canvasTex(256,96,(g,w,h)=>{
     g.fillStyle=bg; const r=30; g.beginPath(); g.moveTo(r,6); g.arcTo(w-6,6,w-6,h-24,r); g.arcTo(w-6,h-24,6,h-24,r); g.arcTo(6,h-24,6,6,r); g.arcTo(6,6,w-6,6,r); g.fill();
     g.beginPath(); g.moveTo(w/2-14,h-25); g.lineTo(w/2,h-4); g.lineTo(w/2+14,h-25); g.fill();
-    g.fillStyle=fg; g.font=`bold 44px ${JP_FONT}`; g.textAlign='center'; g.textBaseline='middle'; g.fillText(text,w/2,(h-20)/2+2);
+    g.fillStyle=fg; g.font=`bold ${text.length>4?36:44}px ${JP_FONT}`; g.textAlign='center'; g.textBaseline='middle'; g.fillText(text,w/2,(h-20)/2+2);
   });
-  return t;
 }
 
 /* =========================================================
@@ -482,7 +554,6 @@ function addEyes(parent, x, y, z, s){
     const h=mesh(G_SPHERE_LO, MAT_SHINE, parent, side*x*1.05+s*0.15, y+s*0.3, z+s*0.9, false); h.scale.setScalar(s*0.16);
   }
 }
-// 脚（外側へ伸びて地面に着く）
 function addLegs(model, parent, {zs, x, y, len, thick, mat, spread=0.35}){
   const geo = new THREE.CylinderGeometry(thick, thick*0.6, len, 5);
   const d = Math.asin(clamp(y/len, 0, 0.95));
@@ -490,8 +561,7 @@ function addLegs(model, parent, {zs, x, y, len, thick, mat, spread=0.35}){
     for(const side of [-1,1]){
       const pivot=new THREE.Group(); pivot.position.set(side*x, y, z); parent.add(pivot);
       const leg=mesh(geo, mat, pivot);
-      const th = -side*(Math.PI/2+d);
-      leg.rotation.z = th;
+      leg.rotation.z = -side*(Math.PI/2+d);
       leg.position.set(side*Math.cos(d)*len/2, -Math.sin(d)*len/2, 0);
       const base = -side*((zs.length-1)/2 - i)*spread;
       pivot.rotation.y = base;
@@ -511,9 +581,7 @@ function addAntennae(parent, x, y, z, len, mat){
 /* =========================================================
    3Dモデル（キャラクター）
    ========================================================= */
-function newModel(){ const root=new THREE.Group(); const body=new THREE.Group(); root.add(body); return {root, body, legs:[], bobAmp:0.04, float:false}; }
-
-// てんとう虫（プレイヤー）
+function newModel(){ const root=new THREE.Group(); const scaler=new THREE.Group(); root.add(scaler); const body=new THREE.Group(); scaler.add(body); return {root, scaler, body, legs:[], bobAmp:0.04, float:false}; }
 function makeLadybug(){
   const md=newModel(), b=md.body;
   const red=MAT(0xe8202a,{r:.28,m:.05,env:1}), blk=MAT(0x141414,{r:.45});
@@ -523,7 +591,7 @@ function makeLadybug(){
   const line=mesh(new THREE.TorusGeometry(0.8,0.028,6,28,Math.PI), blk, shellG); line.rotation.y=Math.PI/2;
   const spots=[[0.55,0.6],[0.55,-0.6],[0.85,0.9],[0.85,-0.9],[1.0,0.35],[1.0,-0.35],[0.5,1.9],[0.5,-1.9],[1.05,1.6],[1.05,-1.6]];
   for(const [th,ph] of spots){
-    const sx=Math.sin(th)*Math.sin(ph), sy=Math.cos(th), sz=Math.sin(th)*Math.cos(ph)*-1;
+    const sx=Math.sin(th)*Math.sin(ph), sy=Math.cos(th), sz=-Math.sin(th)*Math.cos(ph);
     const s=mesh(G_SPHERE, blk, shellG, sx*0.78, sy*0.78, sz*0.78); s.scale.setScalar(0.13);
   }
   const head=mesh(G_SPHERE, blk, b, 0,0.32,0.78); head.scale.set(0.38,0.3,0.3);
@@ -534,7 +602,6 @@ function makeLadybug(){
   addLegs(md, b, {zs:[0.4,0,-0.4], x:0.42, y:0.24, len:0.6, thick:0.05, mat:blk});
   return md;
 }
-// ダンゴムシ
 function makePillbug(){
   const md=newModel(), b=md.body;
   const c1=MAT(0x5e6c7c,{r:.4,m:.1,env:.8}), c2=MAT(0x4a5665,{r:.4,m:.1,env:.8}), dk=MAT(0x262a30,{r:.6});
@@ -549,7 +616,6 @@ function makePillbug(){
   addLegs(md, b, {zs:[0.45,0.2,-0.05,-0.3,-0.55], x:0.45, y:0.18, len:0.38, thick:0.04, mat:dk, spread:0.18});
   return md;
 }
-// クモ
 function makeSpider(){
   const md=newModel(), b=md.body;
   const blk=MAT(0x1c1820,{r:.7}), str=MAT(0xff8a2a,{r:.5,e:0x3a1500});
@@ -559,7 +625,6 @@ function makeSpider(){
   addEyes(b, 0.13, 0.6, 0.55, 0.12);
   const redEye=MAT(0xff2a2a,{e:0xff0000,ei:1.2});
   for(const sx of [-0.06,0.06]){ const e=mesh(G_SPHERE_LO, redEye, b, sx,0.72,0.55,false); e.scale.setScalar(0.04); }
-  // 8本脚（2関節）
   const gU=new THREE.CylinderGeometry(0.045,0.04,0.7,5), gL=new THREE.CylinderGeometry(0.04,0.02,0.92,5);
   const dU=-0.55, dL=1.15;
   for(let i=0;i<4;i++){
@@ -574,12 +639,10 @@ function makeSpider(){
   }
   return md;
 }
-// ホコリン（謎の生き物）
 function makeDustling(){
   const md=newModel(), b=md.body; md.float=true; md.bobAmp=0.12;
   const core=mesh(G_SPHERE, MAT(0x6f6a66,{r:1}), b, 0,0.78,0); core.scale.setScalar(0.6);
-  const fuzzMat=MAT(0xffffff,{r:1});
-  const n=46, inst=new THREE.InstancedMesh(G_SPHERE_LO, fuzzMat, n); inst.castShadow=true;
+  const n=46, inst=new THREE.InstancedMesh(G_SPHERE_LO, MAT(0xffffff,{r:1}), n); inst.castShadow=true;
   const m4=new THREE.Matrix4(), q=new THREE.Quaternion(), col=new THREE.Color();
   for(let i=0;i<n;i++){
     const v=new THREE.Vector3(rand(-1,1),rand(-1,1),rand(-1,1)).normalize();
@@ -598,82 +661,108 @@ function makeDustling(){
 }
 
 /* =========================================================
-   チーム・ステージ定数
+   チーム・モード
    ========================================================= */
-const W = 20, H = 13.5;           // フィールド半径（x, z）
-const NEST_R = 3.0;
-const ROUND_TIME = 90;
 const TEAMS = [
-  { id:0, name:'あなた',     color:0xff5a4f, css:'#ff6a5f', nest:[-15.5, 9.5],  note:'あなたの陣地', stick:'#ff8a80', make:makeLadybug },
-  { id:1, name:'ダンゴムシ', color:0x4da3ff, css:'#5aaaff', nest:[ 15.5, 9.5],  note:'ダンゴ組',     stick:'#8cc4ff', make:makePillbug },
-  { id:2, name:'クモ',       color:0xb46bff, css:'#c08aff', nest:[-15.5,-9.5],  note:'クモ団',       stick:'#cda6ff', make:makeSpider },
-  { id:3, name:'ホコリン',   color:0x5fd38a, css:'#6fe39a', nest:[ 15.5,-9.5],  note:'ホコリ党',     stick:'#9be8b4', make:makeDustling },
+  { id:0, name:'あなた',     color:0xff5a4f, css:'#ff6a5f', nest:[-W+4.5, H-4.5], note:'あなたの陣地', stick:'#ff8a80', make:makeLadybug },
+  { id:1, name:'ダンゴムシ', color:0x4da3ff, css:'#5aaaff', nest:[ W-4.5, H-4.5], note:'ダンゴ組',     stick:'#8cc4ff', make:makePillbug },
+  { id:2, name:'クモ',       color:0xb46bff, css:'#c08aff', nest:[-W+4.5,-H+4.5], note:'クモ団',       stick:'#cda6ff', make:makeSpider },
+  { id:3, name:'ホコリン',   color:0x5fd38a, css:'#6fe39a', nest:[ W-4.5,-H+4.5], note:'ホコリ党',     stick:'#9be8b4', make:makeDustling },
 ];
+const SIDES = [ { name:'赤チーム', color:0xff5a4f, css:'#ff6a5f' }, { name:'青チーム', color:0x4da3ff, css:'#5aaaff' } ];
 const CPU_STATS = [
   null,
-  { speed:5.7, power:1.1,  m:1.35, aggr:0.08, dashCD:4.4 },  // ダンゴムシ：重くて遅い
-  { speed:6.3, power:0.95, m:0.95, aggr:0.26, dashCD:3.6 },  // クモ：速くて好戦的
-  { speed:6.0, power:0.9,  m:0.9,  aggr:0.14, dashCD:4.0 },  // ホコリン：バランス
+  { speed:6.5,  power:1.1,  m:1.35, aggr:0.08, dashCD:4.4 },  // ダンゴムシ：重くて遅い
+  { speed:7.2,  power:0.95, m:0.95, aggr:0.26, dashCD:3.6 },  // クモ：速くて好戦的
+  { speed:6.85, power:0.9,  m:0.9,  aggr:0.14, dashCD:4.0 },  // ホコリン：バランス
 ];
-
-const statics = [];   // 固定障害物（カプセル: 線分+半径）
-const dustZones = []; // ホコリだまり（減速ゾーン）
-function addStatic(ax,az,bx,bz,r,e=0.45){ statics.push({ax,az,bx,bz,r,e}); }
+let mode='ffa';           // 'ffa' 個人戦 / 'team' チーム戦（サッカー）
+const sideOf = c => mode==='team' ? (c.team<2?0:1) : c.team;
+const isEnemy = (a,b) => a!==b && sideOf(a)!==sideOf(b);
+const teamColor = c => mode==='team' ? SIDES[sideOf(c)].color : TEAMS[c.team].color;
+const teamCss = c => mode==='team' ? SIDES[sideOf(c)].css : TEAMS[c.team].css;
+// 得点エリア（モードごと）
+function getZones(){
+  if(mode==='team') return [
+    { x:-W, z:0, r:GOAL_R, scoreSide:1, defSide:0 },  // 左＝赤のゴール（入ると青の得点）
+    { x: W, z:0, r:GOAL_R, scoreSide:0, defSide:1 },  // 右＝青のゴール（入ると赤の得点）
+  ];
+  return TEAMS.map(t=>({ x:t.nest[0], z:t.nest[1], r:NEST_R, scoreSide:t.id, defSide:t.id }));
+}
+let zones=[];
+// コインをどこへ運びたいか
+function attackPoint(c){
+  if(mode==='team') return sideOf(c)===0 ? [W-1.5,0] : [-W+1.5,0];
+  return TEAMS[c.team].nest;
+}
+function ownGoalPoint(c){ return sideOf(c)===0 ? [-W+1.5,0] : [W-1.5,0]; }
 
 /* =========================================================
-   ステージ構築
+   障害物・ステージ
    ========================================================= */
-function buildStage(){
-  // 床
-  const floor=new THREE.Mesh(new THREE.PlaneGeometry(140,140), MAT(0xffffff,{map:TEX_FLOOR, r:.95, env:.3}));
-  floor.rotation.x=-Math.PI/2; floor.receiveShadow=true; scene.add(floor);
-  // 自販機の奥側の暗がり
-  const shade=new THREE.Mesh(new THREE.PlaneGeometry(48,8), new THREE.MeshBasicMaterial({map:canvasTex(16,128,(g,w,h)=>{const gr=g.createLinearGradient(0,0,0,h); gr.addColorStop(0,'rgba(0,0,0,.6)'); gr.addColorStop(1,'rgba(0,0,0,0)'); g.fillStyle=gr; g.fillRect(0,0,w,h);}), transparent:true, depthWrite:false}));
-  shade.rotation.x=-Math.PI/2; shade.position.set(0,0.015,-H+3.5); scene.add(shade);
+const statics = [];
+const dustZones = [];
+function addStatic(ax,az,bx,bz,r,e=0.45,soft=false){ statics.push({ax,az,bx,bz,r,e,soft}); }
+const nestVis=[], goalVis=[];
 
-  // 自販機の背面パネル
+function buildStage(){
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(160,160), MAT(0xffffff,{map:TEX_FLOOR, r:.95, env:.3}));
+  floor.rotation.x=-Math.PI/2; floor.receiveShadow=true; scene.add(floor);
+  const shadeTex=canvasTex(16,128,(g,w,h)=>{const gr=g.createLinearGradient(0,0,0,h); gr.addColorStop(0,'rgba(0,0,0,.6)'); gr.addColorStop(1,'rgba(0,0,0,0)'); g.fillStyle=gr; g.fillRect(0,0,w,h);});
+  const shade=new THREE.Mesh(new THREE.PlaneGeometry(W*2+8,9), new THREE.MeshBasicMaterial({map:shadeTex, transparent:true, depthWrite:false}));
+  shade.rotation.x=-Math.PI/2; shade.position.set(0,0.015,-H+4); scene.add(shade);
+
+  // 自販機の背面パネル（2台並び）
   const panelMat=MAT(0xffffff,{map:TEX_MACHINE, r:.55, m:.45, env:.5});
   const dark=MAT(0x2a2d31,{r:.6,m:.4});
-  const back=new THREE.Mesh(new THREE.BoxGeometry(48,14,2), [dark,dark,dark,dark,panelMat,dark]);
-  back.position.set(0,7,-H-1.3); back.receiveShadow=true; scene.add(back);
-  // 通気口（オレンジの光が漏れる）
+  for(const px of [-W/2-1, W/2+1]){
+    const back=new THREE.Mesh(new THREE.BoxGeometry(W+1.6,15,2), [dark,dark,dark,dark,panelMat,dark]);
+    back.position.set(px,7.5,-H-1.3); back.receiveShadow=true; scene.add(back);
+  }
   const ventMat=new THREE.MeshBasicMaterial({color:0xffa24a});
   const ventFrame=MAT(0x1b1d20,{r:.5,m:.5});
-  for(const vx of [-10,10]){
+  for(const vx of [-20,-8,8,20]){
     mesh(new THREE.BoxGeometry(7.4,3.6,0.2), ventFrame, scene, vx,2.8,-H-0.25,false);
     for(let i=0;i<8;i++){ const s=new THREE.Mesh(new THREE.PlaneGeometry(6.6,0.17), ventMat); s.position.set(vx,1.3+i*0.42,-H-0.13); scene.add(s); }
   }
-  // 自販機の足（アジャスター）
-  for(const fx of [-22,-1,1,22]) mesh(new THREE.CylinderGeometry(0.5,0.6,0.5,10), MAT(0x222222,{m:.6,r:.4}), scene, fx,0.25,-H-0.05);
-  // ケーブル
-  const cableCurve=new THREE.CatmullRomCurve3([new THREE.Vector3(4,6,-H-0.25),new THREE.Vector3(5,1,-H+0.1),new THREE.Vector3(8,0.2,-H+0.15),new THREE.Vector3(16,0.2,-H+0.2),new THREE.Vector3(21,0.5,-H+0.2)]);
-  mesh(new THREE.TubeGeometry(cableCurve,40,0.22,8), MAT(0x111111,{r:.4}), scene);
-  // 左：コンクリート壁、右：隣の自販機の側面
-  const wallL=mesh(new THREE.BoxGeometry(2,5,34), MAT(0xffffff,{map:TEX_CONCRETE, r:.95}), scene, -W-1.3,2.5,0); wallL.receiveShadow=true;
-  const wallR=mesh(new THREE.BoxGeometry(2,12,34), MAT(0xc62828,{r:.35,m:.3,env:.8}), scene, W+1.3,6,0); wallR.receiveShadow=true;
-  mesh(new THREE.BoxGeometry(0.1,1.6,20), MAT(0xffffff,{r:.4}), scene, W+0.25,7,0,false);
-  // 手前：30cm定規（境界）
-  const ruler=mesh(new THREE.BoxGeometry(44,0.35,2.2), [MAT(0xe8c44a),MAT(0xe8c44a),MAT(0xffffff,{map:TEX_RULER, r:.35}),MAT(0xe8c44a),MAT(0xe8c44a),MAT(0xe8c44a)], scene, 0,0.18,H+1.3);
+  for(const fx of [-W-1,-1.5,1.5,W+1]) mesh(new THREE.CylinderGeometry(0.5,0.6,0.5,10), MAT(0x222222,{m:.6,r:.4}), scene, fx,0.25,-H-0.05);
+  const cableCurve=new THREE.CatmullRomCurve3([new THREE.Vector3(4,6,-H-0.25),new THREE.Vector3(5,1,-H+0.1),new THREE.Vector3(9,0.2,-H+0.15),new THREE.Vector3(20,0.2,-H+0.2),new THREE.Vector3(W+1,0.5,-H+0.2)]);
+  mesh(new THREE.TubeGeometry(cableCurve,48,0.22,8), MAT(0x111111,{r:.4}), scene);
+  // 左右の壁
+  const wallL=mesh(new THREE.BoxGeometry(2,5,H*2+6), MAT(0xffffff,{map:TEX_CONCRETE, r:.95}), scene, -W-1.3,2.5,0); wallL.receiveShadow=true;
+  const wallR=mesh(new THREE.BoxGeometry(2,13,H*2+6), MAT(0xc62828,{r:.35,m:.3,env:.8}), scene, W+1.3,6.5,0); wallR.receiveShadow=true;
+  mesh(new THREE.BoxGeometry(0.1,1.6,26), MAT(0xffffff,{r:.4}), scene, W+0.25,8,0,false);
+  // 手前：定規
+  const rulerMat=MAT(0xe8c44a);
+  const ruler=mesh(new THREE.BoxGeometry(W*2+4,0.35,2.2), [rulerMat,rulerMat,MAT(0xffffff,{map:TEX_RULER, r:.35}),rulerMat,rulerMat,rulerMat], scene, 0,0.18,H+1.3);
   ruler.receiveShadow=true;
+  // 角のホコリ山（角を丸くして硬貨が角に詰まらないようにする）
+  for(const sx of [-1,1]) for(const sz of [-1,1]){
+    const cx=sx*W, cz=sz*H;
+    addStatic(cx,cz,cx,cz,2.6,0.6,true);
+    for(let i=0;i<14;i++){ const a=Math.random()*TAU, d=Math.random()*2.4; const s=rand(.5,1.0);
+      const m=mesh(G_SPHERE_LO, MAT(0x7a736c,{r:1}), scene, clamp(cx+Math.cos(a)*d,-W-0.5,W+0.5),s*.35,clamp(cz+Math.sin(a)*d,-H-0.5,H+0.5),false); m.scale.set(s,s*.55,s); }
+  }
 
   // 横倒しの空き缶（サイダー）
   {
-    const g=new THREE.Group(); g.position.set(0,1.3,-8.7); scene.add(g);
+    const g=new THREE.Group(); g.position.set(0,1.4,-H+6.5); scene.add(g);
     const sideM=MAT(0xffffff,{map:canTex('#1f7fd6','#ffffff','サイダー','CIDER'), r:.3, m:.5, env:1});
     const topM=MAT(0xd8dce2,{r:.25,m:1,env:1});
-    const c=mesh(new THREE.CylinderGeometry(1.3,1.3,6,32), [sideM,topM,topM], g); c.rotation.z=Math.PI/2; c.receiveShadow=true;
-    const rim=mesh(new THREE.TorusGeometry(1.15,0.08,6,32), topM, g, 3.0,0,0); rim.rotation.y=Math.PI/2;
-    addStatic(-3,-8.7,3,-8.7,1.3);
+    const c=mesh(new THREE.CylinderGeometry(1.4,1.4,7,32), [sideM,topM,topM], g); c.rotation.z=Math.PI/2; c.receiveShadow=true;
+    const rim=mesh(new THREE.TorusGeometry(1.25,0.08,6,32), topM, g, 3.5,0,0); rim.rotation.y=Math.PI/2;
+    addStatic(-3.5,-H+6.5,3.5,-H+6.5,1.4);
   }
   // 立っている缶（お茶）
-  {
-    const g=new THREE.Group(); g.position.set(9.5,0,0.5); scene.add(g);
-    const sideM=MAT(0xffffff,{map:canTex('#2e7d32','#c8e6c9','お茶','GREEN TEA'), r:.35, m:.4, env:1});
+  function standCan(x,z,tex){
+    const g=new THREE.Group(); g.position.set(x,0,z); scene.add(g);
+    const sideM=MAT(0xffffff,{map:tex, r:.35, m:.4, env:1});
     const topM=MAT(0xd8dce2,{r:.25,m:1,env:1});
-    const c=mesh(new THREE.CylinderGeometry(1.35,1.35,4.6,32), [sideM,topM,topM], g, 0,2.3,0); c.receiveShadow=true;
-    const tab=mesh(new THREE.TorusGeometry(0.35,0.07,6,16), topM, g, 0.3,4.63,0); tab.rotation.x=Math.PI/2;
-    addStatic(9.5,0.5,9.5,0.5,1.35);
+    const c=mesh(new THREE.CylinderGeometry(1.4,1.4,4.8,32), [sideM,topM,topM], g, 0,2.4,0); c.receiveShadow=true;
+    const tab=mesh(new THREE.TorusGeometry(0.35,0.07,6,16), topM, g, 0.3,4.83,0); tab.rotation.x=Math.PI/2;
+    addStatic(x,z,x,z,1.4);
   }
+  standCan(13,3.5, canTex('#2e7d32','#c8e6c9','お茶','GREEN TEA'));
   // 丸まったプリント
   function crumple(x,z,r,seed){
     const geo=new THREE.IcosahedronGeometry(r,3); const p=geo.attributes.position, v=new THREE.Vector3();
@@ -684,11 +773,12 @@ function buildStage(){
     const m=mesh(geo, MAT(0xffffff,{map:TEX_PAPER, r:.9, flat:true}), scene, x,r*0.7,z); m.rotation.set(seed,seed*2,seed*.5); m.receiveShadow=true;
     addStatic(x,z,x,z,r*0.92);
   }
-  crumple(-9.5,0,1.85,1.3);
-  crumple(17.2,-1.6,1.2,2.7);
+  crumple(-13,-3.5,1.9,1.3);
+  crumple(21,-9.5,1.3,2.7);
+  crumple(-21,9.5,1.3,4.1);
   // 鉛筆
   {
-    const ax=-3.6,az=9.0,bx=3.6,bz=9.7, L=Math.hypot(bx-ax,bz-az);
+    const ax=-5,az=H-6,bx=5,bz=H-5.2, L=Math.hypot(bx-ax,bz-az);
     const g=new THREE.Group(); g.position.set((ax+bx)/2,0.38,(az+bz)/2); g.rotation.y=-Math.atan2(bz-az,bx-ax); scene.add(g);
     const body=mesh(new THREE.CylinderGeometry(0.38,0.38,L-1.6,6), MAT(0x2e8b3a,{r:.4}), g); body.rotation.z=Math.PI/2;
     const wood=mesh(new THREE.ConeGeometry(0.38,1.0,6), MAT(0xe8c99a,{r:.8}), g, (L-1.6)/2+0.5,0,0); wood.rotation.z=-Math.PI/2;
@@ -697,70 +787,109 @@ function buildStage(){
     const er=mesh(new THREE.CylinderGeometry(0.38,0.38,0.5,10), MAT(0xff8fa3,{r:.8}), g, -(L-1.6)/2-0.55,0,0); er.rotation.z=Math.PI/2;
     addStatic(ax,az,bx,bz,0.4);
   }
+  // 牛乳パック
+  {
+    const g=new THREE.Group(); g.position.set(17,0,8); g.rotation.y=0.5; scene.add(g);
+    const side=MAT(0xffffff,{map:TEX_MILK,r:.7}), top=MAT(0xf2f2ee,{r:.7});
+    const box=mesh(new THREE.BoxGeometry(2.2,3.2,2.2), [side,side,top,top,side,side], g, 0,1.6,0); box.receiveShadow=true;
+    const roof=mesh(new THREE.CylinderGeometry(0,1.56,0.9,4,1), top, g, 0,3.65,0); roof.rotation.y=Math.PI/4;
+    mesh(new THREE.CylinderGeometry(0.08,0.08,2.4,6), MAT(0xffffff,{r:.4}), g, 0.5,4.3,0.3).rotation.z=0.3;
+    addStatic(17,8,17,8,1.5);
+  }
+  // ガチャのカプセル（大）
+  {
+    const g=new THREE.Group(); g.position.set(-17,1.3,-8); g.rotation.z=0.6; scene.add(g);
+    mesh(new THREE.SphereGeometry(1.35,24,14,0,TAU,0,Math.PI/2), MAT(0x46c7ff,{r:.1,tr:true,op:.7,env:1}), g);
+    const bt=mesh(new THREE.SphereGeometry(1.35,24,14,0,TAU,Math.PI/2,Math.PI/2), MAT(0xffffff,{r:.25,env:1}), g);
+    mesh(new THREE.TorusGeometry(1.35,0.06,6,32), MAT(0xdddddd), g).rotation.x=Math.PI/2;
+    mesh(new THREE.TorusKnotGeometry(0.4,0.13,40,6), MAT(0xff5a8a,{r:.4}), g, 0,0.4,0);
+    addStatic(-17,-8,-17,-8,1.35);
+  }
   // ペットボトルのキャップ・消しゴム
   {
-    const cap=mesh(new THREE.CylinderGeometry(0.95,0.95,0.7,24,1), MAT(0xf2f2f2,{r:.4,flat:true}), scene, -18.4,0.35,0.8);
-    mesh(new THREE.CylinderGeometry(0.75,0.75,0.02,24), MAT(0x1565c0), scene, -18.4,0.71,0.8,false);
-    cap.receiveShadow=true; addStatic(-18.4,0.8,-18.4,0.8,0.95);
-    const er=mesh(new THREE.BoxGeometry(2.2,0.8,1.2), MAT(0xffffff,{r:.9}), scene, 0,0.4,13.0); er.rotation.y=0.3;
-    const sl=mesh(new THREE.BoxGeometry(1.3,0.82,1.22), MAT(0x1e5bd8,{r:.6}), scene, 0,0.4,13.0); sl.rotation.y=0.3;
+    const cap=mesh(new THREE.CylinderGeometry(0.95,0.95,0.7,24,1), MAT(0xf2f2f2,{r:.4,flat:true}), scene, -W+2.2,0.35,-10);
+    mesh(new THREE.CylinderGeometry(0.75,0.75,0.02,24), MAT(0x1565c0), scene, -W+2.2,0.71,-10,false);
+    cap.receiveShadow=true; addStatic(-W+2.2,-10,-W+2.2,-10,0.95);
+    const cap2=mesh(new THREE.CylinderGeometry(0.95,0.95,0.7,24,1), MAT(0xff6f00,{r:.4,flat:true}), scene, W-2.2,0.35,10);
+    cap2.receiveShadow=true; addStatic(W-2.2,10,W-2.2,10,0.95);
+    const er=mesh(new THREE.BoxGeometry(2.2,0.8,1.2), MAT(0xffffff,{r:.9}), scene, 0,0.4,H+0.0); er.rotation.y=0.3;
+    const sl=mesh(new THREE.BoxGeometry(1.3,0.82,1.22), MAT(0x1e5bd8,{r:.6}), scene, 0,0.4,H+0.0); sl.rotation.y=0.3;
   }
   // ホコリだまり（減速ゾーン）
   function dustPatch(x,z,r){
     dustZones.push({x,z,r});
-    const n=34, inst=new THREE.InstancedMesh(G_SPHERE_LO, MAT(0xffffff,{r:1,tr:true,op:.82}), n);
+    const n=40, inst=new THREE.InstancedMesh(G_SPHERE_LO, MAT(0xffffff,{r:1,tr:true,op:.82}), n);
     const m4=new THREE.Matrix4(), q=new THREE.Quaternion(), col=new THREE.Color();
     for(let i=0;i<n;i++){ const a=Math.random()*TAU, d=Math.sqrt(Math.random())*r*0.9, s=rand(0.3,0.75);
       m4.compose(new THREE.Vector3(x+Math.cos(a)*d,s*0.25,z+Math.sin(a)*d), q, new THREE.Vector3(s,s*0.5,s));
       inst.setMatrixAt(i,m4); const g=rand(.42,.62); inst.setColorAt(i,col.setRGB(g,g*.96,g*.9)); }
     inst.receiveShadow=true; scene.add(inst);
-    const pts=[]; for(let i=0;i<70;i++){ const a=Math.random()*TAU, d=Math.random()*r, px=x+Math.cos(a)*d, pz=z+Math.sin(a)*d, b=Math.random()*TAU, l=rand(.4,1.2);
+    const pts=[]; for(let i=0;i<80;i++){ const a=Math.random()*TAU, d=Math.random()*r, px=x+Math.cos(a)*d, pz=z+Math.sin(a)*d, b=Math.random()*TAU, l=rand(.4,1.2);
       pts.push(px,rand(.05,.35),pz, px+Math.cos(b)*l,rand(.05,.4),pz+Math.sin(b)*l); }
     const geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
     scene.add(new THREE.LineSegments(geo,new THREE.LineBasicMaterial({color:0x9a9289,transparent:true,opacity:.7})));
     const ring=new THREE.Mesh(new THREE.CircleGeometry(r,32), new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.18,depthWrite:false}));
     ring.rotation.x=-Math.PI/2; ring.position.set(x,0.02,z); scene.add(ring);
   }
-  dustPatch(-12.5,-3,2.4);
-  dustPatch(12.8,3.6,2.4);
-  // 飾りのホコリ（壁ぎわ）・パンくず
-  for(let i=0;i<24;i++){
-    const side=i%3, x= side===0?rand(-19.5,19.5):(side===1?-19.6:19.6), z= side===0?-H+rand(0,.6):rand(-12,12);
+  dustPatch(-18,3,2.8);
+  dustPatch(18,-3,2.8);
+  dustPatch(0,9.5,2.2);
+  dustPatch(0,-9,2.0);
+  for(let i=0;i<30;i++){
+    const side=i%3, x= side===0?rand(-W+3,W-3):(side===1?-W+0.4:W-0.4), z= side===0?-H+rand(0,.6):rand(-H+3,H-3);
     const s=rand(.2,.5); const m=mesh(G_SPHERE_LO, MAT(0x77706a,{r:1}), scene, x,s*.3,z,false); m.scale.set(s,s*.5,s);
   }
-  for(let i=0;i<30;i++){ const m=mesh(new THREE.BoxGeometry(.18,.1,.14), MAT(0xc8a060,{r:.9,flat:true}), scene, rand(-19,19),0.05,rand(-12,12.5),false); m.rotation.y=rand(0,3); }
+  for(let i=0;i<40;i++){ const m=mesh(new THREE.BoxGeometry(.18,.1,.14), MAT(0xc8a060,{r:.9,flat:true}), scene, rand(-W+1,W-1),0.05,rand(-H+1,H-0.5),false); m.rotation.y=rand(0,3); }
 
-  // 陣地（ふせん）
+  // 個人戦の陣地（ふせん）
   for(const t of TEAMS){
-    const [nx,nz]=t.nest;
-    const note=new THREE.Mesh(new THREE.PlaneGeometry(6.8,6.8), new THREE.MeshStandardMaterial({map:stickyTex(t.stick,t.note), roughness:.85, polygonOffset:true, polygonOffsetFactor:-2}));
-    note.rotation.x=-Math.PI/2; note.rotation.z=rand(-0.12,0.12); note.position.set(nx,0.03,nz); note.receiveShadow=true; scene.add(note);
+    const [nx,nz]=t.nest, g=new THREE.Group(); scene.add(g);
+    const note=new THREE.Mesh(new THREE.PlaneGeometry(7.4,7.4), new THREE.MeshStandardMaterial({map:stickyTex(t.stick,t.note), roughness:.85, polygonOffset:true, polygonOffsetFactor:-2}));
+    note.rotation.x=-Math.PI/2; note.rotation.z=rand(-0.12,0.12); note.position.set(nx,0.03,nz); note.receiveShadow=true; g.add(note);
     const ring=new THREE.Mesh(new THREE.RingGeometry(NEST_R-0.18,NEST_R,48), new THREE.MeshBasicMaterial({color:t.color,transparent:true,opacity:.85,depthWrite:false}));
-    ring.rotation.x=-Math.PI/2; ring.position.set(nx,0.06,nz); scene.add(ring);
+    ring.rotation.x=-Math.PI/2; ring.position.set(nx,0.06,nz); g.add(ring);
     const pulse=new THREE.Mesh(new THREE.RingGeometry(NEST_R-0.08,NEST_R,48), new THREE.MeshBasicMaterial({color:t.color,transparent:true,opacity:.5,depthWrite:false,blending:THREE.AdditiveBlending}));
-    pulse.rotation.x=-Math.PI/2; pulse.position.set(nx,0.07,nz); scene.add(pulse);
-    // つまようじの旗
-    const fx=nx+(nx<0?-2.6:2.6), fz=nz+(nz<0?-2.6:2.6)*0.5;
-    mesh(new THREE.CylinderGeometry(0.06,0.04,4.2,6), MAT(0xe6c68e,{r:.8}), scene, fx,2.1,fz);
-    const flag=mesh(new THREE.PlaneGeometry(1.8,1.1), new THREE.MeshStandardMaterial({color:t.color,side:THREE.DoubleSide,roughness:.7}), scene, fx+(nx<0?0.9:-0.9),3.55,fz);
-    t.vis={ring,pulse,flag,flagBaseX:flag.position.x};
+    pulse.rotation.x=-Math.PI/2; pulse.position.set(nx,0.07,nz); g.add(pulse);
+    const fx=nx+(nx<0?-2.9:2.9), fz=nz+(nz<0?-1.5:1.5);
+    mesh(new THREE.CylinderGeometry(0.06,0.04,4.2,6), MAT(0xe6c68e,{r:.8}), g, fx,2.1,fz);
+    const flag=mesh(new THREE.PlaneGeometry(1.8,1.1), new THREE.MeshStandardMaterial({color:t.color,side:THREE.DoubleSide,roughness:.7}), g, fx+(nx<0?0.9:-0.9),3.55,fz);
+    nestVis.push({group:g,pulse,flag,id:t.id});
   }
+  // チーム戦のゴール
+  SIDES.forEach((s,i)=>{
+    const gx = i===0 ? -W : W, g=new THREE.Group(); scene.add(g);
+    const area=new THREE.Mesh(new THREE.CircleGeometry(GOAL_R,40, i===0?-Math.PI/2:Math.PI/2, Math.PI), new THREE.MeshBasicMaterial({color:s.color,transparent:true,opacity:.28,depthWrite:false}));
+    area.rotation.x=-Math.PI/2; area.position.set(gx,0.04,0); g.add(area);
+    const ring=new THREE.Mesh(new THREE.RingGeometry(GOAL_R-0.2,GOAL_R,40,1, i===0?-Math.PI/2:Math.PI/2, Math.PI), new THREE.MeshBasicMaterial({color:s.color,transparent:true,opacity:.9,depthWrite:false}));
+    ring.rotation.x=-Math.PI/2; ring.position.set(gx,0.05,0); g.add(ring);
+    const pulse=new THREE.Mesh(new THREE.RingGeometry(GOAL_R-0.1,GOAL_R,40,1, i===0?-Math.PI/2:Math.PI/2, Math.PI), new THREE.MeshBasicMaterial({color:s.color,transparent:true,opacity:.5,depthWrite:false,blending:THREE.AdditiveBlending}));
+    pulse.rotation.x=-Math.PI/2; pulse.position.set(gx,0.06,0); g.add(pulse);
+    // ゴールの枠（つまようじ）
+    const postM=MAT(0xf3e2b8,{r:.7}), netM=new THREE.MeshBasicMaterial({color:0xffffff,wireframe:true,transparent:true,opacity:.35});
+    const px = gx + (i===0?0.4:-0.4);
+    for(const pz of [-GOAL_R,GOAL_R]) mesh(new THREE.CylinderGeometry(0.12,0.12,3.4,8), postM, g, px,1.7,pz);
+    const bar=mesh(new THREE.CylinderGeometry(0.12,0.12,GOAL_R*2,8), postM, g, px,3.4,0); bar.rotation.x=Math.PI/2;
+    const net=mesh(new THREE.PlaneGeometry(GOAL_R*2,3.4,8,4), netM, g, gx+(i===0?-0.2:0.2),1.7,0,false); net.rotation.y=Math.PI/2;
+    const lab=new THREE.Sprite(new THREE.SpriteMaterial({map:labelTex(i===0?'赤ゴール':'青ゴール',s.css,'#fff'),transparent:true}));
+    lab.scale.set(3.4,1.28,1); lab.position.set(px+(i===0?1:-1),4.8,0); g.add(lab);
+    goalVis.push({group:g,pulse,side:i});
+  });
 }
 
 /* =========================================================
-   エフェクト（パーティクル・浮かぶ文字）
+   エフェクト（パーティクル・浮かぶ文字・衝撃波）
    ========================================================= */
 const particles=[];
 function makePool(n, tex, additive){
   const arr=[];
   for(let i=0;i<n;i++){
     const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tex, transparent:true, depthWrite:false, blending:additive?THREE.AdditiveBlending:THREE.NormalBlending}));
-    s.visible=false; scene.add(s); arr.push({s, life:0, max:1, vx:0,vy:0,vz:0, size:1, grow:1, g:0});
+    s.visible=false; scene.add(s); arr.push({s, life:0, max:1, vx:0,vy:0,vz:0, size:1, grow:1, g:0, op:1});
   }
   return arr;
 }
-const puffPool=makePool(70, TEX_SOFT, false);
-const sparkPool=makePool(70, TEX_STAR, true);
+const puffPool=makePool(80, TEX_SOFT, false);
+const sparkPool=makePool(90, TEX_STAR, true);
 let puffI=0, sparkI=0;
 function emit(kind, x,y,z, n, o={}){
   const pool = kind==='spark'?sparkPool:puffPool;
@@ -769,8 +898,8 @@ function emit(kind, x,y,z, n, o={}){
     const a=Math.random()*TAU, sp=rand(.3,1)*(o.speed??3);
     p.vx=Math.cos(a)*sp; p.vz=Math.sin(a)*sp; p.vy=rand(.3,1)*(o.up??2);
     p.life=p.max=rand(.6,1)*(o.life??0.7); p.size=(o.size??0.8)*rand(.7,1.3); p.grow=o.grow??1.8; p.g=o.g??0;
-    p.s.position.set(x,y,z); p.s.material.color.set(o.color??0xbdb4a8); p.s.material.opacity=o.op??0.8; p.s.visible=true;
-    p.op=o.op??0.8; particles.push(p);
+    p.s.position.set(x,y,z); p.s.material.color.set(o.color??0xbdb4a8); p.op=o.op??0.8; p.s.material.opacity=p.op; p.s.visible=true;
+    if(!particles.includes(p)) particles.push(p);
   }
 }
 function updateParticles(dt){
@@ -783,9 +912,20 @@ function updateParticles(dt){
     const sc=p.size*(1+(1-t)*p.grow); p.s.scale.set(sc,sc,sc); p.s.material.opacity=p.op*t;
   }
 }
+const waves=[];
+for(let i=0;i<3;i++){
+  const m=new THREE.Mesh(new THREE.RingGeometry(0.85,1,48), new THREE.MeshBasicMaterial({color:0xffc060,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide}));
+  m.rotation.x=-Math.PI/2; m.visible=false; scene.add(m); waves.push({m,t:1,max:1,r:7});
+}
+function shockwave(x,z,r,color){
+  const w=waves.find(w=>w.t>=w.max)||waves[0];
+  w.m.position.set(x,0.3,z); w.m.material.color.set(color); w.t=0; w.max=0.45; w.r=r; w.m.visible=true;
+}
+function updateWaves(dt){ for(const w of waves){ if(w.t>=w.max){ w.m.visible=false; continue; } w.t+=dt; const a=w.t/w.max; w.m.scale.setScalar(0.5+a*w.r); w.m.material.opacity=1-a; } }
 const floatsEl=$('floats'), floats=[];
-function floatText(text, x,y,z, color){
-  const el=document.createElement('div'); el.className='float'; el.textContent=text; el.style.color=color; floatsEl.appendChild(el);
+function floatText(text, x,y,z, color, small){
+  if(floats.length>14){ const f=floats.shift(); f.el.remove(); }
+  const el=document.createElement('div'); el.className='float'+(small?' small':''); el.textContent=text; el.style.color=color; floatsEl.appendChild(el);
   floats.push({el, pos:new THREE.Vector3(x,y,z), life:1.3});
 }
 const _v=new THREE.Vector3();
@@ -800,6 +940,7 @@ function updateFloats(dt){
     f.el.style.opacity=Math.min(1,f.life*1.6);
   }
 }
+function clearFloats(){ for(const f of floats) f.el.remove(); floats.length=0; }
 let msgTimer=null;
 function centerMsg(text, dur=900, small=false){
   const el=$('centerMsg'); el.textContent=text; el.classList.toggle('smallmsg',small); el.classList.add('show');
@@ -822,7 +963,7 @@ function tone(freq, dur, type='sine', vol=0.15, slide=0, delay=0){
   o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t+dur+0.05);
 }
 const sfx = {
-  coin(big){ tone(988,.12,'square',.07); tone(1319,.3,'square',.07,0,.08); if(big){ tone(1760,.35,'square',.06,0,.18);} },
+  coin(v){ tone(988,.12,'square',.07); tone(1319,.3,'square',.07,0,.08); if(v>=50){ tone(1760,.35,'square',.06,0,.18);} if(v>=500){ tone(2093,.5,'square',.06,0,.3);} },
   enemyCoin(){ tone(520,.15,'triangle',.08); tone(390,.2,'triangle',.07,0,.1); },
   bump(v){ tone(140,.16,'triangle',Math.min(.25,.05+v*.02),.5); },
   push(){ tone(420,.05,'sine',.04,1.4); },
@@ -833,36 +974,44 @@ const sfx = {
   end(){ tone(784,.2,'square',.07); tone(622,.2,'square',.07,0,.18); tone(523,.45,'square',.07,0,.36); },
   buy(){ tone(660,.08,'square',.06); tone(990,.08,'square',.06,0,.07); tone(1320,.2,'square',.06,0,.14); },
   fever(){ for(let i=0;i<4;i++) tone(600+i*150,.12,'square',.06,0,i*.08); },
+  item(){ tone(700,.08,'triangle',.08); tone(1050,.08,'triangle',.08,0,.06); tone(1400,.15,'triangle',.07,0,.12); },
+  boom(){ tone(90,.4,'sawtooth',.12,.4); tone(200,.2,'square',.05,.3); },
+  thud(){ tone(70,.35,'triangle',.18,.6); },
 };
 
 /* =========================================================
    キャラクター
    ========================================================= */
 const creatures=[];
+const BASE_R=0.78;
+function newFx(){ const o={}; for(const k of BUFF_KEYS) o[k]=0; return o; }
 class Creature{
   constructor(team){
     const t=TEAMS[team]; this.team=team; this.kind='c'; this.isPlayer=team===0;
-    this.r=0.78; this.x=0; this.z=0; this.vx=0; this.vz=0;
+    this.r=BASE_R; this.x=0; this.z=0; this.vx=0; this.vz=0; this.m=1; this.baseM=1;
     this.model=t.make(); scene.add(this.model.root);
     this.heading=0; this.walk=0; this.stun=0; this.knockT=0; this.dashT=0; this.dashCD=0;
     this.ix=0; this.iz=0; this.wantDash=false; this.inDust=false;
-    this.target=null; this.attack=null; this.think=0; this.stuckT=0; this.detourT=0; this.detourA=0; this.bumpCD=0;
-    this.score=0; this.count10=0; this.count100=0;
-    // 足元のチームリング
+    this.target=null; this.attack=null; this.itemT=null; this.think=0; this.stuckT=0; this.detourT=0; this.detourA=0; this.bumpCD=0;
+    this.ban=new Map(); this.progBest=1e9; this.progT=0; this.approachT=0;
+    this.score=0; this.coinN=0; this.goals=0; this.goalValue=0; this.fx=newFx();
     const ring=new THREE.Mesh(new THREE.RingGeometry(0.85,1.08,32), new THREE.MeshBasicMaterial({color:t.color,transparent:true,opacity:.85,depthWrite:false}));
-    ring.rotation.x=-Math.PI/2; ring.position.y=0.04; this.model.root.add(ring); this.ring=ring;
-    // 気絶の星
-    const stars=new THREE.Group(); stars.position.y=1.6; stars.visible=false; this.model.root.add(stars);
+    ring.rotation.x=-Math.PI/2; ring.position.y=0.04; this.model.scaler.add(ring); this.ring=ring;
+    const stars=new THREE.Group(); stars.position.y=1.6; stars.visible=false; this.model.scaler.add(stars);
     for(let i=0;i<3;i++){ const s=new THREE.Sprite(new THREE.SpriteMaterial({map:TEX_STAR,color:0xffe066,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending})); s.scale.setScalar(.5); s.position.set(Math.cos(i/3*TAU)*.5,0,Math.sin(i/3*TAU)*.5); stars.add(s); }
     this.stars=stars;
+    // シールドの泡
+    this.bubble=new THREE.Mesh(new THREE.SphereGeometry(1.3,20,14), new THREE.MeshBasicMaterial({color:0x8fdcff,transparent:true,opacity:.22,depthWrite:false,blending:THREE.AdditiveBlending}));
+    this.bubble.position.y=0.6; this.bubble.visible=false; this.model.scaler.add(this.bubble);
+    // 名前ラベル・バフアイコン
+    this.label=new THREE.Sprite(new THREE.SpriteMaterial({transparent:true,depthTest:false}));
+    this.label.renderOrder=5; this.model.root.add(this.label);
+    this.buffIcon=new THREE.Sprite(new THREE.SpriteMaterial({transparent:true,depthTest:false})); this.buffIcon.renderOrder=6;
+    this.buffIcon.scale.setScalar(1.0); this.buffIcon.visible=false; this.model.root.add(this.buffIcon);
     if(this.isPlayer){
-      const lab=new THREE.Sprite(new THREE.SpriteMaterial({map:labelTex('あなた','#ff5a4f','#fff'),transparent:true,depthTest:false}));
-      lab.scale.set(1.9,0.72,1); lab.position.y=2.1; lab.renderOrder=5; this.model.root.add(lab); this.label=lab;
-      // 陣地への矢印
       const sh=new THREE.Shape(); sh.moveTo(0,0.55); sh.lineTo(0.38,0); sh.lineTo(0.14,0); sh.lineTo(0.14,-0.3); sh.lineTo(-0.14,-0.3); sh.lineTo(-0.14,0); sh.lineTo(-0.38,0); sh.closePath();
       const arrow=new THREE.Mesh(new THREE.ShapeGeometry(sh), new THREE.MeshBasicMaterial({color:0xffd27a,transparent:true,opacity:.75,depthWrite:false}));
-      arrow.rotation.x=-Math.PI/2; const ag=new THREE.Group(); ag.position.y=0.05; ag.add(arrow); arrow.position.z=-1.6; scene.add(ag); this.arrow=ag;
-      // 磁石の範囲
+      arrow.rotation.x=-Math.PI/2; const ag=new THREE.Group(); ag.position.y=0.05; ag.add(arrow); arrow.position.z=-1.7; scene.add(ag); this.arrow=ag;
       const mr=new THREE.Mesh(new THREE.RingGeometry(0.96,1,48), new THREE.MeshBasicMaterial({color:0x8fd3ff,transparent:true,opacity:.28,depthWrite:false}));
       mr.rotation.x=-Math.PI/2; mr.position.y=0.05; scene.add(mr); this.magRing=mr;
     }
@@ -871,39 +1020,68 @@ class Creature{
   applyStats(){
     if(this.isPlayer){
       const s=save.skills;
-      this.baseSpeed=7.0*(1+0.06*s.speed); this.power=1+0.12*s.power; this.m=1.0+0.03*s.power;
-      this.dashMax=2.0/(1+0.04*s.speed); this.aggr=0.2;
+      this.baseSpeed=8.0*(1+0.06*s.speed); this.power=1+0.12*s.power; this.baseM=1.0+0.03*s.power;
+      this.dashMax=2.0*(1-0.04*s.dash)/(1+0.03*s.speed); this.dashPow=1+0.06*s.dash; this.aggr=0.2;
       this.magR = s.magnet>0 ? 2.4+0.42*s.magnet : 0; this.magF = s.magnet*1.6;
+      this.itemMul = 1+0.1*s.item;
     } else {
       const st=CPU_STATS[this.team], k=1+Math.min(0.36, totalSkillLv()*0.009);
-      this.baseSpeed=st.speed*k; this.power=st.power*(1+(k-1)*0.8); this.m=st.m; this.aggr=st.aggr; this.dashMax=st.dashCD; this.magR=0; this.magF=0;
+      this.baseSpeed=st.speed*k; this.power=st.power*(1+(k-1)*0.8); this.baseM=st.m; this.aggr=st.aggr; this.dashMax=st.dashCD; this.dashPow=1;
+      this.magR=0; this.magF=0; this.itemMul=1;
     }
+    this.m=this.baseM;
   }
+  setLabel(){
+    const txt = this.isPlayer ? 'あなた' : (mode==='team' && sideOf(this)===0 ? 'みかた' : TEAMS[this.team].name);
+    this.label.material.map=labelTex(txt, teamCss(this), '#fff'); this.label.material.needsUpdate=true;
+    const big=this.isPlayer||txt==='みかた';
+    this.label.scale.set(big?1.9:1.6, big?0.72:0.6, 1); this.label.material.opacity = big?1:0.8;
+    this.ring.material.color.set(teamColor(this));
+  }
+  speedMul(){ return (this.fx.speed>0?1.4:1)*(this.fx.freeze>0?0.5:1)*(this.inDust?0.58:1)*(this.fx.giant>0?0.92:1); }
+  powerMul(){ return this.power*(this.fx.power>0?1.8:1)*(this.fx.giant>0?1.3:1); }
 }
 
 /* =========================================================
-   10円玉
+   硬貨
    ========================================================= */
-const coinMats = {
-  10:  { face:MAT(0xffffff,{map:coinFaceTex(false), m:.85, r:.3, e:0x4a2208, ei:.35, env:1.3}), side:MAT(0xc8763c,{m:.9,r:.32,e:0x3a1a06,ei:.3,env:1.3}) },
-  100: { face:MAT(0xffffff,{map:coinFaceTex(true),  m:.9,  r:.25,e:0x303038, ei:.35, env:1.4}), side:MAT(0xc9ccd4,{m:.95,r:.25,env:1.4}) },
-};
-const coinGeo = new THREE.CylinderGeometry(0.95,0.95,0.24,36);
+const coinGeoCache={}, coinMatCache={};
+function coinGeo(type){
+  if(coinGeoCache[type]) return coinGeoCache[type];
+  const d=COIN_TYPES[type], th=type===1?0.18:0.24;
+  let geo;
+  if(d.hole){
+    const sh=new THREE.Shape(); sh.absarc(0,0,d.r,0,TAU,false);
+    const hole=new THREE.Path(); hole.absarc(0,0,d.r*0.3,0,TAU,true); sh.holes.push(hole);
+    geo=new THREE.ExtrudeGeometry(sh,{depth:th,bevelEnabled:false,curveSegments:36});
+    const p=geo.attributes.position, uv=geo.attributes.uv;
+    for(let i=0;i<p.count;i++) uv.setXY(i, p.getX(i)/(2*d.r)+0.5, p.getY(i)/(2*d.r)+0.5);
+    geo.rotateX(-Math.PI/2); geo.translate(0,-th/2,0);
+  } else geo=new THREE.CylinderGeometry(d.r,d.r,th,36);
+  return coinGeoCache[type]=geo;
+}
+function coinMats(type){
+  if(coinMatCache[type]) return coinMatCache[type];
+  const d=COIN_TYPES[type];
+  const face=MAT(0xffffff,{map:coinFaceTex(type), m:type===1?.6:.85, r:.3, e:type===10?0x4a2208:0x2a2a30, ei:.35, env:1.3});
+  const side=MAT(d.side,{m:.9,r:.32,env:1.3});
+  return coinMatCache[type] = d.hole ? [face, side] : [side, face, face];
+}
 const coins=[];
 class Coin{
   constructor(value){
-    this.kind='coin'; this.value=value; this.r=0.95; this.m=value===100?1.1:0.9;
+    const d=COIN_TYPES[value];
+    this.kind='coin'; this.value=value; this.r=d.r; this.m=d.m; this.fr=d.fr;
     this.obj=new THREE.Group(); scene.add(this.obj);
     this.tilt=new THREE.Group(); this.obj.add(this.tilt);
-    const cm=coinMats[value];
-    this.mesh=mesh(coinGeo, [cm.side, cm.face, cm.face], this.tilt, 0,0,0);
-    this.glow=new THREE.Sprite(new THREE.SpriteMaterial({map:TEX_SOFT, color:value===100?0xbfe6ff:0xffb050, transparent:true, opacity:.55, depthWrite:false, blending:THREE.AdditiveBlending}));
-    this.glow.scale.setScalar(3.2); this.glow.position.y=0.25; this.obj.add(this.glow);
+    this.mesh=mesh(coinGeo(value), coinMats(value), this.tilt);
+    this.glow=new THREE.Sprite(new THREE.SpriteMaterial({map:TEX_SOFT, color:d.glow, transparent:true, opacity:.55, depthWrite:false, blending:THREE.AdditiveBlending}));
+    this.glow.scale.setScalar(d.r*3.4); this.glow.position.y=0.25; this.obj.add(this.glow);
     this.spark=new THREE.Sprite(new THREE.SpriteMaterial({map:TEX_STAR, color:0xffffff, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending}));
     this.spark.scale.setScalar(1.2); this.obj.add(this.spark);
-    if(value===100){
-      const beam=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.9,7,16,1,true), new THREE.MeshBasicMaterial({color:0x9fd8ff,transparent:true,opacity:.18,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide}));
-      beam.position.y=3.5; this.obj.add(beam); this.beam=beam;
+    if(d.beam){
+      const beam=new THREE.Mesh(new THREE.CylinderGeometry(0.5,d.r,8,16,1,true), new THREE.MeshBasicMaterial({color:d.beam,transparent:true,opacity:.18,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide}));
+      beam.position.y=4; this.obj.add(beam); this.beam=beam;
     }
     this.reset();
   }
@@ -912,31 +1090,111 @@ class Coin{
     this.spin=Math.random()*TAU; this.w=0; this.idle=0; this.anim=0; this.lastTouch=null; this.obj.scale.setScalar(1);
   }
 }
-const coinPool={10:[],100:[]};
+const coinPool={};
 function getCoin(value){
-  let c=coinPool[value].find(k=>k.state==='off');
-  if(!c){ c=new Coin(value); coinPool[value].push(c); coins.push(c); }
+  const pool=coinPool[value]||(coinPool[value]=[]);
+  let c=pool.find(k=>k.state==='off');
+  if(!c){ c=new Coin(value); pool.push(c); coins.push(c); }
   return c;
 }
-function spawnCoin(forceValue){
-  const value = forceValue || (Math.random()<0.08?100:10);
+function freeSpot(x,z,r){
+  if(Math.abs(x)>W-r-1 || Math.abs(z)>H-r-1) return false;
+  for(const s of statics){ const q=closestOnSeg(x,z,s); if(Math.hypot(x-q.x,z-q.z)<s.r+r+0.6) return false; }
+  for(const zn of zones){ if(Math.hypot(x-zn.x,z-zn.z)<zn.r+2.5) return false; }
+  for(const k of coins){ if((k.state==='ground'||k.state==='fall') && Math.hypot(k.x-x,k.z-z)<k.r+r+0.8) return false; }
+  return true;
+}
+function spawnCoin(forceValue, nearX, nearZ){
+  const value = forceValue || +pickWeighted(COIN_TYPES);
   const c=getCoin(value); c.reset();
-  // 中央付近の空いている場所に落とす
   let x=0,z=0;
-  for(let tries=0;tries<12;tries++){
-    const a=Math.random()*TAU, d=Math.random()*3.2; x=Math.cos(a)*d; z=Math.sin(a)*d*0.8;
-    let ok=true; for(const k of coins){ if(k!==c && (k.state==='ground'||k.state==='fall') && Math.hypot(k.x-x,k.z-z)<2.1){ ok=false; break; } }
-    if(ok) break;
+  const wide = nearX===undefined && Math.random()<0.35;   // 35%はフィールドのどこかに落ちる
+  for(let tries=0;tries<30;tries++){
+    if(nearX!==undefined){ x=nearX+rand(-4,4); z=nearZ+rand(-3,3); }
+    else if(wide){ x=rand(-W+4,W-4); z=rand(-H+4,H-4); }
+    else { const a=Math.random()*TAU, d=Math.random()*5; x=Math.cos(a)*d; z=Math.sin(a)*d*0.8; }
+    if(freeSpot(x,z,c.r)) break;
   }
-  c.x=x; c.z=z; c.y=9+Math.random()*2; c.vy=0; c.state='fall'; c.obj.visible=true;
+  c.x=x; c.z=z; c.y=10+Math.random()*3; c.vy=0; c.state='fall'; c.obj.visible=true;
   return c;
 }
 const activeCoins = () => coins.filter(c=>c.state==='ground'||c.state==='fall');
 
 /* =========================================================
+   アイテム（ガチャのカプセル）
+   ========================================================= */
+const items=[];
+const capGeoTop=new THREE.SphereGeometry(0.6,18,10,0,TAU,0,Math.PI/2), capGeoBot=new THREE.SphereGeometry(0.6,18,10,0,TAU,Math.PI/2,Math.PI/2);
+const capMatBot=MAT(0xffffff,{r:.25,env:1});
+function makeItemObj(){
+  const g=new THREE.Group(); scene.add(g);
+  const cap=new THREE.Group(); cap.position.y=0.9; g.add(cap);
+  const topM=MAT(0xffffff,{r:.1,tr:true,op:.8,env:1,e:0x000000});
+  mesh(capGeoTop, topM, cap); mesh(capGeoBot, capMatBot, cap);
+  const icon=new THREE.Sprite(new THREE.SpriteMaterial({transparent:true,depthWrite:false})); icon.scale.setScalar(1.25); icon.position.y=2.15; g.add(icon);
+  const ring=new THREE.Mesh(new THREE.RingGeometry(0.7,0.95,32), new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.6,depthWrite:false,blending:THREE.AdditiveBlending}));
+  ring.rotation.x=-Math.PI/2; ring.position.y=0.05; g.add(ring);
+  return {g,cap,topM,icon,ring};
+}
+function spawnItem(){
+  const type=pickWeighted(ITEMS);
+  let it=items.find(i=>!i.active);
+  if(!it){ it={...makeItemObj(), active:false}; items.push(it); }
+  let x=0,z=0, ok=false;
+  for(let tries=0;tries<40 && !ok;tries++){
+    x=rand(-W+4,W-4); z=rand(-H+4,H-4);
+    ok = freeSpot(x,z,1.0) && Math.hypot(x,z)>5 && !items.some(o=>o.active&&Math.hypot(o.x-x,o.z-z)<6);
+  }
+  if(!ok) return;
+  it.type=type; it.x=x; it.z=z; it.life=22; it.active=true; it.born=0;
+  const d=ITEMS[type];
+  it.topM.color.set(d.color); it.topM.emissive.set(d.color); it.topM.emissiveIntensity=0.25;
+  it.icon.material.map=emojiTex(d.icon); it.icon.material.needsUpdate=true;
+  it.ring.material.color.set(d.color);
+  it.g.visible=true; it.g.position.set(x,0,z);
+  emit('spark',x,1,z,8,{color:d.color,speed:3,size:.6});
+}
+function clearItems(){ for(const it of items){ it.active=false; it.g.visible=false; } }
+function giveItem(c, type){
+  const d=ITEMS[type];
+  if(type==='mystery'){
+    const keys=Object.keys(ITEMS).filter(k=>k!=='mystery');
+    type=keys[(Math.random()*keys.length)|0];
+    if(state==='play' && c.isPlayer) floatText('🎁 → '+ITEMS[type].icon, c.x,2.4,c.z,'#e0c0ff',true);
+    return giveItem(c, type);
+  }
+  if(state==='play'){
+    floatText(`${d.icon} ${d.name}！`, c.x,2.2,c.z, c.isPlayer?'#fff2a8':teamCss(c), !c.isPlayer);
+    if(c.isPlayer||!isEnemy(c,creatures[0])) sfx.item();
+  }
+  if(type==='wave'){
+    shockwave(c.x,c.z,7,0xffb050); sfx.boom(); emit('spark',c.x,0.8,c.z,16,{color:0xffc060,speed:9,size:.8});
+    if(Math.hypot(c.x-creatures[0].x,c.z-creatures[0].z)<14) shake=Math.max(shake,0.4);
+    for(const o of creatures){
+      if(!isEnemy(c,o)) continue;
+      const dx=o.x-c.x, dz=o.z-c.z, dd=Math.hypot(dx,dz);
+      if(dd<7 && dd>0.01){
+        const k=(o.fx.shield>0?0.3:1)*16*(1-dd/7*0.5);
+        o.vx+=dx/dd*k; o.vz+=dz/dd*k; o.knockT=0.4;
+        if(o.fx.shield<=0) o.stun=Math.max(o.stun,1.0);
+      }
+    }
+    return;
+  }
+  if(type==='freeze'){
+    for(const o of creatures){ if(isEnemy(c,o) && o.fx.shield<=0){ o.fx.freeze=4; emit('spark',o.x,1,o.z,6,{color:0x9be7ff,speed:2,size:.6}); } }
+    if(state==='play') floatText('🧊 ひえひえ〜', c.x,3,c.z,'#9be7ff',true);
+    return;
+  }
+  c.fx[type]=Math.max(c.fx[type], d.dur*c.itemMul);
+  if(type==='shield'){ c.stun=0; }
+}
+
+/* =========================================================
    入力（キーボード・タッチ／ドラッグ）
    ========================================================= */
 const keys={};
+let dashPressed=false;
 addEventListener('keydown', e=>{
   initAudio();
   const k=e.key.toLowerCase(); keys[k]=true;
@@ -948,12 +1206,12 @@ addEventListener('keyup', e=>{ keys[e.key.toLowerCase()]=false; });
 addEventListener('blur', ()=>{ for(const k in keys) keys[k]=false; joy.active=false; $('joy').classList.add('hidden'); if(state==='play') pauseGame(); });
 document.addEventListener('visibilitychange', ()=>{ if(document.hidden && state==='play') pauseGame(); });
 
-let dashPressed=false;
 const joy={active:false, id:-1, sx:0, sy:0, x:0, y:0};
 const JOY_R=60;
 canvas.addEventListener('pointerdown', e=>{
   initAudio();
-  if(state!=='play' || joy.active) return;
+  if(state!=='play' && state!=='countdown') return;
+  if(joy.active) return;
   joy.active=true; joy.id=e.pointerId; joy.sx=e.clientX; joy.sy=e.clientY; joy.x=0; joy.y=0;
   const j=$('joy'); j.style.left=e.clientX+'px'; j.style.top=e.clientY+'px'; j.classList.remove('hidden');
   $('joyKnob').style.transform='translate(0,0)';
@@ -964,7 +1222,7 @@ canvas.addEventListener('pointerdown', e=>{
 canvas.addEventListener('pointermove', e=>{
   if(!joy.active || e.pointerId!==joy.id) return;
   let dx=e.clientX-joy.sx, dy=e.clientY-joy.sy; const l=Math.hypot(dx,dy);
-  if(l>JOY_R){ // パッドが指についてくる
+  if(l>JOY_R){
     joy.sx+= dx*(1-JOY_R/l); joy.sy+= dy*(1-JOY_R/l); dx=e.clientX-joy.sx; dy=e.clientY-joy.sy;
     const j=$('joy'); j.style.left=joy.sx+'px'; j.style.top=joy.sy+'px';
   }
@@ -990,60 +1248,106 @@ function playerInput(c){
 /* =========================================================
    CPU の思考
    ========================================================= */
+// その場所に虫が立てるか（壁・障害物の中でないか）
+function standable(x,z,r){
+  if(Math.abs(x)>W-r-0.1 || Math.abs(z)>H-r-0.1) return false;
+  for(const s of statics){ const q=closestOnSeg(x,z,s); if(Math.hypot(x-q.x,z-q.z)<s.r+r-0.05) return false; }
+  return true;
+}
+// 硬貨をどの方向に押すか（後ろに回れない・壁に向かう場合は向きを変える）
+function pushPlan(c,k,gx,gz){
+  let nx=gx-k.x, nz=gz-k.z; const nl=Math.hypot(nx,nz)||1; nx/=nl; nz/=nl;
+  const R=k.r+c.r+0.15, nearGoal=nl<6;
+  for(const a of [0,0.4,-0.4,0.8,-0.8,1.25,-1.25,1.7,-1.7]){
+    const ca=Math.cos(a), sa=Math.sin(a);
+    const dx=nx*ca-nz*sa, dz=nx*sa+nz*ca;
+    const bx=k.x-dx*R, bz=k.z-dz*R;
+    if(!standable(bx,bz,c.r)) continue;
+    if(!nearGoal){ const ax=k.x+dx*1.8, az=k.z+dz*1.8; if(Math.abs(ax)>W-k.r*0.9 || Math.abs(az)>H-k.r*0.9) continue; }
+    return {dx,dz,bx,bz,dist:nl};
+  }
+  // どうしても無理なら中央へ向けて押し出す
+  let dx=-k.x, dz=-k.z; const dl=Math.hypot(dx,dz)||1; dx/=dl; dz/=dl;
+  return {dx,dz,bx:k.x-dx*R,bz:k.z-dz*R,dist:nl};
+}
+function setTarget(c,k){
+  if(c.target!==k){ c.target=k; c.progBest=1e9; c.progT=0; c.approachT=0; }
+}
 function aiControl(c, dt){
-  const nest=TEAMS[c.team].nest;
+  const [gx,gz]=attackPoint(c);
+  const now=simTime;
   c.think-=dt;
   if(c.think<=0){
-    c.think=rand(0.3,0.6);
+    c.think=rand(0.3,0.55);
+    for(const [k,t] of c.ban) if(t<now) c.ban.delete(k);
     let best=null, bs=1e9;
     for(const k of coins){
-      if(k.state!=='ground') continue;
-      const dSelf=Math.hypot(k.x-c.x,k.z-c.z), dNest=Math.hypot(k.x-nest[0],k.z-nest[1]);
+      if(k.state!=='ground' || c.ban.has(k)) continue;
+      const dSelf=Math.hypot(k.x-c.x,k.z-c.z), dGoal=Math.hypot(k.x-gx,k.z-gz);
       let pen=0;
-      for(const t of TEAMS){ if(t.id===c.team) continue; if(Math.hypot(k.x-t.nest[0],k.z-t.nest[1])<NEST_R+2.2) pen+=8; }
-      // 他の虫がすでに押しているコインは少し避ける
-      for(const o of creatures){ if(o!==c && o.target===k && Math.hypot(o.x-k.x,o.z-k.z)<dSelf-1) pen+=3; }
-      const s=dSelf+dNest*0.5+pen-(k.value>10?6:0)-(k===c.target?2.5:0);
+      if(mode==='ffa'){
+        for(const t of TEAMS){ if(t.id===c.team) continue; if(Math.hypot(k.x-t.nest[0],k.z-t.nest[1])<NEST_R+2.4) pen+=8; }
+      } else {
+        const [ox,oz]=ownGoalPoint(c); const dOwn=Math.hypot(k.x-ox,k.z-oz);
+        if(dOwn<12) pen-= (12-dOwn)*0.9;     // 自陣ゴールに近い硬貨は守る
+      }
+      for(const o of creatures){ if(o!==c && o.target===k && Math.hypot(o.x-k.x,o.z-k.z)<dSelf-1) pen+= (mode==='team'&&!isEnemy(c,o))?7:3; }
+      const valueBonus = Math.min(10, k.value/10) + (k.value>=500?8:0) - (k.value===1?2:0);
+      const s=dSelf+dGoal*0.5+pen-valueBonus-(k===c.target?2.5:0);
       if(s<bs){ bs=s; best=k; }
     }
-    c.target=best;
-    // 攻撃するかどうか（コインを運んでいる相手を狙う）
+    setTarget(c,best);
+    // アイテムを取りに行く
+    c.itemT=null;
+    let bi=null, bd=c.target?7.5:14;
+    for(const it of items){ if(!it.active) continue; const d=Math.hypot(it.x-c.x,it.z-c.z); if(d<bd){ bd=d; bi=it; } }
+    if(bi && (Math.random()<0.75 || bd<3)) c.itemT=bi;
+    // 攻撃
     if(c.dashCD<=0.3 && Math.random()<c.aggr && !c.attack){
       let victim=null, vd=6.5;
-      for(const o of creatures){ if(o===c||o.stun>0) continue; const d=Math.hypot(o.x-c.x,o.z-c.z);
+      for(const o of creatures){ if(!isEnemy(c,o)||o.stun>0||o.fx.shield>0) continue; const d=Math.hypot(o.x-c.x,o.z-c.z);
         const w=(o.isPlayer?0.85:1)*(o.target&&Math.hypot(o.target.x-o.x,o.target.z-o.z)<2.5?0.75:1);
         if(d*w<vd){ vd=d*w; victim=o; } }
       if(victim){ c.attack=victim; c.attackT=2.2; }
     }
   }
   let tx=c.x, tz=c.z, dash=false, precise=false;
+  if(c.itemT && !c.itemT.active) c.itemT=null;
   if(c.attack){
     c.attackT-=dt; const o=c.attack, d=Math.hypot(o.x-c.x,o.z-c.z);
-    if(o.stun>0||c.attackT<=0||d>9){ c.attack=null; }
+    if(o.stun>0||c.attackT<=0||d>9||o.fx.shield>0){ c.attack=null; }
     else { tx=o.x+o.vx*0.15; tz=o.z+o.vz*0.15; if(d<3.4&&c.dashCD<=0) { dash=true; c.attack=null; } }
   }
-  if(!c.attack){
+  if(!c.attack && c.itemT){ tx=c.itemT.x; tz=c.itemT.z; }
+  else if(!c.attack){
     const k=c.target;
     if(k && k.state==='ground'){
-      let nx=nest[0]-k.x, nz=nest[1]-k.z; const nl=Math.hypot(nx,nz)||1; nx/=nl; nz/=nl;
-      const R=k.r+c.r;
-      const bx=k.x-nx*(R+0.15), bz=k.z-nz*(R+0.15);
+      const plan=pushPlan(c,k,gx,gz);
+      const nx=plan.dx, nz=plan.dz, R=k.r+c.r;
       const rx=c.x-k.x, rz=c.z-k.z, along=rx*nx+rz*nz;
-      const dB=Math.hypot(bx-c.x,bz-c.z);
+      const dB=Math.hypot(plan.bx-c.x,plan.bz-c.z);
+      const dk=Math.hypot(rx,rz);
       if(along>-R*0.55 && dB>0.9){
-        // コインの反対側へ回り込む
-        const side=(nx*rz-nz*rx)>0?1:-1;
-        tx=k.x-nz*side*(R+1.1)-nx*R*0.7; tz=k.z+nx*side*(R+1.1)-nz*R*0.7;
-      } else if(dB>0.75){ tx=bx; tz=bz; precise=true; }
+        // 硬貨の反対側へ回り込む（回り込み先が立てない場所なら逆側）
+        let side=(nx*rz-nz*rx)>0?1:-1;
+        let ax=k.x-nz*side*(R+1.1)-nx*R*0.7, az=k.z+nx*side*(R+1.1)-nz*R*0.7;
+        if(!standable(ax,az,c.r)){ side=-side; ax=k.x-nz*side*(R+1.1)-nx*R*0.7; az=k.z+nx*side*(R+1.1)-nz*R*0.7; }
+        tx=ax; tz=az;
+      } else if(dB>0.75){ tx=plan.bx; tz=plan.bz; precise=true; }
       else {
-        // 押す：コインと陣地を結ぶ線にそって
         const dx=k.x-c.x, dz=k.z-c.z, dl=Math.hypot(dx,dz)||1;
         let px=dx/dl*0.55+nx*0.75, pz=dz/dl*0.55+nz*0.75; const pl=Math.hypot(px,pz)||1;
         tx=c.x+px/pl*3; tz=c.z+pz/pl*3;
         const align=(dx/dl)*nx+(dz/dl)*nz;
-        if(align>0.97 && nl<11 && nl>4 && c.dashCD<=0 && Math.random()<dt*0.8) dash=true;
+        if(align>0.97 && plan.dist<13 && plan.dist>4 && c.dashCD<=0 && Math.random()<dt*0.8) dash=true;
       }
-    } else { tx=Math.sin(simTime*0.4+c.team*2)*5; tz=Math.cos(simTime*0.33+c.team)*3.5; }
+      // 進み具合チェック：押しても硬貨がゴールへ近づかないなら諦める
+      const dG=Math.hypot(k.x-gx,k.z-gz);
+      if(dG<c.progBest-0.6){ c.progBest=dG; c.progT=0; }
+      else if(dk<R+1.6) c.progT+=dt;
+      c.approachT+=dt; if(dk<R+1.6) c.approachT=0;
+      if(c.progT>3.5 || c.approachT>9){ c.ban.set(k, now+5); c.target=null; c.think=0; }
+    } else { tx=Math.sin(simTime*0.4+c.team*2)*6; tz=Math.cos(simTime*0.33+c.team)*4; }
   }
   let dx=tx-c.x, dz=tz-c.z, dl=Math.hypot(dx,dz);
   let ix=0, iz=0;
@@ -1057,8 +1361,10 @@ function aiControl(c, dt){
   // 引っかかり対策
   const spd=Math.hypot(c.vx,c.vz);
   if(dl>1 && spd<1.2 && c.stun<=0) c.stuckT+=dt; else c.stuckT=Math.max(0,c.stuckT-dt);
-  if(c.stuckT>0.7){ c.stuckT=0; c.detourT=0.6; c.detourA=Math.atan2(iz,ix)+(Math.random()<.5?1:-1)*rand(1.2,2.2); }
+  if(c.stuckT>0.6){ c.stuckT=0; c.detourT=rand(0.5,0.9); c.detourA=Math.atan2(iz,ix)+(Math.random()<.5?1:-1)*rand(1.3,2.4);
+    c.stuckN=(c.stuckN||0)+1; if(c.stuckN>=3 && c.target){ c.ban.set(c.target, now+4); c.target=null; c.stuckN=0; } }
   if(c.detourT>0){ c.detourT-=dt; ix=Math.cos(c.detourA); iz=Math.sin(c.detourA); }
+  else if(spd>3) c.stuckN=0;
   const il=Math.hypot(ix,iz); if(il>1){ ix/=il; iz/=il; }
   c.ix=ix; c.iz=iz; c.wantDash=dash;
 }
@@ -1088,33 +1394,36 @@ function collidePair(a,b){
   else if(cc && -rv>2){ a.w+=rand(-4,4); b.w+=rand(-4,4); }
 }
 function pushCoin(c,k,nx,nz){
-  // c→k 方向に押す力（パワーで強くなる）
   const app=c.vx*nx+c.vz*nz;
   if(app>0){
     const dashing=c.dashT>0;
-    const boost=app*(dashing?0.95:0.32)*c.power;
+    const boost=app*(dashing?0.95*c.dashPow:0.32)*c.powerMul()/Math.max(0.6,k.m);
     k.vx+=nx*boost; k.vz+=nz*boost;
     const tang=-c.vx*nz+c.vz*nx; k.w+=tang*0.6;
-    if(dashing && c.bumpCD<=0){ c.bumpCD=0.25; emit('spark',k.x,0.6,k.z,6,{color:0xffd080,speed:5,size:.5}); sfx.push(); if(c.isPlayer) shake=Math.max(shake,0.15); }
+    if(dashing && c.bumpCD<=0){ c.bumpCD=0.25; emit('spark',k.x,0.6,k.z,6,{color:0xffd080,speed:5,size:.5}); if(c.isPlayer){ sfx.push(); shake=Math.max(shake,0.15); } }
   }
   k.lastTouch=c; k.idle=0;
 }
 function bump(a,b,nx,nz,impact){
   if(impact<1.2) return;
+  const enemy=isEnemy(a,b);
   const aAtt=Math.max(0,a.vx*nx+a.vz*nz), bAtt=Math.max(0,-(b.vx*nx+b.vz*nz));
-  const kb=(aAtt*0.55+(a.dashT>0?7.5:0))*a.power/b.m;
-  const ka=(bAtt*0.55+(b.dashT>0?7.5:0))*b.power/a.m;
+  const aD=a.dashT>0 && enemy, bD=b.dashT>0 && enemy;
+  let kb=(aAtt*0.55+(aD?7.5*a.dashPow:0))*a.powerMul()/b.m;
+  let ka=(bAtt*0.55+(bD?7.5*b.dashPow:0))*b.powerMul()/a.m;
+  if(b.fx.shield>0) kb*=0.25; if(a.fx.shield>0) ka*=0.25;
+  if(!enemy){ kb*=0.3; ka*=0.3; }
   b.vx+=nx*kb; b.vz+=nz*kb; a.vx-=nx*ka; a.vz-=nz*ka;
   b.knockT=Math.max(b.knockT,0.18+kb*0.02); a.knockT=Math.max(a.knockT,0.18+ka*0.02);
-  if(a.dashT>0 && b.dashT<=0){ b.stun=Math.max(b.stun,0.55+0.25*a.power); sfx.stun(); }
-  if(b.dashT>0 && a.dashT<=0){ a.stun=Math.max(a.stun,0.55+0.25*b.power); sfx.stun(); }
+  if(aD && b.dashT<=0 && b.fx.shield<=0){ b.stun=Math.max(b.stun,0.55+0.25*a.powerMul()); if(a.isPlayer||b.isPlayer) sfx.stun(); }
+  if(bD && a.dashT<=0 && a.fx.shield<=0){ a.stun=Math.max(a.stun,0.55+0.25*b.powerMul()); if(a.isPlayer||b.isPlayer) sfx.stun(); }
   if(a.dashT>0) a.dashT=Math.min(a.dashT,0.04);
   if(b.dashT>0) b.dashT=Math.min(b.dashT,0.04);
   if(a.bumpCD<=0||b.bumpCD<=0){
     a.bumpCD=b.bumpCD=0.2;
     const mx=(a.x+b.x)/2, mz=(a.z+b.z)/2;
     emit('puff',mx,0.5,mz,6,{speed:3,size:.7});
-    if(impact>5||a.dashT>0||b.dashT>0) emit('spark',mx,0.8,mz,8,{color:0xfff0a0,speed:6,size:.6});
+    if(impact>5||aD||bD) emit('spark',mx,0.8,mz,8,{color:0xfff0a0,speed:6,size:.6});
     if(a.isPlayer||b.isPlayer){ sfx.bump(impact); shake=Math.max(shake,Math.min(0.5,0.08+impact*0.03)); }
   }
 }
@@ -1135,11 +1444,9 @@ function bounds(o){
 const inDust=(x,z)=>{ for(const d of dustZones) if(Math.hypot(x-d.x,z-d.z)<d.r) return true; return false; };
 
 function physicsStep(h){
-  const player=creatures[0];
   for(const c of creatures){
     c.inDust=inDust(c.x,c.z);
-    const slow=c.inDust?0.58:1;
-    const max=c.baseSpeed*slow;
+    const max=c.baseSpeed*c.speedMul();
     let ix=c.ix, iz=c.iz;
     if(c.stun>0){ ix=0; iz=0; }
     const ctrl = c.stun>0?1.4 : c.knockT>0?2.2 : c.dashT>0?0.35 : 9;
@@ -1149,12 +1456,18 @@ function physicsStep(h){
   }
   for(const k of coins){
     if(k.state!=='ground') continue;
-    const fr=inDust(k.x,k.z)?3.4:1.35;
+    const fr=inDust(k.x,k.z)?3.2:k.fr;
     const f=Math.exp(-fr*h); k.vx*=f; k.vz*=f;
-    // 磁石の力
-    if(player && player.magR>0){
-      const dx=player.x-k.x, dz=player.z-k.z, d=Math.hypot(dx,dz);
-      if(d<player.magR && d>player.r+k.r+0.05){ const a=player.magF*(1-d/player.magR*0.6)*h/d; k.vx+=dx*a; k.vz+=dz*a; }
+    // 壁ぎわはゆるい坂：硬貨が少しずつ内側へ転がる（端っこで取れなくなる対策）
+    const ex=W-1.8-Math.abs(k.x), ez=H-1.8-Math.abs(k.z);
+    if(ex<0) k.vx+=-Math.sign(k.x)*Math.min(1,-ex)*4.5*h;
+    if(ez<0) k.vz+=-Math.sign(k.z)*Math.min(1,-ez)*4.5*h;
+    // 磁石
+    for(const c of creatures){
+      const R = Math.max(c.magR, c.fx.magnet>0?6.5:0); if(R<=0) continue;
+      const F = Math.max(c.magF, c.fx.magnet>0?9:0);
+      const dx=c.x-k.x, dz=c.z-k.z, d=Math.hypot(dx,dz);
+      if(d<R && d>c.r+k.r+0.05){ const a=F*(1-d/R*0.6)*h/d/Math.max(0.6,k.m); k.vx+=dx*a; k.vz+=dz*a; }
     }
     k.x+=k.vx*h; k.z+=k.vz*h;
   }
@@ -1167,106 +1480,204 @@ function physicsStep(h){
    ゲーム進行
    ========================================================= */
 let state='loading';   // loading / title / countdown / play / paused / timeup / result
-let simTime=0, timeLeft=ROUND_TIME, spawnT=0, countT=0, feverOn=false, lastTick=0;
+let simTime=0, timeLeft=ROUND_TIME, spawnT=0, itemT=0, countT=0, feverOn=false, lastTick=0;
+let sideScore=[0,0];
+let events=[];
 let roundResult=null;
 
 function placeCreatures(){
   creatures.forEach((c,i)=>{
-    const [nx,nz]=TEAMS[i].nest;
-    c.x=nx*0.72; c.z=nz*0.6; c.vx=c.vz=0; c.stun=0; c.knockT=0; c.dashT=0; c.dashCD=0.5;
-    c.heading=Math.atan2(-c.x,-c.z); c.target=null; c.attack=null; c.score=0; c.count10=0; c.count100=0;
-    c.applyStats();
+    if(mode==='team'){ const pos=[[-9,4],[-9,-4],[9,-4],[9,4]][i]; c.x=pos[0]; c.z=pos[1]; }
+    else { const [nx,nz]=TEAMS[i].nest; c.x=nx*0.72; c.z=nz*0.62; }
+    c.vx=c.vz=0; c.stun=0; c.knockT=0; c.dashT=0; c.dashCD=0.5; c.fx=newFx();
+    c.heading=Math.atan2(-c.x,-c.z); c.target=null; c.attack=null; c.itemT=null; c.ban.clear();
+    c.score=0; c.coinN=0; c.goals=0; c.goalValue=0; c.stuckN=0;
+    c.applyStats(); c.setLabel();
   });
 }
-function resetRound(){
-  for(const k of coins) k.reset();
-  placeCreatures();
-  for(let i=0;i<4;i++) spawnCoin(10);
-  timeLeft=ROUND_TIME; spawnT=1.5; feverOn=false; lastTick=0;
-  updateHUD(true);
+function applyModeVisuals(){
+  for(const n of nestVis) n.group.visible = mode==='ffa';
+  for(const g of goalVis) g.group.visible = mode==='team';
 }
-function maxCoins(){ return feverOn?8:5; }
+function resetRound(){
+  zones=getZones();
+  applyModeVisuals();
+  for(const k of coins) k.reset();
+  clearItems(); clearFloats();
+  placeCreatures();
+  sideScore=[0,0];
+  for(let i=0;i<(mode==='team'?3:5);i++) spawnCoin(i<3?10:undefined);
+  timeLeft=ROUND_TIME; spawnT=1.5; itemT=5; feverOn=false; lastTick=0;
+  events=[{t:62,done:false,kind:'gatan'},{t:38,done:false,kind:'gatan'}];
+  updateHUD();
+}
+function maxCoins(){ return mode==='team' ? (feverOn?7:4) : (feverOn?12:8); }
 
 function simulate(dt){
   simTime+=dt;
   for(const c of creatures){
     if(c.isPlayer && state==='play') playerInput(c); else aiControl(c,dt);
+    // バフの時間
+    for(const k of BUFF_KEYS) if(c.fx[k]>0) c.fx[k]=Math.max(0,c.fx[k]-dt);
+    const wantR = c.fx.giant>0 ? BASE_R*1.45 : BASE_R;
+    c.r = lerp(c.r, wantR, Math.min(1,dt*6));
+    c.m = c.baseM*(c.fx.giant>0?2.2:1);
+    if(c.fx.battery>0) c.dashCD=Math.min(c.dashCD,0.45);
     // タックル
     if(c.wantDash && c.dashCD<=0 && c.stun<=0){
       let dx=c.ix, dz=c.iz; const l=Math.hypot(dx,dz);
       if(l<0.1){ dx=Math.sin(c.heading); dz=Math.cos(c.heading); } else { dx/=l; dz/=l; }
-      const sp=c.baseSpeed*2.6; c.vx=dx*sp; c.vz=dz*sp; c.dashT=0.22; c.dashCD=c.dashMax; c.heading=Math.atan2(dx,dz);
+      const sp=c.baseSpeed*Math.max(0.8,c.speedMul())*2.6; c.vx=dx*sp; c.vz=dz*sp; c.dashT=0.22; c.dashCD=c.fx.battery>0?0.45:c.dashMax; c.heading=Math.atan2(dx,dz);
       emit('puff',c.x,0.3,c.z,5,{speed:2,size:.6});
       if(c.isPlayer) sfx.dash();
     }
     c.wantDash=false;
     c.stun=Math.max(0,c.stun-dt); c.knockT=Math.max(0,c.knockT-dt); c.dashCD=Math.max(0,c.dashCD-dt); c.bumpCD=Math.max(0,c.bumpCD-dt);
     if(c.dashT>0){ c.dashT-=dt; if(Math.random()<0.6) emit('puff',c.x,0.3,c.z,1,{speed:.5,size:.5,life:.4}); }
+    if(c.fx.speed>0 && Math.random()<dt*12) emit('spark',c.x,0.4,c.z,1,{color:0xff9ed0,speed:.5,size:.4,life:.4,up:.5});
   }
   const sub=3, h=dt/sub;
   for(let i=0;i<sub;i++) physicsStep(h);
 
-  // コインの落下・得点判定
+  // 硬貨：落下・得点判定・放置リセット
   for(const k of coins){
     if(k.state==='fall'){
       k.vy-=30*dt; k.y+=k.vy*dt;
-      if(k.y<=0.12){ k.y=0.12; if(k.vy<-6){ k.vy*=-0.3; } else { k.vy=0; k.state='ground'; emit('puff',k.x,0.2,k.z,6,{speed:2.5,size:.7}); } }
+      if(k.y<=0.12){ k.y=0.12; if(k.vy<-6){ k.vy*=-0.3; } else { k.vy=0; k.state='ground'; emit('puff',k.x,0.2,k.z,6,{speed:2.5,size:.7}); if(k.value>=500){ sfx.thud(); shake=Math.max(shake,0.35);} } }
     } else if(k.state==='ground'){
-      for(const t of TEAMS){
-        if(Math.hypot(k.x-t.nest[0],k.z-t.nest[1])<NEST_R-0.35){ scoreCoin(k,t.id); break; }
+      for(const zn of zones){
+        if(Math.hypot(k.x-zn.x,k.z-zn.z)<zn.r-0.35){ scoreCoin(k,zn); break; }
       }
       if(k.state==='ground'){
         if(Math.hypot(k.vx,k.vz)<0.15) k.idle+=dt; else k.idle=0;
-        if(k.idle>18){ k.state='vanish'; k.anim=0; emit('puff',k.x,0.3,k.z,8,{size:.8}); }
+        if(k.idle>12){ k.state='vanish'; k.anim=0; emit('puff',k.x,0.3,k.z,8,{size:.8}); }
       }
     } else if(k.state==='score'||k.state==='vanish'){
       k.anim+=dt;
       if(k.anim>0.6) k.reset();
     }
   }
+  // アイテム：拾う・消える
+  for(const it of items){
+    if(!it.active) continue;
+    it.life-=dt; it.born+=dt;
+    if(it.life<=0){ it.active=false; it.g.visible=false; emit('puff',it.x,0.6,it.z,5,{size:.6}); continue; }
+    for(const c of creatures){
+      if(Math.hypot(c.x-it.x,c.z-it.z)<c.r+0.85){
+        it.active=false; it.g.visible=false;
+        emit('spark',it.x,1,it.z,12,{color:ITEMS[it.type].color,speed:5,up:4,size:.7,g:6});
+        giveItem(c,it.type); break;
+      }
+    }
+  }
   // 出現
   spawnT-=dt;
   if(spawnT<=0){
     if(activeCoins().length<maxCoins()) spawnCoin();
-    spawnT=feverOn?0.7:1.5;
+    spawnT = mode==='team' ? (feverOn?1.0:1.9) : (feverOn?0.6:1.2);
+  }
+  itemT-=dt;
+  if(itemT<=0){
+    if(items.filter(i=>i.active).length<3) spawnItem();
+    itemT=rand(7,11);
   }
 }
 
-function scoreCoin(k,teamId){
+function scoreCoin(k,zn){
   k.state='score'; k.anim=0;
-  const c=creatures[teamId], t=TEAMS[teamId];
-  if(state==='play'){
-    c.score+=k.value; if(k.value===10) c.count10++; else c.count100++;
+  const side=zn.scoreSide;
+  const scorer=k.lastTouch;
+  // 得点2倍：最後にさわった虫が得点側でがま口を持っている
+  let value=k.value, doubled=false;
+  if(scorer && sideOf(scorer)===side && scorer.fx.double>0){ value*=2; doubled=true; }
+  emit('spark',k.x,0.8,k.z,14,{color:COIN_TYPES[k.value].glow,speed:6,up:6,size:.7,g:9});
+  if(mode==='ffa'){ const nv=nestVis[side]; if(nv) nv.pulse.scale.setScalar(1.6); }
+  else { const gv=goalVis[zn.defSide]; if(gv) gv.pulse.scale.setScalar(1.6); }
+  if(state!=='play') return;
+  let css;
+  if(mode==='ffa'){
+    const c=creatures[side]; c.score+=value; c.coinN++; css=TEAMS[side].css;
+    if(side===0) sfx.coin(k.value); else sfx.enemyCoin();
+  } else {
+    sideScore[side]+=value; css=SIDES[side].css;
+    let own=false;
+    if(scorer){ if(sideOf(scorer)===side){ scorer.goals++; scorer.goalValue+=value; } else own=true; }
+    if(side===0) sfx.coin(k.value); else sfx.enemyCoin();
+    centerMsg(own?'オウンゴール…':(side===0?'ゴール！':'失点…'), 900, true);
+    if(side===0) shake=Math.max(shake,0.25);
   }
-  emit('spark',k.x,0.8,k.z,14,{color:k.value===100?0xbfe6ff:0xffc060,speed:6,up:6,size:.7,g:9});
-  t.vis.pulse.scale.setScalar(1.6);
-  if(state==='play'){
-    floatText(`+${k.value}円`, k.x,1.5,k.z, t.css);
-    if(teamId===0){ sfx.coin(k.value===100); } else sfx.enemyCoin();
-    updateHUD();
+  floatText(`+${value}円${doubled?' (×2)':''}`, k.x,1.5,k.z, css);
+  updateHUD();
+}
+function runEvents(){
+  for(const ev of events){
+    if(ev.done || timeLeft>ev.t) continue;
+    ev.done=true;
+    if(ev.kind==='gatan'){
+      centerMsg('ガタン！ 自販機から硬貨が！',1300,true); sfx.thud(); shake=Math.max(shake,0.5);
+      const n=mode==='team'?2:4;
+      for(let i=0;i<n;i++) spawnCoin(undefined, rand(-6,6), -H+5);
+    }
   }
 }
 
 /* =========================================================
-   HUD
+   HUD・ミニマップ
    ========================================================= */
-function updateHUD(full){
+function updateHUD(){
   const p=creatures[0];
   $('hTime').textContent=Math.ceil(Math.max(0,timeLeft));
   $('chipTime').classList.toggle('warn', state==='play' && timeLeft<=10);
-  if(p){
+  if(!p) return;
+  if(mode==='ffa'){
+    $('hScoreLbl').textContent='スコア';
     $('hScore').textContent=p.score;
-    $('hCount').textContent=`10円玉 ${p.count10}枚`+(p.count100?`＋100円玉 ${p.count100}枚`:'');
+    $('hCount').textContent=`硬貨 ${p.coinN}枚`;
+    $('hHigh').textContent=Math.max(save.high, p.score);
+    const sorted=[...creatures].sort((a,b)=>b.score-a.score);
+    $('board').innerHTML='<div class="bt">🏁 じんとり順位</div>'+sorted.map((c,i)=>`<div class="r ${c.isPlayer?'me':''}"><span>${i+1}</span><span class="dot" style="background:${TEAMS[c.team].css}"></span><span class="nm">${TEAMS[c.team].name}</span><span class="sc">${c.score}円</span></div>`).join('');
+  } else {
+    $('hScoreLbl').textContent='赤チーム';
+    $('hScore').textContent=sideScore[0];
+    $('hCount').textContent=`あなたのゴール ${p.goals}本`;
+    $('hHigh').textContent=Math.max(save.highTeam, sideScore[0]);
+    $('board').innerHTML=`<div class="bt">⚽ チーム戦</div><div class="vs"><span class="rd">${sideScore[0]}</span><small>−</small><span class="bl">${sideScore[1]}</span></div><div class="tm"><span style="color:var(--red)">赤</span>：あなた・ダンゴムシ<br><span style="color:var(--blue)">青</span>：クモ・ホコリン</div>`;
   }
-  $('hHigh').textContent=Math.max(save.high, p?p.score:0);
-  const sorted=[...creatures].sort((a,b)=>b.score-a.score);
-  $('board').innerHTML='<div class="bt">🏁 じんとり順位</div>'+sorted.map((c,i)=>`<div class="r ${c.isPlayer?'me':''}"><span>${i+1}</span><span class="dot" style="background:${TEAMS[c.team].css}"></span><span class="nm">${TEAMS[c.team].name}</span><span class="sc">${c.score}円</span></div>`).join('');
+}
+let buffHTML='';
+function updateBuffUI(){
+  const p=creatures[0]; if(!p) return;
+  let html='';
+  for(const k of BUFF_KEYS){ if(p.fx[k]>0) html+=`<div class="buff">${k==='freeze'?'🧊':ITEMS[k].icon}<small>${p.fx[k].toFixed(1)}秒</small></div>`; }
+  if(html!==buffHTML){ buffHTML=html; $('buffs').innerHTML=html; }
 }
 function updateDashUI(){
   const p=creatures[0]; if(!p) return;
-  const r=p.dashCD/p.dashMax;
-  $('dashRing').setAttribute('stroke-dashoffset', (295.3*r).toFixed(1));
+  const r=p.dashCD/(p.fx.battery>0?0.45:p.dashMax);
+  $('dashRing').setAttribute('stroke-dashoffset', (295.3*clamp(r,0,1)).toFixed(1));
   $('btnDash').classList.toggle('cool', r>0);
+}
+const mm=$('minimap'), mmg=mm.getContext('2d');
+function drawMinimap(){
+  const w=mm.width, h=mm.height, sx=w/(W*2+2), sz=h/(H*2+2);
+  const X=x=>(x+W+1)*sx, Z=z=>(z+H+1)*sz;
+  mmg.clearRect(0,0,w,h);
+  mmg.fillStyle='rgba(120,110,95,.35)'; mmg.fillRect(X(-W),Z(-H),W*2*sx,H*2*sz);
+  mmg.fillStyle='rgba(255,160,70,.5)'; mmg.fillRect(X(-W),Z(-H)-3,W*2*sx,4);
+  for(const zn of zones){
+    mmg.fillStyle = mode==='team' ? (zn.defSide===0?'rgba(255,90,79,.55)':'rgba(77,163,255,.55)') : TEAMS[zn.scoreSide].css+'99';
+    mmg.beginPath(); mmg.arc(X(zn.x),Z(zn.z),zn.r*sx,0,TAU); mmg.fill();
+  }
+  mmg.fillStyle='rgba(200,190,175,.55)';
+  for(const s of statics){ if(s.soft) continue; mmg.lineWidth=s.r*2*sx; mmg.strokeStyle='rgba(200,190,175,.55)'; mmg.lineCap='round';
+    mmg.beginPath(); mmg.moveTo(X(s.ax),Z(s.az)); mmg.lineTo(X(s.bx)+0.01,Z(s.bz)); mmg.stroke(); }
+  for(const k of coins){ if(k.state!=='ground'&&k.state!=='fall') continue;
+    mmg.fillStyle = k.value>=500?'#ffe066':k.value>=50?'#e6f4ff':k.value===10?'#ffae5c':k.value===5?'#ffd94a':'#cfd4dc';
+    mmg.beginPath(); mmg.arc(X(k.x),Z(k.z),k.value>=100?5:3.6,0,TAU); mmg.fill(); }
+  for(const it of items){ if(!it.active) continue; const x=X(it.x), z=Z(it.z);
+    mmg.fillStyle='#fff'; mmg.beginPath(); mmg.moveTo(x,z-5); mmg.lineTo(x+4,z); mmg.lineTo(x,z+5); mmg.lineTo(x-4,z); mmg.fill(); }
+  for(const c of creatures){ mmg.fillStyle=teamCss(c); mmg.beginPath(); mmg.arc(X(c.x),Z(c.z),c.isPlayer?6:4.5,0,TAU); mmg.fill();
+    if(c.isPlayer){ mmg.strokeStyle='#fff'; mmg.lineWidth=2; mmg.stroke(); } }
 }
 
 /* =========================================================
@@ -1274,20 +1685,22 @@ function updateDashUI(){
    ========================================================= */
 const screens=['scrTitle','scrHow','scrPause','scrResult','scrSkill'];
 function show(id){ for(const s of screens) $(s).classList.toggle('hidden', s!==id); }
-function showOverlay(id,on){ $(id).classList.toggle('hidden',!on); }
 
 function goTitle(){
   state='title'; show('scrTitle'); $('hud').classList.add('hidden');
-  $('tHigh').textContent=save.high; $('tMoney').textContent=save.money;
+  $('tHigh').textContent=save.high; $('tHighT').textContent=save.highTeam; $('tMoney').textContent=save.money;
   $('btnMute').textContent=save.muted?'🔇 音：オフ':'🔊 音：オン';
+  mode = Math.random()<0.5?'ffa':'team';
   resetRound();
 }
-function startGame(){
+function startGame(m){
   initAudio();
+  if(m) mode=m;
   show(null); $('hud').classList.remove('hidden');
-  if(matchMedia('(hover:none),(pointer:coarse)').matches) $('joyHint').classList.remove('hidden');
+  if(IS_TOUCH) $('joyHint').classList.remove('hidden');
   resetRound();
   state='countdown'; countT=3.0; lastTick=4;
+  centerMsg(mode==='team'?'青いゴールをねらえ！':'自分のふせんに集めろ！',1100,true);
   camSnap=true;
   canvas.focus();
 }
@@ -1297,34 +1710,52 @@ function endGame(){
   state='timeup'; sfx.end(); centerMsg('タイムアップ！',1400);
   joy.active=false; $('joy').classList.add('hidden');
   const p=creatures[0];
-  const sorted=[...creatures].sort((a,b)=>b.score-a.score);
-  let rank=sorted.findIndex(c=>c===p)+1;
-  // 同点ならプレイヤーを上位にする
-  while(rank>1 && sorted[rank-2].score===p.score) rank--;
-  const rankMult=[0,1.5,1.25,1.1,1.0][rank];
-  const base=Math.floor(p.score/5)+2;
   const bonusPct=15*save.skills.bonus;
-  const gain=Math.floor(base*rankMult*(1+bonusPct/100));
-  const newHigh=p.score>save.high;
-  save.money+=gain; save.games++; save.totalCoins+=p.count10+p.count100;
-  if(newHigh) save.high=p.score;
+  let r={mode,bonusPct};
+  if(mode==='ffa'){
+    const sorted=[...creatures].sort((a,b)=>b.score-a.score);
+    let rank=sorted.indexOf(p)+1;
+    while(rank>1 && sorted[rank-2].score===p.score) rank--;
+    r.rank=rank; r.mult=[0,1.5,1.25,1.1,1.0][rank];
+    r.base=Math.floor(p.score/6)+2;
+    r.score=p.score; r.coinN=p.coinN;
+    r.sorted=sorted.map(c=>({name:TEAMS[c.team].name,css:TEAMS[c.team].css,score:c.score}));
+    r.newHigh=p.score>save.high; if(r.newHigh) save.high=p.score;
+    if(rank===1) save.wins++;
+  } else {
+    const my=sideScore[0], en=sideScore[1];
+    r.outcome = my>en?'win':my<en?'lose':'draw';
+    r.mult = r.outcome==='win'?1.5:r.outcome==='draw'?1.2:1.0;
+    r.base=Math.floor(my/8)+Math.floor(p.goalValue/6)+2;
+    r.score=my; r.enemy=en; r.goals=p.goals; r.goalValue=p.goalValue;
+    r.sorted=creatures.map(c=>({name:(c.isPlayer?'あなた':TEAMS[c.team].name),css:teamCss(c),score:c.goals,unit:'ゴール'}));
+    r.newHigh=my>save.highTeam; if(r.newHigh) save.highTeam=my;
+    if(r.outcome==='win') save.wins++;
+  }
+  r.gain=Math.floor(r.base*r.mult*(1+bonusPct/100));
+  save.money+=r.gain; save.games++; save.totalCoins+=(p.coinN||0)+(p.goals||0);
   writeSave();
-  roundResult={rank,base,rankMult,bonusPct,gain,newHigh,score:p.score,count10:p.count10,count100:p.count100,sorted:sorted.map(c=>({team:c.team,score:c.score}))};
+  roundResult=r;
   setTimeout(showResult,1500);
 }
 function showResult(){
   if(state!=='timeup') return;
   state='result'; const r=roundResult;
-  $('rRank').textContent=r.rank+'位';
-  $('rRankLbl').textContent=r.rank===1?'🎉 優勝！ あなたの順位':'あなたの順位';
   $('rNew').classList.toggle('hidden',!r.newHigh);
-  $('rBoard').innerHTML=r.sorted.map((c,i)=>`<div><span><span style="color:${TEAMS[c.team].css}">●</span> ${i+1}位 ${TEAMS[c.team].name}</span><b>${c.score}円</b></div>`).join('');
-  $('rScore').textContent=r.score+'円';
-  $('rCount').textContent=`10円玉 ${r.count10}枚`+(r.count100?` ／ 100円玉 ${r.count100}枚`:'');
-  $('rBase').textContent='🪙 '+r.base;
-  $('rRankB').textContent='×'+r.rankMult.toFixed(2);
-  $('rSkillB').textContent='+'+r.bonusPct+'%';
-  $('rGain').textContent='🪙 +'+r.gain;
+  const rows=[];
+  if(r.mode==='ffa'){
+    $('rRankLbl').textContent=r.rank===1?'🎉 優勝！ あなたの順位':'あなたの順位';
+    $('rRank').textContent=r.rank+'位';
+    $('rBoard').innerHTML=r.sorted.map((c,i)=>`<div><span><span style="color:${c.css}">●</span> ${i+1}位 ${c.name}</span><b>${c.score}円</b></div>`).join('');
+    rows.push(['スコア',r.score+'円'],['集めた硬貨',r.coinN+'枚'],['基本おこづかい','🪙 '+r.base],['順位ボーナス','×'+r.mult.toFixed(2)]);
+  } else {
+    $('rRankLbl').textContent=`赤 ${r.score}円 − ${r.enemy}円 青`;
+    $('rRank').textContent=r.outcome==='win'?'🎉 勝利！':r.outcome==='draw'?'引き分け':'敗北…';
+    $('rBoard').innerHTML=r.sorted.map(c=>`<div><span><span style="color:${c.css}">●</span> ${c.name}</span><b>${c.score}${c.unit}</b></div>`).join('');
+    rows.push(['チームの得点',r.score+'円'],['あなたのゴール',`${r.goals}本（${r.goalValue}円）`],['基本おこづかい','🪙 '+r.base],['勝敗ボーナス','×'+r.mult.toFixed(2)]);
+  }
+  rows.push(['スキル「ボーナス獲得率」','+'+r.bonusPct+'%']);
+  $('rTable').innerHTML=rows.map(x=>`<tr><td>${x[0]}</td><td>${x[1]}</td></tr>`).join('')+`<tr class="total"><td>獲得おこづかい</td><td>🪙 +${r.gain}</td></tr>`;
   show('scrResult'); $('hud').classList.add('hidden');
 }
 
@@ -1347,8 +1778,7 @@ function renderSkills(){
       <button class="btn ${dis?'':'primary'}" ${dis?'disabled':''}>${label}</button>`;
     el.querySelector('button').onclick=()=>buySkill(k);
   }
-  $('conn-bonus').classList.toggle('on',isUnlocked('bonus'));
-  $('conn-magnet').classList.toggle('on',isUnlocked('magnet'));
+  for(const k of ['bonus','magnet','dash','item']) $('conn-'+k).classList.toggle('on',isUnlocked(k));
 }
 function buySkill(k){
   initAudio();
@@ -1361,11 +1791,14 @@ function buySkill(k){
 }
 
 /* ---------- ボタン ---------- */
-$('btnStart').onclick=startGame;
-$('btnRetry').onclick=startGame;
-$('btnRetryP').onclick=startGame;
+let pendingMode=null;
+function tryStart(m){ if(!save.seenHow){ pendingMode=m; show('scrHow'); } else startGame(m); }
+$('btnStartFFA').onclick=()=>tryStart('ffa');
+$('btnStartTeam').onclick=()=>tryStart('team');
+$('btnRetry').onclick=()=>startGame(roundResult?roundResult.mode:mode);
+$('btnRetryP').onclick=()=>startGame(mode);
 $('btnHow').onclick=()=>show('scrHow');
-$('btnHowClose').onclick=()=>{ save.seenHow=true; writeSave(); if(pendingStart){ pendingStart=false; startGame(); } else show('scrTitle'); };
+$('btnHowClose').onclick=()=>{ save.seenHow=true; writeSave(); if(pendingMode){ const m=pendingMode; pendingMode=null; startGame(m); } else show('scrTitle'); };
 $('btnSkillT').onclick=()=>openSkills('scrTitle');
 $('btnSkillR').onclick=()=>openSkills('scrResult');
 $('btnSkillClose').onclick=()=>{ if(skillReturn==='scrResult'){ show('scrResult'); } else { show('scrTitle'); $('tMoney').textContent=save.money; } };
@@ -1377,15 +1810,13 @@ $('btnMute').onclick=()=>{ save.muted=!save.muted; writeSave(); $('btnMute').tex
 $('btnReset').onclick=()=>{
   if(confirm('セーブデータ（おこづかい・スキル・ハイスコア）をすべて消します。よろしいですか？')){
     save=JSON.parse(JSON.stringify(DEFAULT_SAVE)); writeSave(); for(const c of creatures) c.applyStats(); renderSkills();
-    $('tHigh').textContent=0; $('tMoney').textContent=0;
+    $('tHigh').textContent=0; $('tHighT').textContent=0; $('tMoney').textContent=0;
   }
 };
-let pendingStart=false;
-// 初回は遊び方を見せてからスタート
-$('btnStart').onclick=()=>{ if(!save.seenHow){ pendingStart=true; show('scrHow'); } else startGame(); };
+$('howItems').innerHTML=Object.values(ITEMS).map(d=>`<div><b>${d.icon} ${d.name}</b><br>${d.desc}</div>`).join('');
 
 /* =========================================================
-   見た目の更新（モデルのアニメーション）
+   見た目の更新
    ========================================================= */
 function updateVisuals(dt, t){
   for(const c of creatures){
@@ -1393,7 +1824,8 @@ function updateVisuals(dt, t){
     md.root.position.set(c.x,0,c.z);
     if(c.stun>0){ c.heading+=dt*14; }
     else if(spd>0.4){ c.heading=angLerp(c.heading, Math.atan2(c.vx,c.vz), Math.min(1,dt*12)); }
-    md.root.rotation.y=c.heading;
+    md.body.rotation.y=0; md.scaler.rotation.y=c.heading;
+    const sc=c.r/BASE_R; md.scaler.scale.setScalar(sc);
     c.walk+=dt*(3+spd*2.2);
     const amt=Math.min(1,spd/4);
     for(const L of md.legs){ L.pivot.rotation.y=L.base+Math.sin(c.walk+L.ph)*0.45*amt; L.pivot.rotation.z=Math.max(0,Math.cos(c.walk+L.ph))*0.3*amt*-L.side; }
@@ -1404,12 +1836,18 @@ function updateVisuals(dt, t){
     md.body.scale.set(sq,1/sq,sq);
     c.stars.visible=c.stun>0; if(c.stun>0) c.stars.rotation.y=t*8;
     c.ring.material.opacity = c.dashCD<=0 ? 0.9 : 0.45;
+    c.bubble.visible=c.fx.shield>0; if(c.bubble.visible) c.bubble.material.opacity=0.18+Math.sin(t*6)*0.06+(c.fx.shield<2?Math.sin(t*20)*0.1:0);
+    c.label.position.y=(2.1+Math.sin(t*4+c.team)*0.08)*Math.max(1,sc*0.9);
+    // バフアイコン
+    let bk=null, bt=0; for(const k of BUFF_KEYS){ if(c.fx[k]>bt){ bt=c.fx[k]; bk=k; } }
+    if(bk){ const e=bk==='freeze'?'🧊':ITEMS[bk].icon; if(c._buffE!==e){ c._buffE=e; c.buffIcon.material.map=emojiTex(e); c.buffIcon.material.needsUpdate=true; }
+      c.buffIcon.visible=true; c.buffIcon.position.y=c.label.position.y+1.0; } else c.buffIcon.visible=false;
     if(c.isPlayer){
-      const n=TEAMS[0].nest; c.arrow.position.set(c.x,0.05,c.z);
-      c.arrow.rotation.y=Math.atan2(-(n[0]-c.x),-(n[1]-c.z));
-      c.arrow.visible = state==='play' && Math.hypot(n[0]-c.x,n[1]-c.z)>NEST_R+1;
-      c.label.position.y=2.1+Math.sin(t*4)*0.1;
-      c.magRing.visible=c.magR>0; if(c.magR>0){ c.magRing.position.set(c.x,0.05,c.z); c.magRing.scale.setScalar(c.magR); c.magRing.material.opacity=0.18+Math.sin(t*3)*0.08; }
+      const [ax,az]=attackPoint(c); c.arrow.position.set(c.x,0.05,c.z);
+      c.arrow.rotation.y=Math.atan2(-(ax-c.x),-(az-c.z));
+      c.arrow.visible = state==='play' && Math.hypot(ax-c.x,az-c.z)>NEST_R+1.5;
+      const R=Math.max(c.magR, c.fx.magnet>0?6.5:0);
+      c.magRing.visible=R>0; if(R>0){ c.magRing.position.set(c.x,0.05,c.z); c.magRing.scale.setScalar(R); c.magRing.material.opacity=0.18+Math.sin(t*3)*0.08; }
     }
   }
   for(const k of coins){
@@ -1417,51 +1855,56 @@ function updateVisuals(dt, t){
     const spd=Math.hypot(k.vx,k.vz);
     k.w*=Math.exp(-2.2*dt); k.spin+=(k.w+spd*0.8)*dt;
     k.mesh.rotation.y=k.spin;
-    const head=Math.atan2(k.vx,k.vz);
-    k.obj.rotation.y=head; k.tilt.rotation.x=Math.min(0.35,spd*0.035);
+    k.obj.rotation.y=Math.atan2(k.vx,k.vz); k.tilt.rotation.x=Math.min(0.35,spd*0.035);
     let y=k.y+0.12;
-    if(k.state==='ground'){ y=0.13+Math.sin(t*3+k.x)*0.0; k.tilt.position.y=Math.min(0.25,spd*0.02); }
+    if(k.state==='ground'){ y=0.13; k.tilt.position.y=Math.min(0.25,spd*0.02); }
     k.obj.position.set(k.x,y,k.z);
     k.glow.material.opacity=0.45+Math.sin(t*4+k.z)*0.15;
     k.spark.position.set(Math.cos(t*2+k.x)*0.6,0.5,Math.sin(t*2+k.x)*0.6);
     const sp=(Math.sin(t*5+k.x*3)+1)/2; k.spark.scale.setScalar(0.4+sp*1.0); k.spark.material.opacity=sp;
     if(k.beam) k.beam.material.opacity=0.12+Math.sin(t*5)*0.06;
+    if(k.state==='ground' && k.idle>9) k.obj.visible = Math.sin(t*20)>-0.3;
+    else k.obj.visible=true;
     if(k.state==='score'){ const a=k.anim/0.6; k.obj.scale.setScalar(Math.max(0.01,1-a)); k.obj.position.y=0.13+a*2.5; k.mesh.rotation.y+=dt*20; }
     if(k.state==='vanish'){ const a=k.anim/0.6; k.obj.scale.setScalar(Math.max(0.01,1-a)); }
   }
-  for(const tm of TEAMS){
-    const v=tm.vis; v.pulse.scale.setScalar(lerp(v.pulse.scale.x,1,Math.min(1,dt*4)));
-    v.pulse.material.opacity=0.25+Math.sin(t*3+tm.id)*0.15+(v.pulse.scale.x-1)*0.8;
-    v.flag.rotation.y=Math.sin(t*3+tm.id)*0.25;
+  for(const it of items){
+    if(!it.active) continue;
+    it.cap.rotation.y=t*2; it.cap.rotation.z=Math.sin(t*2)*0.3; it.cap.position.y=0.9+Math.sin(t*3+it.x)*0.15;
+    it.icon.position.y=2.15+Math.sin(t*3+it.x)*0.15;
+    const sIn=Math.min(1,it.born*4); it.g.scale.setScalar(sIn);
+    it.g.visible = it.life>3 || Math.sin(t*18)>-0.2;
+    it.ring.material.opacity=0.4+Math.sin(t*4)*0.2;
   }
-  machineLight.intensity=45+Math.sin(t*1.7)*4+(Math.random()<0.01?-20:0);
+  for(const v of nestVis){ v.pulse.scale.setScalar(lerp(v.pulse.scale.x,1,Math.min(1,dt*4))); v.pulse.material.opacity=0.25+Math.sin(t*3+v.id)*0.15+(v.pulse.scale.x-1)*0.8; v.flag.rotation.y=Math.sin(t*3+v.id)*0.25; }
+  for(const v of goalVis){ v.pulse.scale.setScalar(lerp(v.pulse.scale.x,1,Math.min(1,dt*4))); v.pulse.material.opacity=0.25+Math.sin(t*3+v.side)*0.15+(v.pulse.scale.x-1)*0.8; }
+  machineLight.intensity=60+Math.sin(t*1.7)*5+(Math.random()<0.01?-25:0);
 }
 
 /* =========================================================
    カメラ
    ========================================================= */
-const camLook=new THREE.Vector3(0,0,0);
+const camLook=new THREE.Vector3(0,0,0), _want=new THREE.Vector3(), _look=new THREE.Vector3();
 let camSnap=true;
 function camOffset(){
   const a=innerWidth/innerHeight;
-  const k = a<1 ? 1.25+(1-a)*1.1 : a<1.3 ? 1.12 : 1.0;
-  return {y:20*k, z:14.5*k};
+  const k = a<1 ? 1.22+(1-a)*1.0 : a<1.3 ? 1.1 : 1.0;
+  return {y:21*k, z:15.5*k};
 }
 function updateCamera(dt,t){
-  let tx,tz;
-  const p=creatures[0];
   if(state==='title'){
-    const r=30, a=t*0.07;
-    camera.position.set(Math.sin(a)*r*0.75, 20, Math.cos(a)*r*0.55+8);
+    const a=t*0.06;
+    camera.position.set(Math.sin(a)*30, 27, Math.cos(a)*20+12);
     camLook.set(0,0,0); camera.lookAt(camLook); return;
   }
-  tx=clamp(p.x,-W+7,W-7); tz=clamp(p.z,-H+5,H-3);
+  const p=creatures[0];
+  const tx=clamp(p.x,-W+9,W-9), tz=clamp(p.z,-H+7,H-4);
   const o=camOffset();
-  const want=new THREE.Vector3(tx, o.y, tz+o.z);
-  if(camSnap){ camera.position.copy(want); camLook.set(tx,0,tz-1); camSnap=false; }
+  _want.set(tx, o.y, tz+o.z); _look.set(tx,0,tz-1);
+  if(camSnap){ camera.position.copy(_want); camLook.copy(_look); camSnap=false; }
   const f=Math.min(1,dt*4);
-  camera.position.lerp(want,f);
-  camLook.lerp(new THREE.Vector3(tx,0,tz-1),f);
+  camera.position.lerp(_want,f);
+  camLook.lerp(_look,f);
   camera.lookAt(camLook);
   if(shake>0){ camera.position.x+=rand(-1,1)*shake; camera.position.y+=rand(-1,1)*shake*0.5; shake=Math.max(0,shake-dt*1.6); }
 }
@@ -1469,7 +1912,7 @@ function updateCamera(dt,t){
 /* =========================================================
    メインループ
    ========================================================= */
-let last=performance.now(), slowFrames=0, fpsChecked=false, frameN=0;
+let last=performance.now(), slowFrames=0, fpsChecked=false, frameN=0, mmTick=0;
 function loop(now){
   requestAnimationFrame(loop);
   let dt=(now-last)/1000; last=now;
@@ -1480,26 +1923,30 @@ function loop(now){
   else if(state==='countdown'){
     countT-=dt;
     const n=Math.ceil(countT);
-    if(n!==lastTick && n>0){ lastTick=n; centerMsg(String(n),700); sfx.tick(); }
+    if(n!==lastTick && n>0 && n<=2){ lastTick=n; centerMsg(String(n),700); sfx.tick(); }
     if(countT<=0){ state='play'; centerMsg('スタート！',800); sfx.go(); }
   }
   else if(state==='play'){
     simulate(dt);
     timeLeft-=dt;
-    if(!feverOn && timeLeft<=20){ feverOn=true; centerMsg('ラストスパート！',1400,true); sfx.fever(); for(let i=0;i<2;i++) spawnCoin(); }
+    runEvents();
+    if(!feverOn && timeLeft<=20){
+      feverOn=true; centerMsg('ラストスパート！ 500円玉が出現！',1700,true); sfx.fever();
+      spawnCoin(500); for(let i=0;i<2;i++) spawnCoin();
+    }
     if(timeLeft<=10 && Math.ceil(timeLeft)!==lastTick){ lastTick=Math.ceil(timeLeft); if(lastTick>0) sfx.tick(); }
     if(timeLeft<=0){ timeLeft=0; endGame(); }
-    updateHUD(); updateDashUI();
+    updateHUD(); updateDashUI(); updateBuffUI();
   }
-  else if(state==='timeup'||state==='result'){ /* 停止 */ }
 
   updateVisuals(dt,t);
   updateParticles(dt);
+  updateWaves(dt);
   updateFloats(dt);
   updateCamera(dt,t);
+  if(state==='play'||state==='countdown'){ if(++mmTick%3===0) drawMinimap(); }
   renderer.render(scene,camera);
 
-  // 重い端末なら自動で画質を下げる
   if(!fpsChecked && state!=='loading'){
     frameN++; if(frameN>30){ if(dt>0.034) slowFrames++; else slowFrames=Math.max(0,slowFrames-0.5);
       if(slowFrames>45){ fpsChecked=true; lowerQuality(); } if(frameN>900) fpsChecked=true; }
@@ -1526,6 +1973,7 @@ goTitle();
 onResize();
 $('loading').classList.add('hidden');
 window.__gameReady=true;
+window.__dbg={ get state(){return state;}, get mode(){return mode;}, creatures, coins, items, get sideScore(){return sideScore;}, get timeLeft(){return timeLeft;}, set timeLeft(v){timeLeft=v;} };
 requestAnimationFrame(loop);
 </script>
 </body>
