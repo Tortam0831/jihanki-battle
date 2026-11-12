@@ -2403,7 +2403,7 @@ function updateHUD(){
     else { bn.classList.add('run'); bn.textContent = me.immune>0 ? '🛡 タッチ返しされない時間' : '🏃 鬼から逃げろ！'; }
   } else bn.classList.add('hidden');
   if(hap.k && hap.left>0){ $('mapName').textContent=`⚠ ${HAPPENINGS[hap.k].name} 残り${Math.ceil(hap.left)}秒`; }
-  else $('mapName').textContent=MAP?(MAP.icon+' '+MAP.name+(feverOn?'　🔥硬貨1.5倍':'')+(isOnline&&net.ping?`　📶${(net.ping/1000).toFixed(1)}秒`:'')):'';
+  else $('mapName').textContent=MAP?(MAP.icon+' '+MAP.name+(feverOn?'　🔥硬貨1.5倍':'')+(isOnline?netStatusText():'')):'';
   $('combo').textContent = me.comboN>0 && me.comboT>0 ? `🔥 コンボ ×${me.comboN+1}` : '';
 }
 let buffHTML='';
@@ -2759,6 +2759,11 @@ function gcall(fn, ...args){
   });
 }
 function netMsg(type, data){ if(!isOnline || isGuest) return; net.msgSeq++; net.msgs.push([net.msgSeq,type,data]); if(net.msgs.length>14) net.msgs.shift(); }
+function netStatusText(){
+  if(isGuest) return net.ping?`　${rtcGuestOpen()?'⚡直接':'📶GAS'} ${(net.ping/1000).toFixed(2)}秒`:'';
+  const rem=creatures.filter(c=>c.isRemote).length, dir=creatures.filter(c=>c.isRemote && rtc.peers[c.pid] && dcOpen(rtc.peers[c.pid].dc)).length;
+  return rem? `　⚡直接 ${dir}/${rem}人`+(dir<rem&&net.gasPing?` 📶GAS ${(net.gasPing/1000).toFixed(1)}秒`:'') : '';
+}
 function lobbyHumans(){ return net.meta ? net.meta.players.length : 1; }
 $('btnOnline').onclick=()=>{
   initAudio();
@@ -2788,7 +2793,7 @@ function showLobby(){
   const m=net.meta; if(!m) return;
   $('lobCode').textContent=m.code;
   const s=m.settings||{}; const total=Math.max(s.players||2, m.players.length);
-  let html=m.players.map(p=>`<div>${p.pid===m.host?'👑':'🙂'} ${esc(p.name)}${p.pid===net.pid?'（あなた）':''} ${SPECIES[p.skin?.species]?.e||''}</div>`).join('');
+  let html=m.players.map(p=>`<div>${p.pid===m.host?'👑':'🙂'} ${esc(p.name)}${p.pid===net.pid?'（あなた）':''} ${SPECIES[p.skin?.species]?.e||''} <small style="color:var(--sub)">${p.pid===m.host?'':connLabel(p.pid)}</small></div>`).join('');
   for(let i=m.players.length;i<total;i++) html+=`<div class="cpu">🤖 CPU</div>`;
   $('lobPlayers').innerHTML=html;
   const ss = net.role==='host' ? netSettings() : s;
@@ -2806,6 +2811,7 @@ function startLobbyPoll(){
       lobbySettingsDirty=false;
       if(r.err){ $('lobMsg').textContent='⚠ '+r.err; net.polling=false; setTimeout(()=>{ netReset(); show('scrOnline'); $('onlineMsg').textContent='⚠ '+r.err; },1500); return; }
       net.meta=r;
+      if(net.role==='host') rtcHostLobby(r); else rtcGuestLobby(r);
       if(!$('scrLobby').classList.contains('hidden')) showLobby();
       if(net.role==='guest' && r.started && r.gameId!==net.gameId && r.settings && r.settings.roster){ net.gameId=r.gameId; net.polling=false; guestStart(r); return; }
     }catch(e){ $('lobMsg').textContent='通信がおくれています…'; }
@@ -2826,6 +2832,8 @@ $('btnLobStart').onclick=async()=>{
   try{ const r=await gcall('net_start', net.code, net.pid, settings); if(r.err) throw new Error(r.err); net.meta=r; net.gameId=r.gameId; }
   catch(e){ $('lobMsg').textContent='⚠ '+(e.message||'通信エラー'); return; }
   $('lobMsg').textContent='';
+  const bmsg='B'+JSON.stringify(net.meta);
+  for(const d of [0,300,800]) setTimeout(()=>{ for(const P of Object.values(rtc.peers)) rtcSend(P.dc,bmsg); }, d);
   isOnline=true; isGuest=false; net.msgs=[]; net.msgSeq=0;
   beginMatch({mode:settings.mode, diff:settings.diff, players:settings.players, map, roster});
   for(const c of creatures) c.lastIn=performance.now();
@@ -2844,7 +2852,7 @@ $('btnToLobby').onclick=async()=>{
   isOnline=false; isGuest=false; net.loopOn=false; state='lobby';
   showLobby(); startLobbyPoll();
 };
-function netReset(){ net.code=null; net.pid=null; net.meta=null; net.role=null; net.loopOn=false; isOnline=false; isGuest=false; }
+function netReset(){ net.code=null; net.pid=null; net.meta=null; net.role=null; net.loopOn=false; isOnline=false; isGuest=false; rtcClose(); }
 function netLeave(){ if(net.code){ const c=net.code, p=net.pid; gcall('net_leave', c, p).catch(()=>{}); } netReset(); }
 /* ---------- ホスト ---------- */
 function buildSnap(){
@@ -2866,31 +2874,120 @@ let hostBusy=false;
 const HOST_LANES=3, GUEST_LANES=2;
 function notePing(ms){ net.ping = net.ping ? net.ping*0.8+ms*0.2 : ms; }
 // lanes: 最大本数。通信がおそいほど本数を増やす（1本あたり約0.35秒ごとに1回とどくように）
-function netPump(lanes, once, alive){
+function netPump(lanes, once, alive, skip){
   net.inflight=0; net.lastLaunch=0;
   const iv=setInterval(()=>{
     if(!alive()){ clearInterval(iv); return; }
-    const want=clamp(Math.ceil((net.ping||700)/170),2,lanes);   // 約0.17秒ごとに1回とどくように
-    const now=performance.now(), gap=Math.max(110, (net.ping||700)/want);
+    if(skip && skip()) return;
+    const want=clamp(Math.ceil((net.gasPing||700)/170),2,lanes);   // 約0.17秒ごとに1回とどくように
+    const now=performance.now(), gap=Math.max(110, (net.gasPing||700)/want);
     if(net.inflight>=want) return;
-    if(net.inflight<lanes && now-net.lastLaunch>=gap){
+    if(now-net.lastLaunch>=gap){
       net.lastLaunch=now; net.inflight++;
       once().catch(()=>{}).finally(()=>{ net.inflight--; });
     }
   }, 30);
 }
+function noteGasPing(ms){ net.gasPing = net.gasPing ? net.gasPing*0.8+ms*0.2 : ms; if(!rtcGuestOpen()) notePing(ms); }
+
+/* ---------- 直接接続（WebRTC）：GASは最初のあいさつだけに使う ---------- */
+const RTC_OK = typeof RTCPeerConnection!=='undefined';
+const ICE = { iceServers:[{urls:'stun:stun.l.google.com:19302'}] };
+const rtc = { peers:{}, pc:null, dc:null, lastOffer:null, guestFailed:false, since:0 };
+function waitIce(pc, ms=3000){ return new Promise(res=>{ if(pc.iceGatheringState==='complete') return res(); const t=setTimeout(res,ms); pc.addEventListener('icegatheringstatechange',()=>{ if(pc.iceGatheringState==='complete'){ clearTimeout(t); res(); } }); }); }
+const dcOpen = dc => !!dc && dc.readyState==='open';
+function rtcGuestOpen(){ return dcOpen(rtc.dc); }
+function rtcSend(dc, str){ try{ if(dcOpen(dc) && dc.bufferedAmount<64000) dc.send(str); }catch(e){} }
+function rtcClose(){
+  for(const pid in rtc.peers){ try{ rtc.peers[pid].pc.close(); }catch(e){} }
+  rtc.peers={}; if(rtc.pc){ try{ rtc.pc.close(); }catch(e){} } rtc.pc=null; rtc.dc=null; rtc.lastOffer=null; rtc.guestFailed=false;
+}
+// ホスト：新しく来たゲストに申しこみを作る
+async function rtcHostOffer(pid, tries){
+  if(!RTC_OK) return;
+  const pc=new RTCPeerConnection(ICE);
+  const dc=pc.createDataChannel('g',{ordered:false, maxRetransmits:0});
+  const P={pc,dc,since:performance.now(),answered:false,failed:false,tries}; rtc.peers[pid]=P;
+  dc.onopen=()=>{ if(!$('scrLobby').classList.contains('hidden')) showLobby(); };
+  dc.onmessage=e=>rtcHostMsg(pid, e.data);
+  try{
+    await pc.setLocalDescription(await pc.createOffer()); await waitIce(pc);
+    await gcall('net_sig', net.code, 'o', pid, JSON.stringify(pc.localDescription));
+  }catch(e){ P.failed=true; }
+}
+function rtcHostLobby(r){
+  if(!RTC_OK || !r.players) return;
+  const ids=r.players.map(p=>p.pid);
+  for(const pid in rtc.peers){ if(!ids.includes(pid)){ try{ rtc.peers[pid].pc.close(); }catch(e){} delete rtc.peers[pid]; } }
+  for(const p of r.players){
+    if(p.pid===net.pid) continue;
+    let P=rtc.peers[p.pid];
+    if(!P){ rtcHostOffer(p.pid,1); continue; }
+    if(dcOpen(P.dc)) continue;
+    const ans=r.answers&&r.answers[p.pid];
+    if(ans && !P.answered && P.pc.signalingState==='have-local-offer'){ P.answered=true; P.pc.setRemoteDescription(JSON.parse(ans)).catch(()=>{ P.failed=true; }); }
+    if(!P.failed && performance.now()-P.since>20000) P.failed=true;
+    if(P.failed && P.tries<2 && performance.now()-P.since>21000){ try{ P.pc.close(); }catch(e){} rtcHostOffer(p.pid,P.tries+1); }
+  }
+}
+function rtcHostMsg(pid, data){
+  const t=data[0], body=data.slice(1);
+  if(t==='I'){ applyInputs({[pid]:body}); }
+  else if(t==='P'){ const P=rtc.peers[pid]; if(P) rtcSend(P.dc,'Q'+body); }
+}
+// ゲスト：ホストの申しこみに答える
+async function rtcGuestAnswer(offer){
+  if(!RTC_OK) return;
+  if(rtc.pc){ try{ rtc.pc.close(); }catch(e){} }
+  const pc=new RTCPeerConnection(ICE); rtc.pc=pc; rtc.dc=null; rtc.since=performance.now(); rtc.guestFailed=false;
+  pc.ondatachannel=e=>{ const dc=e.channel; rtc.dc=dc; dc.onmessage=ev=>rtcGuestMsg(ev.data); dc.onopen=()=>{ net.ping=0; if(!$('scrLobby').classList.contains('hidden')) showLobby(); }; };
+  try{
+    await pc.setRemoteDescription(JSON.parse(offer));
+    await pc.setLocalDescription(await pc.createAnswer()); await waitIce(pc);
+    await gcall('net_sig', net.code, 'a', net.pid, JSON.stringify(pc.localDescription));
+  }catch(e){ rtc.guestFailed=true; }
+}
+function rtcGuestLobby(r){
+  if(!RTC_OK) return;
+  if(r.offer && r.offer!==rtc.lastOffer){ rtc.lastOffer=r.offer; rtcGuestAnswer(r.offer); }
+  if(rtc.pc && !rtcGuestOpen() && performance.now()-rtc.since>20000) rtc.guestFailed=true;
+}
+function rtcGuestMsg(data){
+  const t=data[0], body=data.slice(1);
+  if(t==='S'){ if(isOnline && isGuest) applySnap(body); }
+  else if(t==='Q'){ notePing(performance.now()-(+body)); }
+  else if(t==='B'){ let m; try{ m=JSON.parse(body); }catch(e){ return; }
+    if(net.role==='guest' && m.started && m.gameId!==net.gameId && m.settings && m.settings.roster && state!=='play' && state!=='countdown'){ net.gameId=m.gameId; net.meta=m; net.polling=false; guestStart(m); } }
+}
+function connLabel(pid){
+  if(!RTC_OK) return '📡GAS';
+  if(net.role==='host'){ const P=rtc.peers[pid]; if(!P) return '…'; if(dcOpen(P.dc)) return '⚡直接'; return P.failed?'📡GAS':'…接続中'; }
+  if(pid!==net.pid) return '';
+  return rtcGuestOpen() ? '⚡直接' : rtc.guestFailed ? '📡GAS' : '…接続中';
+}
+
+/* ---------- ホスト ---------- */
 function startHostLoop(){
-  net.loopOn=true; net.ping=0;
+  net.loopOn=true; net.ping=0; net.gasPing=0;
+  const alive=()=>net.loopOn && isOnline && !isGuest;
+  const gasPids=()=>creatures.filter(c=>c.isRemote && !(rtc.peers[c.pid] && dcOpen(rtc.peers[c.pid].dc))).map(c=>c.pid);
   const once=async()=>{
-    const pids=creatures.filter(c=>c.isRemote).map(c=>c.pid);
+    const pids=gasPids();
     const t0=performance.now();
-    try{ const inp=await gcall('net_host', net.code, buildSnap(), pids); notePing(performance.now()-t0); applyInputs(inp||{}); }
+    try{ const inp=await gcall('net_host', net.code, buildSnap(), pids); noteGasPing(performance.now()-t0); applyInputs(inp||{}); }
     catch(e){ await new Promise(r=>setTimeout(r,400)); }
+  };
+  // 直接つながっていない人がいるときだけGASを使う
+  netPump(6, once, alive, ()=>gasPids().length===0);
+  // 直接つながっている人には1秒に15回送る
+  const iv=setInterval(()=>{
+    if(!alive()){ clearInterval(iv); return; }
+    const open=Object.values(rtc.peers).filter(P=>dcOpen(P.dc));
+    if(open.length){ const str='S'+buildSnap(); for(const P of open) rtcSend(P.dc,str); }
     const now=performance.now();
     for(const c of creatures){ if(c.isRemote && now-c.lastIn>9000){ c.isRemote=false; c.name+='(CPU)'; floatText(`${c.name} が切断…CPUが代わりに動かします`,c.x,2.5,c.z,'#fff',true); } }
-    if(state==='result' && performance.now()-resultSentAt>12000) net.loopOn=false;
-  };
-  netPump(6, once, ()=>net.loopOn && isOnline && !isGuest);
+    if(state==='result' && now-resultSentAt>12000) net.loopOn=false;
+  }, 66);
 }
 let resultSentAt=0;
 function netSendNow(){ resultSentAt=performance.now(); }
@@ -2901,7 +2998,7 @@ function applyInputs(inp){
     const s=inp[c.pid]; if(!s) continue;
     let d; try{ d=JSON.parse(s); }catch(e){ continue; }
     if(d.q<=c.inSeq) continue; c.inSeq=d.q; c.lastIn=now;
-    const lead=Math.min(0.7,(net.ping||0)/2000);   // ゲストが送ってからここに届くまでの時間ぶん先読み
+    const lead=Math.min(0.7,(d.pg||net.ping||0)/2000);   // ゲストが送ってからここに届くまでの時間ぶん先読み
     c.x=d.x+d.vx*lead; c.z=d.z+d.vz*lead; c.vx=d.vx; c.vz=d.vz; c.heading=d.h; c.dashT=d.d?0.15:0; c.hidden=!!d.hd;
     if(d.dash) emit('puff',c.x,0.3,c.z,5,{speed:2,size:.6});
     // ゲストが自分で押した硬貨は、ゲストの計算を正しいことにする（押した感じがずれない）
@@ -2912,22 +3009,29 @@ function applyInputs(inp){
 }
 /* ---------- ゲスト ---------- */
 let guestDash=false;
+function guestInput(){
+  const now=performance.now();
+  const cp=coins.filter(k=>k.state==='ground' && k.nid && now-(k.myTouch||0)<700).slice(0,4).map(k=>[k.nid,r2(k.x),r2(k.z),r2(k.vx),r2(k.vz)]);
+  const s=me?JSON.stringify({q:++net.inSeq,x:r2(me.x),z:r2(me.z),vx:r2(me.vx),vz:r2(me.vz),h:r2(me.heading),d:me.dashT>0?1:0,hd:me.hidden?1:0,dash:guestDash?1:0,pg:Math.round(net.ping||0),cp:cp.length?cp:undefined}):'{}';
+  guestDash=false; return s;
+}
 function startGuestLoop(){
-  net.loopOn=true; net.ping=0;
+  net.loopOn=true; net.ping=0; net.gasPing=0;
   const humans=creatures.filter(c=>c.isLocal||c.isRemote).length;
+  const alive=()=>net.loopOn && isOnline && isGuest;
   const once=async()=>{
-    const now=performance.now();
-    const cp=coins.filter(k=>k.state==='ground' && k.nid && now-(k.myTouch||0)<700).slice(0,4).map(k=>[k.nid,r2(k.x),r2(k.z),r2(k.vx),r2(k.vz)]);
-    const inp=me?JSON.stringify({q:++net.inSeq,x:r2(me.x),z:r2(me.z),vx:r2(me.vx),vz:r2(me.vz),h:r2(me.heading),d:me.dashT>0?1:0,hd:me.hidden?1:0,dash:guestDash?1:0,cp:cp.length?cp:undefined}):'{}';
-    guestDash=false;
-    const t0=performance.now();
-    try{ const s=await gcall('net_guest', net.code, net.pid, inp); notePing(performance.now()-t0); if(s) applySnap(s); }catch(e){ await new Promise(r=>setTimeout(r,400)); }
-    if(performance.now()-net.lastSnapAt>12000 && state!=='result' && net.loopOn){ net.loopOn=false; centerMsg('ホストとの通信が切れました',2500,true,false); setTimeout(()=>{ netReset(); goTitle(); },2500); return; }
-    if(state==='result') net.loopOn=false;
+    const inp=guestInput(); const t0=performance.now();
+    try{ const s=await gcall('net_guest', net.code, net.pid, inp); noteGasPing(performance.now()-t0); if(s) applySnap(s); }catch(e){ await new Promise(r=>setTimeout(r,400)); }
   };
-  // 人が多いときはGASの同時実行数の上限（30）をこえないように本数を減らす
-  // GASの同時実行の上限（30）をこえないように：ホスト6本＋ゲスト全員で合計24本まで
-  netPump(clamp(Math.floor(18/Math.max(1,humans-1)),2,6), once, ()=>net.loopOn && isOnline && isGuest);
+  // GASの同時実行の上限（30）をこえないように：ホスト6本＋ゲスト全員で合計24本まで。直接つながっていればGASは使わない
+  netPump(clamp(Math.floor(18/Math.max(1,humans-1)),2,6), once, alive, rtcGuestOpen);
+  let pingT=0;
+  const iv=setInterval(()=>{
+    if(!alive()){ clearInterval(iv); return; }
+    if(rtcGuestOpen()){ rtcSend(rtc.dc,'I'+guestInput()); if(++pingT%15===0) rtcSend(rtc.dc,'P'+performance.now()); }
+    if(performance.now()-net.lastSnapAt>12000 && state!=='result'){ net.loopOn=false; centerMsg('ホストとの通信が切れました',2500,true,false); setTimeout(()=>{ netReset(); goTitle(); },2500); return; }
+    if(state==='result') net.loopOn=false;
+  }, 50);
 }
 function applySnap(str){
   let S; try{ S=JSON.parse(str); }catch(e){ return; }

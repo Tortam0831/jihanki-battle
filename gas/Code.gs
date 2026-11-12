@@ -79,7 +79,26 @@ function net_lobby(code, pid, settings) {
       });
     }
   }
-  return m;
+  // 直接接続（WebRTC）のあいさつ：ホストには全員の答え、ゲストには自分あての申しこみをわたす
+  var out = JSON.parse(JSON.stringify(m));
+  if (pid === m.host) {
+    var akeys = m.players.map(function (p) { return 'sig:' + code + ':a:' + p.pid; });
+    var got = cache_().getAll(akeys); out.answers = {};
+    m.players.forEach(function (p) { var v = got['sig:' + code + ':a:' + p.pid]; if (v) out.answers[p.pid] = v; });
+  } else {
+    out.offer = cache_().get('sig:' + code + ':o:' + pid) || null;
+  }
+  return out;
+}
+
+/** 直接接続（WebRTC）の申しこみ・答えを置く  kind: 'o'=ホストからの申しこみ 'a'=ゲストの答え */
+function net_sig(code, kind, pid, sdp) {
+  if (kind !== 'o' && kind !== 'a') return { err: 'bad kind' };
+  if (String(sdp).length > 60000) return { err: 'too big' };
+  var c = cache_();
+  c.put('sig:' + code + ':' + kind + ':' + pid, String(sdp), ROOM_TTL);
+  if (kind === 'o') c.remove('sig:' + code + ':a:' + pid);   // 新しい申しこみなら古い答えは消す
+  return { ok: true };
 }
 
 /** ゲーム開始（ホストのみ） */
