@@ -1967,7 +1967,7 @@ function pushCoin(c,k,nx,nz){
     if(k.kind==='coin'){ const tang=-c.vx*nz+c.vz*nx; k.w+=tang*0.6; }
     if(dashing && c.bumpCD<=0){ c.bumpCD=0.25; emit('spark',k.x,0.6,k.z,6,{color:0xffd080,speed:5,size:.5}); if(c===me){ sfx('push'); shake=Math.max(shake,0.15); } }
   }
-  if(k.kind==='coin'){ k.lastTouch=c; k.idle=0; }
+  if(k.kind==='coin'){ k.lastTouch=c; k.idle=0; if(isGuest && c===me) k.myTouch=performance.now(); else if(!c.isRemote) k.hostTouchAt=performance.now(); }
 }
 function bump(a,b,nx,nz,impact){
   if(impact<1.2) return;
@@ -2416,7 +2416,7 @@ function updateHUD(){
     else { bn.classList.add('run'); bn.textContent = me.immune>0 ? '🛡 タッチ返しされない時間' : '🏃 鬼から逃げろ！'; }
   } else bn.classList.add('hidden');
   if(hap.k && hap.left>0){ $('mapName').textContent=`⚠ ${HAPPENINGS[hap.k].name} 残り${Math.ceil(hap.left)}秒`; }
-  else $('mapName').textContent=MAP?(MAP.icon+' '+MAP.name+(feverOn?'　🔥硬貨1.5倍':'')):'';
+  else $('mapName').textContent=MAP?(MAP.icon+' '+MAP.name+(feverOn?'　🔥硬貨1.5倍':'')+(isOnline&&net.ping?`　📶${(net.ping/1000).toFixed(1)}秒`:'')):'';
   $('combo').textContent = me.comboN>0 && me.comboT>0 ? `🔥 コンボ ×${me.comboN+1}` : '';
 }
 let buffHTML='';
@@ -2875,19 +2875,35 @@ function buildSnap(){
   return JSON.stringify(S);
 }
 let hostBusy=false;
+// GASの1回の通信は0.5〜1秒以上かかるので、何本かを同時に走らせて更新回数を増やす
+const HOST_LANES=3, GUEST_LANES=2;
+function notePing(ms){ net.ping = net.ping ? net.ping*0.8+ms*0.2 : ms; }
+// lanes: 最大本数。通信がおそいほど本数を増やす（1本あたり約0.35秒ごとに1回とどくように）
+function netPump(lanes, once, alive){
+  net.inflight=0; net.lastLaunch=0;
+  const iv=setInterval(()=>{
+    if(!alive()){ clearInterval(iv); return; }
+    const want=clamp(Math.ceil((net.ping||700)/350),2,lanes);
+    const now=performance.now(), gap=Math.max(110, (net.ping||700)/want);
+    if(net.inflight>=want) return;
+    if(net.inflight<lanes && now-net.lastLaunch>=gap){
+      net.lastLaunch=now; net.inflight++;
+      once().catch(()=>{}).finally(()=>{ net.inflight--; });
+    }
+  }, 30);
+}
 function startHostLoop(){
-  net.loopOn=true;
-  const tick=async()=>{
-    if(!net.loopOn || !isOnline || isGuest) return;
+  net.loopOn=true; net.ping=0;
+  const once=async()=>{
     const pids=creatures.filter(c=>c.isRemote).map(c=>c.pid);
-    try{ hostBusy=true; const inp=await gcall('net_host', net.code, buildSnap(), pids); hostBusy=false; applyInputs(inp||{}); }
-    catch(e){ hostBusy=false; }
+    const t0=performance.now();
+    try{ const inp=await gcall('net_host', net.code, buildSnap(), pids); notePing(performance.now()-t0); applyInputs(inp||{}); }
+    catch(e){ await new Promise(r=>setTimeout(r,400)); }
     const now=performance.now();
-    for(const c of creatures){ if(c.isRemote && now-c.lastIn>8000){ c.isRemote=false; c.name+='(CPU)'; floatText(`${c.name} が切断…CPUが代わりに動かします`,c.x,2.5,c.z,'#fff',true); } }
-    if(state==='result' && performance.now()-resultSentAt>12000){ net.loopOn=false; return; }
-    setTimeout(tick, 90);
+    for(const c of creatures){ if(c.isRemote && now-c.lastIn>9000){ c.isRemote=false; c.name+='(CPU)'; floatText(`${c.name} が切断…CPUが代わりに動かします`,c.x,2.5,c.z,'#fff',true); } }
+    if(state==='result' && performance.now()-resultSentAt>12000) net.loopOn=false;
   };
-  tick();
+  netPump(4, once, ()=>net.loopOn && isOnline && !isGuest);
 }
 let resultSentAt=0;
 function netSendNow(){ resultSentAt=performance.now(); }
@@ -2898,24 +2914,32 @@ function applyInputs(inp){
     const s=inp[c.pid]; if(!s) continue;
     let d; try{ d=JSON.parse(s); }catch(e){ continue; }
     if(d.q<=c.inSeq) continue; c.inSeq=d.q; c.lastIn=now;
-    c.x=d.x; c.z=d.z; c.vx=d.vx; c.vz=d.vz; c.heading=d.h; c.dashT=d.d?0.15:0; c.hidden=!!d.hd;
+    const lead=Math.min(0.7,(net.ping||0)/2000);   // ゲストが送ってからここに届くまでの時間ぶん先読み
+    c.x=d.x+d.vx*lead; c.z=d.z+d.vz*lead; c.vx=d.vx; c.vz=d.vz; c.heading=d.h; c.dashT=d.d?0.15:0; c.hidden=!!d.hd;
     if(d.dash) emit('puff',c.x,0.3,c.z,5,{speed:2,size:.6});
+    // ゲストが自分で押した硬貨は、ゲストの計算を正しいことにする（押した感じがずれない）
+    if(d.cp) for(const [nid,x,z,vx,vz] of d.cp){ const k=coins.find(k=>k.nid===nid && k.state==='ground' && !k.carried); if(!k) continue;
+      if(k.lastTouch && k.lastTouch!==c && !k.lastTouch.isRemote && now-(k.hostTouchAt||0)<300) continue;
+      k.x=x+vx*lead; k.z=z+vz*lead; k.vx=vx; k.vz=vz; k.lastTouch=c; k.idle=0; }
   }
 }
 /* ---------- ゲスト ---------- */
 let guestDash=false;
 function startGuestLoop(){
-  net.loopOn=true;
-  const tick=async()=>{
-    if(!net.loopOn || !isOnline || !isGuest) return;
-    const inp=me?JSON.stringify({q:++net.inSeq,x:r2(me.x),z:r2(me.z),vx:r2(me.vx),vz:r2(me.vz),h:r2(me.heading),d:me.dashT>0?1:0,hd:me.hidden?1:0,dash:guestDash?1:0}):'{}';
+  net.loopOn=true; net.ping=0;
+  const humans=creatures.filter(c=>c.isLocal||c.isRemote).length;
+  const once=async()=>{
+    const now=performance.now();
+    const cp=coins.filter(k=>k.state==='ground' && k.nid && now-(k.myTouch||0)<700).slice(0,4).map(k=>[k.nid,r2(k.x),r2(k.z),r2(k.vx),r2(k.vz)]);
+    const inp=me?JSON.stringify({q:++net.inSeq,x:r2(me.x),z:r2(me.z),vx:r2(me.vx),vz:r2(me.vz),h:r2(me.heading),d:me.dashT>0?1:0,hd:me.hidden?1:0,dash:guestDash?1:0,cp:cp.length?cp:undefined}):'{}';
     guestDash=false;
-    try{ const s=await gcall('net_guest', net.code, net.pid, inp); if(s) applySnap(s); }catch(e){}
-    if(performance.now()-net.lastSnapAt>12000 && state!=='result'){ net.loopOn=false; centerMsg('ホストとの通信が切れました',2500,true,false); setTimeout(()=>{ netReset(); goTitle(); },2500); return; }
-    if(state==='result'){ net.loopOn=false; return; }
-    setTimeout(tick, 90);
+    const t0=performance.now();
+    try{ const s=await gcall('net_guest', net.code, net.pid, inp); notePing(performance.now()-t0); if(s) applySnap(s); }catch(e){ await new Promise(r=>setTimeout(r,400)); }
+    if(performance.now()-net.lastSnapAt>12000 && state!=='result' && net.loopOn){ net.loopOn=false; centerMsg('ホストとの通信が切れました',2500,true,false); setTimeout(()=>{ netReset(); goTitle(); },2500); return; }
+    if(state==='result') net.loopOn=false;
   };
-  tick();
+  // 人が多いときはGASの同時実行数の上限（30）をこえないように本数を減らす
+  netPump(clamp(Math.floor(22/Math.max(1,humans-1)),2,4), once, ()=>net.loopOn && isOnline && isGuest);
 }
 function applySnap(str){
   let S; try{ S=JSON.parse(str); }catch(e){ return; }
@@ -2950,7 +2974,12 @@ function applySnap(str){
     if(!k){ k=getCoin(val); k.reset(); k.nid=nid; k.x=x; k.z=z; k.y=y; net.coinMap.set(nid,k); k.obj.visible=true; }
     const stName=[null,'fall','ground','score','vanish'][st];
     if(stName==='fall'){ k.state='fall'; k.x=x; k.z=z; k.y=y; }
-    else if(stName==='ground'){ if(k.state!=='ground'){ k.state='ground'; k.x=x; k.z=z; } else { const d=Math.hypot(k.x-x,k.z-z); if(d>2.5){ k.x=x; k.z=z; } else { k.x+= (x-k.x)*0.5; k.z+=(z-k.z)*0.5; } } k.vx=lerp(k.vx,vx,0.6); k.vz=lerp(k.vz,vz,0.6); k.y=0.12; }
+    else if(stName==='ground'){
+      const age=Math.min(0.5,(net.ping||0)/2000), ex=x+vx*age, ez=z+vz*age;   // 届くまでの時間ぶん先へ
+      if(k.state!=='ground'){ k.state='ground'; k.x=ex; k.z=ez; k.vx=vx; k.vz=vz; }
+      else if(performance.now()-(k.myTouch||0)<900){ /* 自分が押している硬貨はそのまま */ }
+      else { const d=Math.hypot(k.x-ex,k.z-ez); if(d>3){ k.x=ex; k.z=ez; } else { k.tx=ex; k.tz=ez; k.tcorr=0.25; } k.vx=lerp(k.vx,vx,0.7); k.vz=lerp(k.vz,vz,0.7); }
+      k.y=0.12; }
     else if(k.state==='ground'||k.state==='fall'){ k.state=stName; k.anim=0; }
     k.netCarry=car;
   }
@@ -2990,13 +3019,14 @@ function guestSimulate(dt){
   const now=performance.now();
   for(const c of creatures){
     if(c===me || c.nx===undefined) continue;
-    const age=Math.min(0.6,(now-c.netAt)/1000);
+    const age=Math.min(0.7,(now-c.netAt)/1000+(net.ping||0)/2000);
     const px=c.nx+c.vx*age, pz=c.nz+c.vz*age;
-    c.x+= (px-c.x)*Math.min(1,dt*8); c.z+=(pz-c.z)*Math.min(1,dt*8);
+    c.x+= (px-c.x)*Math.min(1,dt*6); c.z+=(pz-c.z)*Math.min(1,dt*6);
   }
   const sub=3, h=dt/sub;
   for(let i=0;i<sub;i++){ const sx=creatures.map(c=>c===me?null:[c.x,c.z]); physicsStep(h,true); creatures.forEach((c,j)=>{ if(sx[j]){ c.x=sx[j][0]; c.z=sx[j][1]; } }); }
   for(const k of coins){
+    if(k.state==='ground' && k.tcorr>0){ const f=Math.min(1,dt/k.tcorr); k.x+=(k.tx-k.x)*f*0.6; k.z+=(k.tz-k.z)*f*0.6; k.tcorr=Math.max(0,k.tcorr-dt); }
     if(k.state==='fall'){ k.vy-=30*dt; k.y+=k.vy*dt; if(k.y<=0.12){ k.y=0.12; k.vy=0; } }
     else if(k.state==='score'||k.state==='vanish'){ k.anim+=dt; if(k.anim>0.6) k.reset(); }
     else if(k.state==='ground' && k.netCarry>=0){ const c=creatures[k.netCarry]; if(c){ const d=c.r+k.r+0.05; k.x=c.x+Math.sin(c.heading)*d; k.z=c.z+Math.cos(c.heading)*d; } }
