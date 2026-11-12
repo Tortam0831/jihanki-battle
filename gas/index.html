@@ -2763,7 +2763,13 @@ const NET_OK = !!(window.google && google.script && google.script.run);
 const net = { code:null, pid:null, meta:null, role:null, polling:false, loopOn:false, inSeq:0, msgs:[], msgSeq:0, lastSeen:0, lastSnapT:-1, lastSnapAt:0, kSeen:{x:0,z:0}, stunSeen:0, tpSeen:0, gameId:0, lastRes:null };
 let lobbySettingsDirty=false;
 function gcall(fn, ...args){
-  return new Promise((res,rej)=>{ try{ google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...args); }catch(e){ rej(e); } });
+  return new Promise((res,rej)=>{
+    try{
+      const runner=google.script.run.withSuccessHandler(res).withFailureHandler(e=>rej(new Error((e&&e.message)||String(e))));
+      if(typeof runner[fn]!=='function'){ rej(new Error('GASのCode.gsが古いままです。Code.gsを新しいものに貼り替えて保存し、「デプロイを管理」→編集→「新バージョン」でデプロイし直してね')); return; }
+      runner[fn](...args);
+    }catch(e){ rej(e); }
+  });
 }
 function netMsg(type, data){ if(!isOnline || isGuest) return; net.msgSeq++; net.msgs.push([net.msgSeq,type,data]); if(net.msgs.length>14) net.msgs.shift(); }
 function lobbyHumans(){ return net.meta ? net.meta.players.length : 1; }
