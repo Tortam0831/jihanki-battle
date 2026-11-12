@@ -181,7 +181,27 @@ h3{margin:14px 0 6px;color:var(--accent);font-size:16px}
 .plist div.cpu{opacity:.55}
 #loadErr{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;z-index:70;background:var(--bg)}
 #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:69;background:var(--bg);font-size:20px;color:var(--sub)}
+#alert{position:fixed;left:50%;top:calc(126px + var(--safe-t));transform:translateX(-50%);z-index:13;pointer-events:none;background:repeating-linear-gradient(45deg,#c81e1e 0 14px,#2a0a0a 14px 28px);border:3px solid #ffd23a;border-radius:14px;padding:8px 16px;font-weight:800;font-size:18px;color:#fff;text-align:center;box-shadow:0 0 30px rgba(255,40,40,.6);max-width:92vw}
+#alert b{color:#ffe066;font-size:21px}
+#alert small{display:block;font-size:13px;font-weight:500;background:rgba(0,0,0,.55);border-radius:8px;padding:2px 8px;margin-top:3px}
+#alert.blink{filter:brightness(1.5)}
+#obj{position:absolute;left:50%;top:calc(116px + var(--safe-t));transform:translateX(-50%);width:min(360px,70vw);display:flex;flex-direction:column;gap:4px}
+#obj .bar{position:relative;height:20px;background:rgba(0,0,0,.6);border:2px solid var(--line);border-radius:10px;overflow:hidden}
+#obj .bar i{display:block;height:100%;transition:width .2s}
+#obj .bar span{position:absolute;left:8px;top:0;font-size:12px;font-weight:800;line-height:16px;text-shadow:0 1px 2px #000}
+#obj .obj-t{text-align:center;font-size:13px;font-weight:800;color:#ffe08a;text-shadow:0 2px 0 #000}
+#dlg{position:fixed;left:50%;bottom:calc(18px + var(--safe-b));transform:translateX(-50%);width:min(760px,94vw);z-index:80;background:linear-gradient(#2e231a,#1a130e);border:3px solid var(--accent);border-radius:20px;padding:14px 16px 12px 104px;min-height:120px;box-shadow:0 12px 40px rgba(0,0,0,.7);cursor:pointer}
+#dlg.narr{border-color:#9ab8ff;background:linear-gradient(#1c2234,#10141f)}
+#dlgFace{position:absolute;left:14px;top:14px;width:76px;height:76px;border-radius:18px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:48px}
+#dlgName{font-weight:800;color:var(--accent);font-size:15px;margin-bottom:4px}
+#dlgText{font-size:18px;line-height:1.6;min-height:2.8em}
+#dlgHint{font-size:12px;color:var(--sub);text-align:right;margin-top:4px}
+#dlgSkip{position:absolute;right:10px;top:8px;background:rgba(0,0,0,.4);border:1px solid var(--line);border-radius:10px;padding:4px 10px;font-size:13px;min-height:32px}
+.story-card{min-height:96px}
+.conn-box{background:rgba(0,0,0,.3);border:2px dashed var(--line);border-radius:12px;padding:8px 10px;margin:8px 0;font-size:14px;line-height:1.6;text-align:center}
+.conn-box.ok{border-color:#6fe39a;border-style:solid;background:rgba(60,160,90,.18)}
 @media (max-width:640px){
+  #dlg{padding-left:84px}#dlgFace{width:60px;height:60px;font-size:38px}#dlgText{font-size:16px}
   .chip{padding:3px 9px}.chip .val{font-size:21px}
   #board{top:auto;bottom:calc(140px + var(--safe-b));font-size:11.5px;min-width:118px}
   #board .vs{font-size:22px}
@@ -208,6 +228,7 @@ h3{margin:14px 0 6px;color:var(--accent);font-size:16px}
   </div>
   <div id="board"></div>
   <div id="banner" class="hidden"></div>
+  <div id="obj" class="hidden"></div>
   <div id="mapName"></div>
   <canvas id="minimap" width="320" height="216"></canvas>
   <div id="combo"></div>
@@ -221,6 +242,8 @@ h3{margin:14px 0 6px;color:var(--accent);font-size:16px}
 </div>
 <div id="joy" class="hidden"><div id="joyKnob"></div></div>
 <div id="centerMsg"></div>
+<div id="alert" class="hidden"></div>
+<div id="dlg" class="hidden"><div id="dlgFace">📖</div><div id="dlgName"></div><div id="dlgText"></div><div id="dlgHint">▶ タップ（クリック／スペース）で次へ　<span id="dlgPage"></span></div><button id="dlgSkip">スキップ ⏭</button></div>
 <div id="floats"></div>
 
 <!-- タイトル -->
@@ -235,6 +258,7 @@ h3{margin:14px 0 6px;color:var(--accent);font-size:16px}
       <div>🏆 勝利 <b id="tWins">0</b></div>
     </div>
     <button class="btn big primary" id="btnSolo">🎮 ひとりで遊ぶ<small>CPUと対戦（個人戦・チーム戦・鬼ごっこ）</small></button>
+    <button class="btn big green" id="btnStory" style="margin-top:10px">📖 ストーリーモード<small>自販機の裏の世界から脱出せよ！（全4章）</small></button>
     <button class="btn big team" id="btnOnline" style="margin-top:10px">🌐 オンライン対戦<small>友だちと最大7人（足りない分はCPU）</small></button>
     <div class="row">
       <button class="btn" id="btnWard">👕 着せかえ</button>
@@ -256,10 +280,12 @@ h3{margin:14px 0 6px;color:var(--accent);font-size:16px}
     <h3>モード</h3>
     <div class="seg" id="segMode"></div>
     <div class="note" id="modeDesc"></div>
+    <div id="kothOpt" class="hidden"><h3>エリア制圧のルール</h3><div class="seg" id="segKoth"></div></div>
     <h3>マップ</h3>
     <div class="cards" id="mapCards"></div>
-    <h3>人数（あなたをふくめて）</h3>
+    <h3 id="playersH">人数（あなたをふくめて）</h3>
     <div class="seg" id="segPlayers"></div>
+    <div class="note hidden" id="coopNote">🛡 サーバー防衛は協力プレイです。CPUの味方はいません（オンラインでは参加者みんなで守ります）。</div>
     <h3>CPUの強さ</h3>
     <div class="seg" id="segDiff"></div>
     <div class="row" style="margin-top:16px">
@@ -293,6 +319,7 @@ h3{margin:14px 0 6px;color:var(--accent);font-size:16px}
     <div class="note">この番号を友だちに教えてね</div>
     <h3>参加者</h3>
     <div class="plist" id="lobPlayers"></div>
+    <div class="conn-box" id="lobConn"></div>
     <div class="note" id="lobSettings"></div>
     <div id="lobHost">
       <div class="row"><button class="btn" id="btnLobSet">⚙ 設定を変える</button><button class="btn primary" id="btnLobStart">▶ スタート</button></div>
@@ -313,6 +340,18 @@ h3{margin:14px 0 6px;color:var(--accent);font-size:16px}
     <p>赤チームと青チームに分かれて、硬貨を<b>相手のゴール</b>に入れよう。赤は右の青いゴール、青は左の赤いゴールをねらうよ。</p>
     <h3>👹 鬼ごっこ</h3>
     <p>広いマップで鬼ごっこ！ 逃げている間は<b>1秒ごとに1ポイント</b>。鬼は体当たりでタッチすると鬼交代＋ボーナス。<b>ホコリの森</b>にかくれると鬼から見えにくいよ。落ちている硬貨は拾うと＋3ポイント。</p>
+    <h3>🥫 缶取り合戦</h3>
+    <p>チーム戦。中央の<b>ゴールド缶</b>にさわって持ち、<b>自分のベース</b>まで運ぶと1点。持っている間は少しおそく、気絶させられると落としてしまう。</p>
+    <h3>⭕ エリア制圧</h3>
+    <p><b>制圧サークル</b>の中にいるとゲージが増え、100%で勝ち。2チーム（2匹）以上が入ると<b>うばいあい</b>で止まるので、タックルで追い出そう。サークルはときどき移動するよ。</p>
+    <h3>⚡ ショック床</h3>
+    <p>同じ床にいると熱くなり、<b>赤く点滅したあと消える</b>（または電気が流れる）。穴に落ちたら脱落。タックル中は穴を飛びこえられる！ 最後の1匹が勝ち。</p>
+    <h3>🛡 サーバー防衛</h3>
+    <p>協力プレイ。四方から来る敵（バグロボ・コイン泥棒・不良品タンク）を<b>タックルでこわして</b>、メインサーバーを5ウェーブ守りきれ。</p>
+    <h3>☕ ホット・ポテト</h3>
+    <p>熱々缶コーヒーを持っていると<b>毎秒＋3点</b>。でも0秒で爆発すると<b>−25点</b>！ 持っている人がタックルすると相手に押しつけられる。</p>
+    <h3>⚠ 外部干渉（人間の手）</h3>
+    <p>試合中、ときどき<b>人間が自販機にちょっかい</b>を出してくる！ マップごとに、巨大硬貨の落下・台パン・暴風・懐中電灯・吸い込み・停電・冷凍などが起きるよ。</p>
     <h3>🪙 硬貨</h3>
     <div class="grid2">
       <div><b>1円玉</b> 軽くてよく飛ぶ</div><div><b>5円玉・50円玉</b> 穴あき</div>
@@ -353,9 +392,24 @@ h3{margin:14px 0 6px;color:var(--accent);font-size:16px}
       <button class="btn big primary" id="btnRetry">↻ もう一度</button>
       <div class="row"><button class="btn" id="btnChange">⚙ 設定を変える</button><button class="btn" id="btnTitleR">🏠 タイトルへ</button></div>
     </div>
+    <div id="rBtnStory" class="hidden">
+      <button class="btn big primary" id="btnStoryNext">▶ 次のチャプターへ</button>
+      <div class="row"><button class="btn" id="btnStoryRetry">↻ もう一度</button><button class="btn" id="btnStoryBack">📖 ストーリーへ</button></div>
+    </div>
     <div id="rBtnOnline" class="hidden">
       <button class="btn big primary" id="btnToLobby">🏠 ロビーにもどる</button>
     </div>
+  </div>
+</div>
+
+<!-- ストーリー -->
+<div id="scrStory" class="screen dim hidden">
+  <div class="panel wide">
+    <h2>📖 ストーリー「ジャンク・アンダーグラウンド」</h2>
+    <div class="note" style="font-size:14.5px;text-align:left;line-height:1.7">街外れの、昭和レトロなボロい自販機。コイン投入口に吸い込まれてしまったあなたは、機械の裏側の世界「ジャンク・アンダーグラウンド」へ——。<br>元の世界に帰るため、裏世界を支配するボス『エラーコード99』をたおして、メイン基盤を復旧しよう！</div>
+    <div class="cards" id="storyList" style="margin-top:10px"></div>
+    <div class="note" id="storyReward" style="color:#ffe08a;font-size:14px"></div>
+    <button class="btn" id="btnStoryClose" style="margin-top:12px">← もどる</button>
   </div>
 </div>
 
@@ -438,6 +492,8 @@ const SPECIES = {
   ant:    { name:'アリ',         lv:2, hat:[0,0.82,0.78], e:'🐜' },
   snail:  { name:'カタツムリ',   lv:4, hat:[0,1.5,-0.25], e:'🐌' },
   hopper: { name:'バッタ',       lv:6, hat:[0,0.86,0.88], e:'🦗' },
+  hero:   { name:'覚醒テントウ', lv:1, hat:[0,0.58,0.72], e:'🌟', story:true },
+  err99:  { name:'エラーコード99', lv:1, hat:[0,1.1,0.2], e:'👾', story:true },
 };
 const COLORS = {
   normal: { name:'ノーマル', hex:null,     r:'N',  css:'#888' },
@@ -519,7 +575,7 @@ function defSave(){ return { money:0, xp:0, level:1, games:0, wins:0, tickets:1,
   best:{ffa:0,team:0,tag:0}, owned:{color:['normal'],hat:['none'],trail:['none']},
   equip:{species:'ladybug',color:'normal',hat:'none',trail:'none'},
   settings:{mode:'ffa',map:'random',players:5,diff:'normal'},
-  missions:{day:'',list:[]}, played:{}, total:{coins:0,stuns:0,items:0,tags:0}, refunded:0 }; }
+  missions:{day:'',list:[]}, played:{}, total:{coins:0,stuns:0,items:0,tags:0}, refunded:0, story:{cleared:0,unlocked:false} }; }
 function loadSave(){
   const d=defSave();
   try{
@@ -545,15 +601,16 @@ function loadSave(){
       if(s.played && typeof s.played==='object') d.played=s.played;
       if(s.total) Object.assign(d.total, s.total);
       if(s.refunded && !s.skills) d.refunded=s.refunded|0;
+      if(s.story && typeof s.story==='object'){ d.story.cleared=clamp(s.story.cleared|0,0,4); d.story.unlocked=!!s.story.unlocked; }
     }
   }catch(e){}
-  if(!SPECIES[d.equip.species] || SPECIES[d.equip.species].lv>d.level) d.equip.species='ladybug';
+  { const sp=SPECIES[d.equip.species]; if(!sp || (sp.story ? !d.story.unlocked : sp.lv>d.level)) d.equip.species='ladybug'; }
   if(!d.owned.color.includes(d.equip.color)) d.equip.color='normal';
   if(!d.owned.hat.includes(d.equip.hat)) d.equip.hat='none';
   if(!d.owned.trail.includes(d.equip.trail)) d.equip.trail='none';
   d.settings.players=clamp(d.settings.players|0,2,7);
   if(!DIFFS[d.settings.diff]) d.settings.diff='normal';
-  if(!['ffa','team','tag'].includes(d.settings.mode)) d.settings.mode='ffa';
+  if(!['ffa','team','tag','ctf','koth','shock','defense','potato'].includes(d.settings.mode)) d.settings.mode='ffa';
   return d;
 }
 let save = loadSave();
@@ -628,6 +685,8 @@ function floorTex(kind,col){
     if(kind==='wood'){ for(let y=0;y<h;y+=32){ g.fillStyle=`rgba(0,0,0,${rand(.02,.12)})`; g.fillRect(0,y,w,30); g.fillStyle='rgba(0,0,0,.28)'; g.fillRect(0,y+30,w,2); for(let x=rand(0,200);x<w;x+=rand(160,300)) g.fillRect(x,y,2,32);
       g.strokeStyle='rgba(60,30,10,.12)'; for(let k=0;k<3;k++){ g.beginPath(); g.moveTo(0,y+rand(4,26)); for(let x=0;x<=w;x+=32) g.lineTo(x,y+rand(4,26)); g.stroke(); } } }
     if(kind==='carpet'){ noise(g,w,h,26000,.04,.12); }
+    if(kind==='asphalt'){ noise(g,w,h,24000,.05,.2); g.strokeStyle='rgba(0,0,0,.45)'; g.lineWidth=2; for(let i=0;i<14;i++){ g.beginPath(); let x=Math.random()*w,y=Math.random()*h; g.moveTo(x,y); for(let j=0;j<8;j++){ x+=rand(-25,25); y+=rand(-25,25); g.lineTo(x,y);} g.stroke(); } g.fillStyle='rgba(255,255,255,.5)'; g.fillRect(0,h/2-6,w,12); }
+    if(kind==='pcb'){ g.strokeStyle='rgba(216,176,74,.7)'; g.lineWidth=4; for(let i=0;i<26;i++){ g.beginPath(); let x=Math.random()*w,y=Math.random()*h; g.moveTo(x,y); for(let j=0;j<4;j++){ if(Math.random()<.5) x+=rand(-120,120); else y+=rand(-120,120); g.lineTo(x,y);} g.stroke(); g.fillStyle='#d8b04a'; g.beginPath(); g.arc(x,y,6,0,TAU); g.fill(); } }
     if(kind==='sand'){ for(let i=0;i<14000;i++){ g.fillStyle=Math.random()<.5?`rgba(90,60,30,${rand(.1,.3)})`:`rgba(255,250,230,${rand(.1,.3)})`; g.fillRect(Math.random()*w,Math.random()*h,2,2); } }
     noise(g,w,h,kind==='carpet'?0:8000,.03,.13);
     if(kind==='concrete'){ g.strokeStyle='rgba(30,25,20,.18)'; g.lineWidth=1; for(let i=0;i<10;i++){ g.beginPath(); let x=Math.random()*w,y=Math.random()*h; g.moveTo(x,y); for(let j=0;j<6;j++){ x+=rand(-30,30); y+=rand(-30,30); g.lineTo(x,y);} g.stroke(); } }
@@ -658,6 +717,14 @@ function backTex(kind){
       case 'roof': grad('#9aa3a8','#6d767b'); for(let i=0;i<4;i++){ const x=40+i*250; g.fillStyle='#d9dde0'; g.fillRect(x,50,210,200); g.strokeStyle='#555'; g.lineWidth=3; g.beginPath(); g.arc(x+105,150,70,0,TAU); g.stroke(); for(let k=0;k<6;k++){ g.beginPath(); g.moveTo(x+105,150); g.lineTo(x+105+Math.cos(k)*70,150+Math.sin(k)*70); g.stroke(); } } text('室外機',450,40,26,'#222'); break;
       case 'desk': grad('#8b6a46','#5e4428'); for(let i=0;i<4;i++){ g.strokeStyle='rgba(0,0,0,.45)'; g.lineWidth=4; g.strokeRect(20+i*256,30,216,h-60); g.fillStyle='#c9c9c9'; g.fillRect(100+i*256,140,56,12); } text('職員室',440,30,24,'#fff'); break;
       case 'shoes': grad('#7e8a8f','#525c60'); for(let x=0;x<w;x+=86){ for(let y=0;y<h;y+=80){ g.strokeStyle='rgba(0,0,0,.4)'; g.lineWidth=3; g.strokeRect(x+3,y+3,80,74); g.fillStyle=Math.random()<.6?'#f2f2f2':'#3a6ad8'; g.fillRect(x+16,y+40,50,22); } } text('げた箱',450,30,26,'#fff','rgba(0,0,0,.4)'); break;
+      case 'retro': grad('#9a2a1a','#5a1408'); g.fillStyle='rgba(60,20,10,.5)'; for(let i=0;i<40;i++){ g.beginPath(); g.arc(Math.random()*w,Math.random()*h,rand(8,40),0,TAU); g.fill(); }
+        g.fillStyle='#f2e6c8'; g.fillRect(300,30,420,70); text('つめた〜い　昭和の味',330,82,40,'#9a2a1a'); for(let i=0;i<8;i++){ g.fillStyle=['#2a6ad8','#d83a2a','#f2c200','#2a9a4a'][i%4]; g.fillRect(70+i*115,140,70,110); }
+        text('故障中？',820,300,22,'#fff','rgba(0,0,0,.4)'); break;
+      case 'station': grad('#3a3a48','#1e1e28'); for(let i=0;i<5;i++){ g.fillStyle=['#ff4ad8','#4ae8ff','#ffe04a','#7aff6a','#ff7a3a'][i]; g.fillRect(40+i*200,30,160,46); g.fillStyle='#111'; g.font=`bold 30px ${JP_FONT}`; g.fillText(['カラオケ','駅前','ゲーセン','ラーメン','ATM'][i],60+i*200,66); }
+        g.fillStyle='#bfc4cc'; for(let i=0;i<6;i++) g.fillRect(60+i*165,150,110,150); text('改札口',450,130,26,'#fff'); break;
+      case 'food': grad('#6a3a20','#3a1e10'); const menu=['ラーメン','カレー','たこ焼き','うどん']; for(let i=0;i<4;i++){ g.fillStyle='#fff4dc'; g.fillRect(30+i*250,30,220,150); text(menu[i],50+i*250,90,38,'#c62828'); text(`${350+i*50}円`,90+i*250,150,30,'#333'); } g.fillStyle='#c0c0c0'; g.fillRect(0,230,w,40); text('セルフサービス',420,260,22,'#333'); break;
+      case 'board': grad('#0c1a10','#050c08'); g.strokeStyle='rgba(63,255,154,.55)'; g.lineWidth=3; for(let i=0;i<40;i++){ g.beginPath(); let x=Math.random()*w,y=Math.random()*h; g.moveTo(x,y); x+=rand(-200,200); g.lineTo(x,y); y+=rand(-120,120); g.lineTo(x,y); g.stroke(); }
+        for(let i=0;i<5;i++){ g.fillStyle='#111'; g.fillRect(80+i*190,90,120,120); g.fillStyle='#888'; for(let k=0;k<8;k++){ g.fillRect(84+i*190+k*14,80,6,10); g.fillRect(84+i*190+k*14,210,6,10); } } text('MAIN BOARD  ERROR 99',330,40,30,'#ff3a5a'); break;
       case 'gymnight': grad('#2a2018','#120c08'); g.strokeStyle='rgba(120,120,120,.3)'; g.lineWidth=3; for(let x=0;x<w;x+=24){ g.beginPath(); g.moveTo(x,0); g.lineTo(x,h); g.stroke(); } text('夜の体育館',400,70,34,'#c8b080'); break;
     }
     const d=g.createLinearGradient(0,h*.6,0,h); d.addColorStop(0,'rgba(60,45,30,0)'); d.addColorStop(1,'rgba(40,30,20,.5)'); g.fillStyle=d; g.fillRect(0,0,w,h);
@@ -888,7 +955,27 @@ function makeHopper(col){
   addLegs(md, b, {zs:[0.45,0.15], x:0.2, y:0.4, len:0.55, thick:0.035, mat:g2, spread:0.4});
   return md;
 }
-const MAKERS = { ladybug:makeLadybug, pillbug:makePillbug, spider:makeSpider, dust:makeDustling, ant:makeAnt, snail:makeSnail, hopper:makeHopper };
+function makeHero(col){
+  const md=makeLadybug(col??0xffc030);
+  for(const [m] of md.tint){ m.emissive.set(0x553300); m.emissiveIntensity=0.55; m.metalness=0.6; m.roughness=0.3; m.envMapIntensity=1.4; }
+  const cape=mesh(new THREE.PlaneGeometry(1.3,1.1), MAT(0xd81b3a,{r:.6,ds:true}), md.body, 0,0.75,-0.75); cape.rotation.x=-0.9;
+  const halo=mesh(new THREE.TorusGeometry(0.3,0.04,6,24), new THREE.MeshBasicMaterial({color:0xfff3a0}), md.body, 0,1.05,0.72,false); halo.rotation.x=Math.PI/2;
+  const gl=new THREE.Sprite(new THREE.SpriteMaterial({map:TEX_SOFT,color:0xffd860,transparent:true,opacity:.35,depthWrite:false,blending:THREE.AdditiveBlending})); gl.scale.setScalar(2.4); gl.position.y=0.5; md.body.add(gl);
+  return md;
+}
+function makeErr99(col){
+  const md=newModel(), b=md.body;
+  const body=MAT(col??0x23262e,{m:.7,r:.35,env:1}), dk=MAT(0x111111,{r:.6}); md.tint.push([body,1]);
+  mesh(new THREE.BoxGeometry(1.2,0.75,1.3), body, b, 0,0.6,-0.1).receiveShadow=true;
+  const scr=cachedTex('err99',()=>canvasTex(128,96,(g,w,h)=>{ g.fillStyle='#120006'; g.fillRect(0,0,w,h); g.fillStyle='#ff2a40'; g.font='bold 64px monospace'; g.textAlign='center'; g.textBaseline='middle'; g.fillText('99',w/2,h/2+4); g.fillStyle='rgba(255,40,64,.35)'; for(let y=0;y<h;y+=6) g.fillRect(0,y,w,2); }));
+  mesh(new THREE.BoxGeometry(0.95,0.62,0.12), dk, b, 0,0.85,0.6);
+  mesh(new THREE.PlaneGeometry(0.85,0.52), new THREE.MeshBasicMaterial({map:scr}), b, 0,0.85,0.67,false);
+  for(const s of [-1,1]){ const an=mesh(new THREE.CylinderGeometry(0.03,0.03,0.6,4), dk, b, s*0.4,1.25,0.1); an.rotation.z=-s*0.3; mesh(G_SPHERE_LO, MAT(0xff2a40,{e:0xff0000,ei:1.4}), b, s*0.5,1.55,0.1,false).scale.setScalar(0.08); }
+  addLegs(md, b, {zs:[0.4,0,-0.4], x:0.55, y:0.3, len:0.65, thick:0.06, mat:dk});
+  return md;
+}
+const MAKERS = { ladybug:makeLadybug, pillbug:makePillbug, spider:makeSpider, dust:makeDustling, ant:makeAnt, snail:makeSnail, hopper:makeHopper, hero:makeHero, err99:makeErr99 };
+const speciesLocked = k => !SPECIES[k] || (SPECIES[k].story ? !(save.story&&save.story.unlocked) : SPECIES[k].lv>save.level);
 // ぼうし
 function makeHat(k){
   const g=new THREE.Group();
@@ -920,46 +1007,46 @@ function buildModel(sk){
    マップ（11種類＋鬼ごっこ用2種類）
    ========================================================= */
 const MAPS = {
-  vend:   { name:'自販機の裏', icon:'🥤', tags:'ホコリだまり／ガタン！イベント', W:28,H:19, floor:['concrete','#7d766c'], back:'vend', bl:0xff9440, walls:[0x9a958c,0xc62828], build(B){
+  vend:   {intv:{k:'slam'}, name:'自販機の裏', icon:'🥤', tags:'ホコリだまり／ガタン！イベント', W:28,H:19, floor:['concrete','#7d766c'], back:'vend', bl:0xff9440, walls:[0x9a958c,0xc62828], build(B){
     B.lyingCan(0,-12.5,7,0,'cider'); B.standCan(13,3.5,'tea'); B.paper(-13,-3.5,1.9); B.paper(21,-9.5,1.3); B.paper(-21,9.5,1.3);
     B.pencil(-5,13,5,13.8,0x2e8b3a); B.milk(17,8); B.capsuleBig(-17,-8,0x46c7ff); B.cap(-25.6,-10,0x1565c0); B.cap(25.6,10,0xff6f00);
     B.zone('dust',{x:-18,z:3,r:2.8}); B.zone('dust',{x:18,z:-3,r:2.8}); B.zone('dust',{x:0,z:9.5,r:2.2}); B.zone('dust',{x:0,z:-9,r:2}); B.special='gatan'; } },
-  fridge: { name:'給食室の冷蔵庫の下', icon:'🧊', tags:'ツルツル氷の床', W:27,H:18, floor:['tile','#b9c7cf'], back:'fridge', bl:0x88ccff, walls:[0xdde3e8,0xdde3e8], build(B){
+  fridge: {intv:{k:'frost'}, name:'給食室の冷蔵庫の下', icon:'🧊', tags:'ツルツル氷の床', W:27,H:18, floor:['tile','#b9c7cf'], back:'fridge', bl:0x88ccff, walls:[0xdde3e8,0xdde3e8], build(B){
     B.zone('ice',{x:-14,z:0,w:10,h:9}); B.zone('ice',{x:14,z:0,w:10,h:9}); B.zone('ice',{x:0,z:-12,w:16,h:5}); B.zone('ice',{x:0,z:12,w:16,h:5});
     B.iceCube(-7,5); B.iceCube(7,-5); B.iceCube(-20,-7); B.iceCube(20,7); B.milk(0,7.5); B.milk(0,-7.5);
     B.box(-11,-11,3,2,1.4,0xffd36b); B.box(11,11,3,2,1.4,0xffd36b); B.standCan(-19,4,'orange'); B.standCan(19,-4,'cola'); } },
-  library:{ name:'図書室の本棚の裏', icon:'📚', tags:'本の通路／ワープするすき間', W:28,H:19, floor:['wood','#9a7048'], back:'shelf', bl:0xffd8a0, walls:[0x6b4428,0x6b4428], build(B){
+  library:{intv:{k:'search',name:'図書委員の見回り！'}, name:'図書室の本棚の裏', icon:'📚', tags:'本の通路／ワープするすき間', W:28,H:19, floor:['wood','#9a7048'], back:'shelf', bl:0xffd8a0, walls:[0x6b4428,0x6b4428], build(B){
     B.book(-21,-6,-9,-6); B.book(9,6,21,6); B.book(-21,6.5,-13,6.5); B.book(13,-6.5,21,-6.5); B.book(-6,9,-6,16); B.book(6,-16,6,-9);
     B.warp(-10,-15,10,15,0xb46bff); B.warp(-10,15,10,-15,0xffa53d); B.zone('dust',{x:-22,z:0,r:2.2}); B.zone('dust',{x:22,z:0,r:2.2}); B.paper(0,-10,1.3); B.paper(0,10,1.3); } },
-  gym:    { name:'体育館の倉庫', icon:'🏀', tags:'転がるボール／はねるコーン', W:28,H:19, floor:['wood','#c9955b'], back:'gym', bl:0xfff0c0, walls:[0xc0a080,0x6a6a6a], build(B){
+  gym:    {intv:{k:'suction',name:'倉庫の換気扇が全開！'}, name:'体育館の倉庫', icon:'🏀', tags:'転がるボール／はねるコーン', W:28,H:19, floor:['wood','#c9955b'], back:'gym', bl:0xfff0c0, walls:[0xc0a080,0x6a6a6a], build(B){
     B.court(); B.ball(-8,-6,1.5,'basket'); B.ball(8,6,1.5,'basket'); B.ball(8,-6,1.25,'volley'); B.ball(-8,6,1.25,'volley');
     B.bumper(0,-10,1.0,0xff7a1a); B.bumper(0,10,1.0,0xff7a1a); B.bumper(-16,0,1.0,0xff7a1a); B.bumper(16,0,1.0,0xff7a1a);
     B.box(-20,-11,4,2.4,1.6,0x2a5ad8); B.box(20,11,4,2.4,1.6,0x2a5ad8); } },
-  science:{ name:'理科室の机の下', icon:'🧪', tags:'回るかくはん棒／ベルトコンベア', W:28,H:19, floor:['tile','#4d5a5e'], back:'lab', bl:0x7fe0ff, walls:[0x2f3a40,0x2f3a40], build(B){
+  science:{intv:{k:'short'}, name:'理科室の机の下', icon:'🧪', tags:'回るかくはん棒／ベルトコンベア', W:28,H:19, floor:['tile','#4d5a5e'], back:'lab', bl:0x7fe0ff, walls:[0x2f3a40,0x2f3a40], build(B){
     B.sweeper(0,0,8,2,0.5,0xc0e8ff); B.zone('conv',{x:0,z:-14,w:16,h:3,dx:1,dz:0,spd:4}); B.zone('conv',{x:0,z:14,w:16,h:3,dx:-1,dz:0,spd:4});
     B.beaker(-14,8); B.beaker(14,-8); B.beaker(-14,-8); B.beaker(14,8); B.box(-22,0,2,4,1.2,0x9aa0a4); B.box(22,0,2,4,1.2,0x9aa0a4); } },
-  music:  { name:'音楽室のピアノの下', icon:'🎹', tags:'ドーンと響く振動／はねる太鼓', W:28,H:19, floor:['carpet','#7a2630'], back:'piano', bl:0xffc070, walls:[0x3a1418,0x141414], build(B){
+  music:  {intv:{k:'slam',name:'ピアノのフォルテッシモ！',desc:'すごい音の振動で全員ふっとぶ！'}, name:'音楽室のピアノの下', icon:'🎹', tags:'ドーンと響く振動／はねる太鼓', W:28,H:19, floor:['carpet','#7a2630'], back:'piano', bl:0xffc070, walls:[0x3a1418,0x141414], build(B){
     B.beat([[-15,-11],[15,-11],[0,12]],4.5); B.bumper(-9,4,1.35,0xd0d0d0,'drum'); B.bumper(9,-4,1.35,0xd0d0d0,'drum'); B.bumper(0,-7.5,1.2,0xd0d0d0,'drum');
     B.bumper(-19,-3,1.1,0xd0d0d0,'drum'); B.bumper(19,3,1.1,0xd0d0d0,'drum'); B.pencil(-6,13.5,4,12.5,0xf2f2f2); } },
-  class:  { name:'教室のロッカーの裏', icon:'🧹', tags:'うろつく掃除ロボ／ホコリだらけ', W:28,H:19, floor:['linoleum','#6f8f6a'], back:'locker', bl:0xfff0d0, walls:[0x8e969c,0x8e969c], build(B){
+  class:  {intv:{k:'search',name:'先生の見回り！'}, name:'教室のロッカーの裏', icon:'🧹', tags:'うろつく掃除ロボ／ホコリだらけ', W:28,H:19, floor:['linoleum','#6f8f6a'], back:'locker', bl:0xfff0d0, walls:[0x8e969c,0x8e969c], build(B){
     B.robot(-10,0); B.robot(10,0);
     B.zone('dust',{x:-16,z:-4,r:2.5}); B.zone('dust',{x:16,z:4,r:2.5}); B.zone('dust',{x:-5,z:11,r:2.2}); B.zone('dust',{x:5,z:-11,r:2.2}); B.zone('dust',{x:0,z:0,r:1.8});
     B.box(-9,-9,2.2,1.2,0.8,0xffffff,'eraser'); B.box(9,9,2.2,1.2,0.8,0xffffff,'eraser'); B.pencil(-22,-4,-22,4,0xe8c000); B.pencil(22,-4,22,4,0xe8c000); } },
-  pool:   { name:'プールの更衣室', icon:'🏊', tags:'すべる水たまり／排水口ワープ', W:28,H:19, floor:['tile','#a9d4e6'], back:'pool', bl:0x9fe0ff, walls:[0x5fb7d8,0x5fb7d8], build(B){
+  pool:   {intv:{k:'gale',name:'換気扇が暴走！'}, name:'プールの更衣室', icon:'🏊', tags:'すべる水たまり／排水口ワープ', W:28,H:19, floor:['tile','#a9d4e6'], back:'pool', bl:0x9fe0ff, walls:[0x5fb7d8,0x5fb7d8], build(B){
     B.zone('water',{x:-12,z:-4,r:4.4}); B.zone('water',{x:12,z:4,r:4.4}); B.zone('water',{x:0,z:-12,r:3.2}); B.zone('water',{x:0,z:12,r:3.2});
     B.warp(-22,-1,22,1,0x3de0e0); B.warp(-6,15,6,-15,0x4da3ff);
     B.box(-7,8,3.2,1.6,0.5,0x3a8ad8); B.box(7,-8,3.2,1.6,0.5,0xff7a3d); B.cap(-19,9,0x1565c0); B.cap(19,-9,0xffffff); } },
-  yard:   { name:'夜の校庭の砂場', icon:'🌙', tags:'まっくら／ふかふかの砂', W:28,H:19, floor:['sand','#c2a878'], back:'night', bl:0x6a80c0, walls:[0x6a6050,0x6a6050], dark:true, build(B){
+  yard:   {intv:{k:'gale',name:'夜の突風！'}, name:'夜の校庭の砂場', icon:'🌙', tags:'まっくら／ふかふかの砂', W:28,H:19, floor:['sand','#c2a878'], back:'night', bl:0x6a80c0, walls:[0x6a6050,0x6a6050], dark:true, build(B){
     B.zone('sand',{x:-10,z:6,r:5}); B.zone('sand',{x:10,z:-6,r:5}); B.zone('sand',{x:-19,z:-8,r:3.4}); B.zone('sand',{x:19,z:8,r:3.4});
     B.rock(-5,-9,1.4); B.rock(5,9,1.4); B.rock(-15,1,1.2); B.rock(15,-1,1.2); B.rock(-22,12,1.0); B.rock(22,-12,1.0); B.pencil(-3,-15,4,-14,0x888888); } },
-  roof:   { name:'屋上の室外機の前', icon:'🌬️', tags:'ふきつける強風レーン', W:28,H:19, floor:['concrete','#8a948c'], back:'roof', bl:0xd0e8ff, walls:[0xa0a8ac,0xa0a8ac], build(B){
+  roof:   {intv:{k:'gale'}, name:'屋上の室外機の前', icon:'🌬️', tags:'ふきつける強風レーン', W:28,H:19, floor:['concrete','#8a948c'], back:'roof', bl:0xd0e8ff, walls:[0xa0a8ac,0xa0a8ac], build(B){
     B.zone('wind',{x:0,z:-10,w:44,h:4.5,dx:1,dz:0,spd:6}); B.zone('wind',{x:0,z:10,w:44,h:4.5,dx:-1,dz:0,spd:6});
     B.pipe(-10,-4,-10,4); B.pipe(10,-4,10,4); B.pipe(-20,-2,-20,2); B.pipe(20,-2,20,2); B.standCan(0,-16,'coffee'); B.paper(0,16.2,1.2); } },
-  staff:  { name:'職員室の机の下', icon:'🪑', tags:'回るイスの脚／ダッシュ床', W:28,H:19, floor:['carpet','#5d6470'], back:'desk', bl:0xffe8c0, walls:[0x8b6a46,0x8b6a46], build(B){
+  staff:  {intv:{k:'search'}, name:'職員室の机の下', icon:'🪑', tags:'回るイスの脚／ダッシュ床', W:28,H:19, floor:['carpet','#5d6470'], back:'desk', bl:0xffe8c0, walls:[0x8b6a46,0x8b6a46], build(B){
     B.sweeper(0,-11.5,4.6,5,0.9,0x333333); B.sweeper(0,11.5,4.6,5,-0.9,0x333333);
     B.pad(-18,5,0); B.pad(18,-5,Math.PI); B.pad(-9,0,0); B.pad(9,0,Math.PI);
     B.box(-14,-4,2.6,1.2,1.0,0x222222,'stapler'); B.box(14,4,2.6,1.2,1.0,0x222222,'stapler'); B.box(-22,4,1.6,1.6,0.3,0xffd84a); B.box(22,-4,1.6,1.6,0.3,0xffd84a); } },
-  tag_hall:{ name:'放課後の大廊下', icon:'🏃', tags:'鬼ごっこ専用・広い／かくれる森／ワープ', W:40,H:28, tagOnly:true, floor:['linoleum','#8fa3a0'], back:'shoes', bl:0xfff0d0, walls:[0xc8c0b0,0xc8c0b0], build(B){
+  tag_hall:{intv:{k:'search',name:'先生の見回り！'}, name:'放課後の大廊下', icon:'🏃', tags:'鬼ごっこ専用・広い／かくれる森／ワープ', W:40,H:28, tagOnly:true, floor:['linoleum','#8fa3a0'], back:'shoes', bl:0xfff0d0, walls:[0xc8c0b0,0xc8c0b0], build(B){
     B.zone('hide',{x:-26,z:-14,r:3.6}); B.zone('hide',{x:26,z:14,r:3.6}); B.zone('hide',{x:-10,z:15,r:3.2}); B.zone('hide',{x:10,z:-15,r:3.2}); B.zone('hide',{x:-31,z:12,r:3}); B.zone('hide',{x:31,z:-12,r:3});
     B.warp(-35,-23,35,23,0xb46bff); B.warp(-35,23,35,-23,0xffa53d); B.warp(0,-24,0,24,0x3de0e0);
     B.pad(-18,0,0); B.pad(18,0,Math.PI); B.pad(0,-11,Math.PI/2); B.pad(0,11,-Math.PI/2);
@@ -967,13 +1054,30 @@ const MAPS = {
     for(const [x,z] of [[-20,-8],[20,8],[-8,-20],[8,20],[-28,2],[28,-2],[-14,22],[14,-22]]) B.box(x,z,3.2,1.4,1.1,0xffffff,'shoe');
     B.bumper(-12,-7,1.1,0xff5a8a); B.bumper(12,7,1.1,0xff5a8a); B.bumper(12,-7,1.1,0xff5a8a); B.bumper(-12,7,1.1,0xff5a8a);
     B.lyingCan(-24,-22,6,0,'cola'); B.lyingCan(24,22,6,0,'orange'); B.standCan(-34,0,'tea'); B.standCan(34,0,'cider'); } },
-  tag_night:{ name:'夜の体育館', icon:'🔦', tags:'鬼ごっこ専用・まっくら／マットにかくれる', W:40,H:28, tagOnly:true, dark:true, floor:['wood','#a07848'], back:'gymnight', bl:0x8090c0, walls:[0x4a3a2a,0x4a3a2a], build(B){
+  tag_night:{intv:{k:'search',name:'警備員の懐中電灯！'}, name:'夜の体育館', icon:'🔦', tags:'鬼ごっこ専用・まっくら／マットにかくれる', W:40,H:28, tagOnly:true, dark:true, floor:['wood','#a07848'], back:'gymnight', bl:0x8090c0, walls:[0x4a3a2a,0x4a3a2a], build(B){
     B.court(); B.zone('hide',{x:-22,z:-12,r:3.4,mat:true}); B.zone('hide',{x:22,z:12,r:3.4,mat:true}); B.zone('hide',{x:0,z:-20,r:3.2,mat:true}); B.zone('hide',{x:0,z:20,r:3.2,mat:true}); B.zone('hide',{x:-30,z:14,r:3,mat:true}); B.zone('hide',{x:30,z:-14,r:3,mat:true});
     B.ball(-10,0,1.6,'basket'); B.ball(10,0,1.6,'basket'); B.ball(0,8,1.3,'volley'); B.robot(0,-8);
     B.pad(-28,-4,0); B.pad(28,4,Math.PI); B.pad(-14,18,0); B.pad(14,-18,Math.PI);
     B.warp(-36,-24,36,24,0xffe066); B.warp(-36,24,36,-24,0xffe066);
     for(const [x,z] of [[-18,6],[18,-6],[-6,-12],[6,12]]) B.box(x,z,3,2,1.6,0x8a5a30,'vault'); } },
 };
+Object.assign(MAPS, {
+  alley:  { name:'路地裏の自販機', icon:'🏮', tags:'錆びた缶／水たまり／台パン', W:26,H:18, floor:['asphalt','#4a4a4e'], back:'retro', bl:0xff7040, walls:[0x6a5a4a,0x7a3020], intv:{k:'slam'}, build(B){
+    B.lyingCan(-8,-11,6,0.2,'cola'); B.lyingCan(9,10.5,6,-0.3,'coffee'); B.standCan(12,-3,'orange'); B.paper(-13,4,1.6);
+    B.box(-19,-6,3.4,2.4,1.6,0x8a5a2a,'crate'); B.box(19,6,3.4,2.4,1.6,0x8a5a2a,'crate');
+    B.zone('water',{x:-6,z:6,r:3.2}); B.zone('water',{x:7,z:-6,r:3}); B.zone('dust',{x:-17,z:10,r:2.4}); B.zone('dust',{x:17,z:-10,r:2.4}); B.cap(0,-14.5,0xc62828); B.cap(0,14.5,0x1565c0); } },
+  station:{ name:'駅前の繁華街', icon:'🚉', tags:'人間がコインを投入！ 巨大硬貨が降る', W:28,H:19, floor:['tile','#8e8e9a'], back:'station', bl:0xff5ad8, walls:[0x7a7a88,0x3a3a48], intv:{k:'coinrain'}, build(B){
+    B.standCan(-12,-8,'cola'); B.standCan(12,8,'cider'); B.paper(-16,6,1.4); B.paper(16,-6,1.4);
+    B.box(-6,-12,4,1.4,0.35,0xf6f2e2,'ticket'); B.box(6,12,4,1.4,0.35,0xf6f2e2,'ticket'); B.pad(-21,0,0); B.pad(21,0,Math.PI);
+    B.zone('dust',{x:0,z:-9.5,r:2}); B.zone('dust',{x:0,z:9.5,r:2}); B.pencil(-22,-12,-16,-14,0xd81b60); B.pencil(16,14,22,12,0x1e88e5); } },
+  food:   { name:'フードコートの床', icon:'🍜', tags:'ベタベタのソース床／熱い温風', W:28,H:19, floor:['tile','#d8c8a8'], back:'food', bl:0xffc080, walls:[0xc0a080,0xc04030], intv:{k:'suction',name:'ダクトの吸い込み！',desc:'換気ダクトに吸い込まれる！'}, build(B){
+    B.zone('sauce',{x:-12,z:-5,r:4}); B.zone('sauce',{x:12,z:5,r:4}); B.zone('sauce',{x:0,z:11,w:12,h:4}); B.zone('sauce',{x:0,z:-11,w:12,h:4});
+    B.zone('wind',{x:-19,z:6,w:8,h:8,dx:0,dz:-1,spd:6,hot:true}); B.zone('wind',{x:19,z:-6,w:8,h:8,dx:0,dz:1,spd:6,hot:true});
+    B.pencil(-8,4,-3,8.5,0xd9b27a); B.pencil(8,-4,3,-8.5,0xd9b27a); B.standCan(-21,-11,'tea'); B.standCan(21,11,'coffee'); B.paper(-5,-16,1.2); B.paper(5,16,1.2); } },
+  board:  { name:'メイン基盤', icon:'💾', tags:'機械の心臓部／ショートで暗転', W:28,H:19, floor:['pcb','#1f6a3a'], back:'board', bl:0x3fff9a, walls:[0x1a2a20,0x1a2a20], intv:{k:'short'}, build(B){
+    B.box(-14,-7,4,3,1.0,0x111111,'chip'); B.box(14,7,4,3,1.0,0x111111,'chip'); B.box(-14,8,3,3,1.0,0x111111,'chip'); B.box(14,-8,3,3,1.0,0x111111,'chip');
+    B.capacitor(-6,-12); B.capacitor(6,12); B.capacitor(-22,0); B.capacitor(22,0); B.capacitor(-20,-12); B.capacitor(20,12); } },
+});
 const MAP_KEYS = Object.keys(MAPS);
 const mapsFor = m => MAP_KEYS.filter(k => m==='tag' ? MAPS[k].tagOnly : !MAPS[k].tagOnly);
 function featuredMap(){ const list=mapsFor('ffa'); return list[hashStr(today())%list.length]; }
@@ -1064,6 +1168,9 @@ function makeBuilder(){
     if(kind==='eraser'){ mesh(new THREE.BoxGeometry(w,h,d), MAT(0xffffff,{r:.9}), g, 0,h/2,0).receiveShadow=true; mesh(new THREE.BoxGeometry(w*0.6,h*1.02,d*1.02), MAT(0x1e5bd8,{r:.6}), g, 0,h/2,0); }
     else if(kind==='shoe'){ mesh(new THREE.BoxGeometry(w,h*0.6,d), MAT(0xf4f4f4,{r:.8}), g, 0,h*0.3,0).receiveShadow=true; mesh(new THREE.BoxGeometry(w*0.98,h*0.25,d*1.02), MAT(0x3a6ad8,{r:.6}), g, 0,h*0.12,0); mesh(new THREE.BoxGeometry(w*0.4,h*0.5,d*0.9), MAT(0xf4f4f4,{r:.8}), g, -w*0.25,h*0.75,0); }
     else if(kind==='stapler'){ mesh(new THREE.BoxGeometry(w,h*0.4,d), MAT(0x333333,{m:.5,r:.4}), g, 0,h*0.2,0); mesh(new THREE.BoxGeometry(w*0.95,h*0.4,d*0.8), MAT(color,{r:.4}), g, 0,h*0.7,0).rotation.z=0.08; }
+    else if(kind==='crate'){ const m=MAT(color,{r:.8}); for(const y of [0.2,h-0.2]) mesh(new THREE.BoxGeometry(w,0.3,d), m, g, 0,y,0).receiveShadow=true; for(const sx of [-1,1]) for(const sz of [-1,1]) mesh(new THREE.BoxGeometry(0.25,h,0.25), m, g, sx*(w/2-0.12),h/2,sz*(d/2-0.12)); mesh(new THREE.BoxGeometry(w*0.9,0.06,d*0.9), MAT(0x553311), g, 0,0.06,0); }
+    else if(kind==='ticket'){ mesh(new THREE.BoxGeometry(w,h,d), MAT(0xffffff,{map:cachedTex('ticket',()=>canvasTex(256,96,(gg,ww,hh)=>{ gg.fillStyle='#f6f2e2'; gg.fillRect(0,0,ww,hh); gg.fillStyle='#2a6ad8'; gg.fillRect(0,0,ww,20); gg.fillStyle='#333'; gg.font=`bold 30px ${JP_FONT}`; gg.fillText('きっぷ　140円',20,66); })), r:.8}), g, 0,h/2,0).receiveShadow=true; }
+    else if(kind==='chip'){ mesh(new THREE.BoxGeometry(w,h,d), MAT(0x111111,{r:.4,m:.3}), g, 0,h/2,0).receiveShadow=true; const pin=MAT(0xc0c0c0,{m:1,r:.3}); for(let i=0;i<5;i++){ for(const sz of [-1,1]) mesh(new THREE.BoxGeometry(0.15,0.15,0.5), pin, g, -w/2+0.4+i*(w-0.8)/4,0.1,sz*(d/2+0.2)); } }
     else if(kind==='vault'){ for(let i=0;i<3;i++) mesh(new THREE.BoxGeometry(w-i*0.2,h/3,d-i*0.1), MAT(i===2?0xf2f2e8:color,{r:.7}), g, 0,h/6+i*h/3,0).receiveShadow=true; }
     else mesh(new THREE.BoxGeometry(w,h,d), MAT(color,{r:.6}), g, 0,h/2,0).receiveShadow=true;
     addS(ax,az,bx,bz,r);
@@ -1080,6 +1187,13 @@ function makeBuilder(){
     mesh(new THREE.CylinderGeometry(1.2,1.2,3.2,24,1,true), MAT(0xdff6ff,{r:.05,tr:true,op:.35,env:1.6,ds:true}), G, x,1.6,z);
     mesh(new THREE.CylinderGeometry(1.12,1.12,1.4,24), MAT(new THREE.Color().setHSL(Math.random(),0.7,0.55).getHex(),{tr:true,op:.65,e:0x113344,ei:.4}), G, x,0.7,z,false);
     addS(x,z,x,z,1.2);
+  };
+  B.capacitor=(x,z)=>{
+    if(!okC(x,z,1.1)) return;
+    mesh(new THREE.CylinderGeometry(1.1,1.1,2.6,24), MAT(0x1a3a8a,{r:.35,m:.2,env:1}), G, x,1.3,z).receiveShadow=true;
+    mesh(new THREE.CylinderGeometry(1.05,1.05,0.06,24), MAT(0xc8ccd2,{m:1,r:.25}), G, x,2.62,z,false);
+    mesh(new THREE.BoxGeometry(0.3,2.62,0.05), MAT(0xdddddd), G, x,1.3,z+1.08,false);
+    addS(x,z,x,z,1.1);
   };
   B.rock=(x,z,r)=>{
     if(!okC(x,z,r)) return;
@@ -1119,6 +1233,9 @@ function makeBuilder(){
     } else if(t==='ice'){
       mk(new THREE.MeshStandardMaterial({color:0xbfeaff,roughness:0.05,metalness:0.2,transparent:true,opacity:.55,envMapIntensity:2,polygonOffset:true,polygonOffsetFactor:-1}),0.03);
       for(let i=0;i<6;i++){ const s=new THREE.Sprite(new THREE.SpriteMaterial({map:TEX_STAR,color:0xe0f8ff,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending})); s.scale.setScalar(0.8); s.position.set(o.x+rand(-1,1)*(o.w||o.r*2)*0.4,0.2,o.z+rand(-1,1)*(o.h||o.r*2)*0.4); G.add(s); }
+    } else if(t==='sauce'){
+      const m=mk(new THREE.MeshStandardMaterial({color:0x6a2a0a,roughness:0.15,metalness:0.1,transparent:true,opacity:.75,envMapIntensity:1.8,polygonOffset:true,polygonOffsetFactor:-1}),0.03); z.vis=m;
+      for(let i=0;i<5;i++){ const s=new THREE.Sprite(new THREE.SpriteMaterial({map:TEX_SOFT,color:0xffd0a0,transparent:true,opacity:.35,depthWrite:false,blending:THREE.AdditiveBlending})); s.scale.setScalar(1.2); s.position.set(o.x+rand(-1,1)*(o.w||o.r*2)*0.35,0.1,o.z+rand(-1,1)*(o.h||o.r*2)*0.35); G.add(s); }
     } else if(t==='water'){
       const m=mk(new THREE.MeshStandardMaterial({color:0x3aa0e0,roughness:0.08,metalness:0.1,transparent:true,opacity:.55,envMapIntensity:2,polygonOffset:true,polygonOffsetFactor:-1}),0.03); z.vis=m;
     } else if(t==='conv'||t==='wind'){
@@ -1127,7 +1244,7 @@ function makeBuilder(){
       const ang=Math.atan2(o.dz,o.dx), alongX=Math.abs(o.dx)>Math.abs(o.dz), L=alongX?o.w:o.h, Wd=alongX?o.h:o.w;
       const g=new THREE.Group(); g.position.set(o.x,0.05,o.z); g.rotation.y=-ang-Math.PI/2; G.add(g);
       const sh=new THREE.Shape(); sh.moveTo(-0.9,-0.25); sh.lineTo(0,0.55); sh.lineTo(0.9,-0.25); sh.lineTo(0.55,-0.25); sh.lineTo(0,0.2); sh.lineTo(-0.55,-0.25); sh.closePath();
-      const geo=new THREE.ShapeGeometry(sh), cm=new THREE.MeshBasicMaterial({color:t==='conv'?0xffd84a:0xffffff,transparent:true,opacity:t==='conv'?0.9:0.45,depthWrite:false});
+      const geo=new THREE.ShapeGeometry(sh), cm=new THREE.MeshBasicMaterial({color:t==='conv'?0xffd84a:o.hot?0xffa060:0xffffff,transparent:true,opacity:t==='conv'?0.9:0.45,depthWrite:false});
       const n=Math.max(2,Math.floor(L/2.4)), cols=Math.max(1,Math.round(Wd/3)), list=[];
       for(let i=0;i<n;i++) for(let j=0;j<cols;j++){ const m=new THREE.Mesh(geo,cm); m.rotation.x=-Math.PI/2; m.scale.setScalar(Math.min(1.6,Wd/cols*0.45)); m.position.x=(j-(cols-1)/2)*Wd/cols; g.add(m); list.push({m,base:i*L/n}); }
       convVis.push({list,L,spd:o.spd*(t==='wind'?0.6:1)});
@@ -1211,6 +1328,7 @@ function buildMap(key, mode, nPlayers){
   zones=getZones(mode, nPlayers);
   reserved=zones.map(z=>({x:z.x,z:z.z,r:z.r+1.3}));
   if(mode!=='tag') reserved.push({x:0,z:0,r:3.2});
+  reserved.push(...modeReserved(mode));
   const G=mapGroup;
   // 床・壁
   const ft=floorTex(MAP.floor[0],MAP.floor[1]);
@@ -1313,10 +1431,12 @@ function envAt(x,z){
       case 'conv': ENV.cx+=zn.dx*zn.spd; ENV.cz+=zn.dz*zn.spd; break;
       case 'wind': ENV.wx+=zn.dx*zn.spd; ENV.wz+=zn.dz*zn.spd; break;
       case 'hide': ENV.hide=true; break;
+      case 'sauce': ENV.ctrl*=0.3; ENV.slow*=0.85; ENV.fr*=0.5; break;
     }
   }
   if(hap.k==='gust' && hap.left>0){ ENV.wx+=hap.dx*7; ENV.wz+=hap.dz*7; }
   if(hap.k==='quake' && hap.left>0){ ENV.ctrl*=0.3; ENV.fr*=0.5; }
+  intvEnv(x,z);
   return ENV;
 }
 
@@ -1426,6 +1546,7 @@ const SFX = {
   slip(){ tone(900,.35,'sine',.07,.3); },
   beat(){ tone(55,.3,'sine',.25,.7); },
   combo(n){ tone(700+n*120,.12,'square',.06); },
+  alarm(){ for(let i=0;i<3;i++){ tone(880,.14,'square',.07,0,i*.28); tone(660,.14,'square',.07,0,i*.28+.14); } },
   level(){ for(let i=0;i<5;i++) tone(523*Math.pow(1.26,i),.14,'square',.06,0,i*.09); },
 };
 function sfx(name, ...a){ if(SFX[name]) SFX[name](...a); }
@@ -1442,7 +1563,7 @@ let sideScore=[0,0];
 let hap={k:null,left:0,dx:0,dz:0,x:0,list:[]};
 let roundResult=null, roster=[], me=null;
 let isOnline=false, isGuest=false;
-const ROUND_TIME={ffa:90,team:90,tag:100};
+const ROUND_TIME={ffa:90,team:90,tag:100,ctf:120,koth:150,shock:120,defense:9999,potato:100,boss:9999};
 
 /* =========================================================
    キャラクター
@@ -1463,7 +1584,8 @@ class Creature{
     this.ban=new Map(); this.progBest=1e9; this.progT=0; this.approachT=0; this.wanderA=rand(0,TAU);
     this.score=0; this.coinN=0; this.goals=0; this.goalValue=0; this.fx=newFx(); this.pts=0; this.oni=false; this.oniFreeze=0; this.immune=0;
     this.comboN=0; this.comboT=0; this.warpCD=0; this.padCD=0; this.robotCD=0; this.carry=null;
-    this.st={stuns:0,items:0,coins:0,yen:0,tags:0,big:0};
+    this.st={stuns:0,items:0,coins:0,yen:0,tags:0,big:0,caps:0,kills:0,kos:0,booms:0};
+    this.out=false; this.outT=0; this.fallT=0;
     this.stunSeq=0; this.tpSeq=0; this.tpX=0; this.tpZ=0; this.kx=0; this.kz=0; this.lastIn=0;
     this.rx=0; this.rz=0;  // 表示位置
     const col=this.teamColor();
@@ -1495,9 +1617,9 @@ class Creature{
     }
     this.applyStats();
   }
-  side(){ return mode==='team' ? this.slot%2 : this.slot; }
-  teamColor(){ return mode==='team' ? SIDES[this.slot%2].color : SLOT_COLORS[this.slot]; }
-  teamCss(){ return mode==='team' ? SIDES[this.slot%2].css : SLOT_CSS[this.slot]; }
+  side(){ return isTeam() ? this.slot%2 : this.slot; }
+  teamColor(){ return isTeam() ? SIDES[this.slot%2].color : SLOT_COLORS[this.slot]; }
+  teamCss(){ return isTeam() ? SIDES[this.slot%2].css : SLOT_CSS[this.slot]; }
   applyStats(){
     const human = this.isLocal||this.isRemote;
     const D=DIFFS[diff];
@@ -1505,11 +1627,12 @@ class Creature{
     this.power = human ? 1 : 0.92+0.08*D.spd;
     this.m=1; this.dashMax = human ? 2.0 : 3.6/D.dash;
     this.aggr = rand(0.08,0.22)*D.aggr;
-    if(mode==='team'){ const sizes=[0,0]; for(let i=0;i<nPlayers;i++) sizes[i%2]++; if(sizes[this.slot%2]<sizes[1-this.slot%2]) this.baseSpeed*=1.06; }
+    if(isTeam()){ const sizes=[0,0]; for(let i=0;i<nPlayers;i++) sizes[i%2]++; if(sizes[this.slot%2]<sizes[1-this.slot%2]) this.baseSpeed*=1.06; }
   }
   speedMul(e){
     let m=(this.fx.speed>0?1.4:1)*(this.fx.freeze>0?0.5:1)*(this.fx.giant>0?0.92:1)*(this.fx.star>0?1.3:1)*(e?e.slow:1);
     if(mode==='tag' && this.oni) m*=1.1;
+    if(MS.can && MS.can.carrier===this) m*=0.86;
     if(this.leaderSlow) m*=0.96;
     if(hap.k==='speedfest' && hap.left>0) m*=1.3;
     return m;
@@ -1518,9 +1641,9 @@ class Creature{
   immuneNow(){ return this.fx.shield>0 || this.fx.star>0; }
   dispose(){ disposeTree(this.model.root); }
 }
-function foe(a,b){ if(a===b) return false; if(mode==='team') return a.side()!==b.side(); if(mode==='tag') return a.oni!==b.oni; return true; }
-function canStun(a,b){ if(a===b) return false; if(mode==='team') return a.side()!==b.side(); return true; }
-function setStun(c,v){ if(c.immuneNow()) return false; if(v>c.stun){ c.stun=v; c.stunSeq++; if(c.carry){ c.carry.carried=null; c.carry=null; } return true; } return false; }
+function foe(a,b){ if(a===b) return false; if(isCoop()) return false; if(isTeam()) return a.side()!==b.side(); if(mode==='tag') return a.oni!==b.oni; return true; }
+function canStun(a,b){ if(a===b) return false; if(isCoop()) return false; if(isTeam()) return a.side()!==b.side(); return true; }
+function setStun(c,v){ if(c.immuneNow()) return false; if(v>c.stun){ c.stun=v; c.stunSeq++; if(MS.can && MS.can.carrier===c && !isGuest) dropCan(c); if(c.carry){ c.carry.carried=null; c.carry=null; } return true; } return false; }
 let inPhys=false, physGuest=false;
 function addKick(c,dx,dz){ c.vx+=dx; c.vz+=dz; if(c.isRemote && !inPhys){ c.kx+=dx; c.kz+=dz; } }
 function teleport(c,x,z){ c.x=x; c.z=z; c.rx=x; c.rz=z; if(c.isRemote){ c.tpSeq++; c.tpX=x; c.tpZ=z; } }
@@ -1637,7 +1760,7 @@ function spawnItem(x0,z0){
   let x=0,z=0, ok=false;
   for(let tries=0;tries<40 && !ok;tries++){
     x = x0!==undefined ? x0+rand(-6,6) : rand(-W+4,W-4); z = z0!==undefined ? z0+rand(-4,4) : rand(-H+4,H-4);
-    ok = freeSpot(x,z,1.0) && (x0!==undefined || Math.hypot(x,z)>4) && !items.some(o=>o!==it&&o.active&&Math.hypot(o.x-x,o.z-z)<5);
+    ok = freeSpot(x,z,1.0) && (x0!==undefined || Math.hypot(x,z)>4) && !items.some(o=>o!==it&&o.active&&Math.hypot(o.x-x,o.z-z)<5) && (mode!=='shock' || tileSafe(x,z));
   }
   if(!ok) return;
   it.x=x; it.z=z; it.life=22; it.active=true; it.born=0; it.col=CAP_COLORS[(Math.random()*CAP_COLORS.length)|0];
@@ -1648,7 +1771,8 @@ function spawnItem(x0,z0){
 function clearItems(){ for(const it of items){ it.active=false; it.g.visible=false; } }
 // 順位が低いほど強いアイテム
 function rankFactor(c){
-  if(mode==='team'){ const s=c.side(); return sideScore[s]<sideScore[1-s]?0.85:sideScore[s]>sideScore[1-s]?0.15:0.5; }
+  if(isTeam()){ const s=c.side(); return sideScore[s]<sideScore[1-s]?0.85:sideScore[s]>sideScore[1-s]?0.15:0.5; }
+  if(isCoop()) return 0.6;
   const val=x=>mode==='tag'?x.pts:x.score;
   const sorted=[...creatures].sort((a,b)=>val(b)-val(a));
   const i=sorted.indexOf(c); return sorted.length>1 ? i/(sorted.length-1) : 0.5;
@@ -1656,7 +1780,7 @@ function rankFactor(c){
 function rollItem(c){
   const rf=rankFactor(c), list=[];
   for(const k in ITEMS){ const d=ITEMS[k];
-    if(mode==='tag' ? d.m==='coin' : d.m==='tag') continue;
+    if((!isCoinMode() && d.m==='coin') || d.m==='tag') continue;
     const w = d.tier==='b' ? d.w*(1.35-rf*0.6) : d.w*(0.25+rf*1.9);
     list.push([k,w]); }
   return pickW(list);
@@ -1681,7 +1805,7 @@ function giveItem(c, type){
   const d=ITEMS[type];
   c.st.items++;
   if(type==='mystery'){
-    const keys=Object.keys(ITEMS).filter(k=>k!=='mystery' && (mode==='tag'?ITEMS[k].m!=='coin':true));
+    const keys=Object.keys(ITEMS).filter(k=>k!=='mystery' && (isCoinMode() || ITEMS[k].m!=='coin'));
     return giveItem(c, keys[(Math.random()*keys.length)|0]);
   }
   if(state==='play'){
@@ -1689,7 +1813,15 @@ function giveItem(c, type){
     if(me && (c===me || !foe(c,me))) sfxAt('item',c.x,c.z);
   }
   const mul = c.isLocal||c.isRemote ? 1 : 1;
-  const enemies = creatures.filter(o=>foe(c,o));
+  const enemies = creatures.filter(o=>foe(c,o) && !o.out);
+  if(ENEMIES.length && ['wave','freeze','stopwatch','confuse'].includes(type)){
+    for(const e of ENEMIES.slice()){ const d=Math.hypot(e.x-c.x,e.z-c.z);
+      if(type==='wave' && d<7.5){ enDamage(e,2,c); if(!e.heavy){ e.vx+=(e.x-c.x)/(d||1)*12; e.vz+=(e.z-c.z)/(d||1)*12; e.stun=0.8; } }
+      if(type==='freeze') e.slow=5; if(type==='stopwatch') e.stun=2.5; if(type==='confuse' && d<10) e.stun=1.6; }
+    if(type==='wave'){ shockwave(c.x,c.z,7,0xffb050); sfxAt('boom',c.x,c.z); }
+    if(type==='freeze'||type==='stopwatch') centerMsg(type==='freeze'?'🧊 敵がこおりついた！':'⏱️ 敵が止まった！',900,true);
+    if(isCoop()) return;
+  }
   switch(type){
     case 'wave':
       shockwave(c.x,c.z,7,0xffb050); sfxAt('boom',c.x,c.z); emit('spark',c.x,0.8,c.z,16,{color:0xffc060,speed:9,size:.8});
@@ -1703,6 +1835,7 @@ function giveItem(c, type){
     case 'banana': dropBanana(c); return;
     case 'warp': { emit('spark',c.x,1,c.z,10,{color:0xb46bff,speed:4}); let p;
       if(mode==='tag'){ p=safeSpotAway(creatures.filter(o=>o.oni!==c.oni)); }
+      else if(!isCoinMode()){ p=safeSpotAway(enemies.length?enemies:creatures.filter(o=>o!==c)); if(mode==='shock'){ for(let i=0;i<20 && !tileSafe(p[0],p[1]);i++) p=[rand(-W+3,W-3),rand(-H+3,H-3)]; } }
       else { const ks=coins.filter(k=>k.state==='ground'); const k=ks.sort((a,b)=>b.value-a.value)[0]; p = k ? [clamp(k.x+rand(-2,2),-W+2,W-2), clamp(k.z+rand(-2,2),-H+2,H-2)] : safeSpotAway(enemies); if(!standable(p[0],p[1],c.r)) p=safeSpotAway(enemies); }
       teleport(c,p[0],p[1]); emit('spark',c.x,1,c.z,10,{color:0xb46bff,speed:4}); sfxAt('warp',c.x,c.z); return; }
     case 'rain': for(let i=0;i<4;i++) spawnCoin(undefined, c.x, c.z, 4); return;
@@ -1753,6 +1886,7 @@ canvas.addEventListener('pointerup', endJoy);
 canvas.addEventListener('pointercancel', endJoy);
 $('btnDash').addEventListener('pointerdown', e=>{ e.preventDefault(); e.stopPropagation(); initAudio(); dashPressed=true; });
 function playerInput(c){
+  if(window.__autoInput){ window.__autoInput(c); return; }   // テスト用
   let x=0,z=0;
   if(keys['a']||keys['arrowleft']) x-=1;
   if(keys['d']||keys['arrowright']) x+=1;
@@ -1803,12 +1937,21 @@ function steer(c,tx,tz,precise,dt){
   if(c.detourT>0){ c.detourT-=dt; ix=Math.cos(c.detourA); iz=Math.sin(c.detourA); }
   else if(spd>3) c.stuckN=0;
   if(c.fx.confuse>0){ if(Math.random()<dt*2) c.wanderA=rand(0,TAU); ix=Math.cos(c.wanderA); iz=Math.sin(c.wanderA); }
+  if(MS.tiles){ const l=Math.hypot(ix,iz);
+    if(l>0.1) for(const look of [1.3,2.6]){ if(tileBad(c.x+ix/l*look,c.z+iz/l*look)){ let fix=null;
+      for(const a of [0.7,-0.7,1.4,-1.4,2.2,-2.2,Math.PI]){ const ca=Math.cos(a), sa=Math.sin(a), rx=ix*ca-iz*sa, rz=ix*sa+iz*ca; if(!tileBad(c.x+rx/l*look,c.z+rz/l*look)){ fix=[rx,rz]; break; } }
+      if(fix){ ix=fix[0]; iz=fix[1]; } else if(!tileBad(c.x,c.z)){ ix=0; iz=0; } break; } } }
   const il=Math.hypot(ix,iz); if(il>1){ ix/=il; iz/=il; }
   c.ix=ix; c.iz=iz;
 }
 function aiControl(c, dt){
   const D=DIFFS[diff];
   if(mode==='tag') return aiTag(c,dt);
+  if(mode==='ctf'){ if(MS.can) aiCtf(c,dt); return; }
+  if(mode==='koth'){ if(MS.hill) aiKoth(c,dt); return; }
+  if(mode==='shock'){ if(MS.tiles) aiShock(c,dt); return; }
+  if(mode==='potato'){ if(MS.bomb) aiPotato(c,dt); return; }
+  if(isCoop()){ c.ix=0; c.iz=0; return; }
   const [gx,gz]=attackPoint(c);
   c.think-=dt;
   if(c.think<=0){
@@ -1925,16 +2068,18 @@ function collidePair(a,b){
   if(d2>=R*R) return;
   let d=Math.sqrt(d2); if(d<1e-4){ dx=rand(-1,1); dz=rand(-1,1); d=Math.hypot(dx,dz); }
   const nx=dx/d, nz=dz/d, pen=R-d;
-  const ima=a.kind==='robot'?0.02:1/a.m, imb=b.kind==='robot'?0.02:1/b.m, sum=ima+imb;
+  const ima=(a.kind==='robot'||a.heavy)?0.02:1/a.m, imb=(b.kind==='robot'||b.heavy)?0.02:1/b.m, sum=ima+imb;
   a.x-=nx*pen*ima/sum; a.z-=nz*pen*ima/sum; b.x+=nx*pen*imb/sum; b.z+=nz*pen*imb/sum;
   const rv=(b.vx-a.vx)*nx+(b.vz-a.vz)*nz;
   const both=a.kind==='c'&&b.kind==='c', cc=a.kind==='coin'&&b.kind==='coin';
   const e=both?0.35:cc?0.45:(a.kind==='ball'||b.kind==='ball')?0.5:0.15;
-  if(rv<0){ const j=-(1+e)*rv/sum; if(a.kind!=='robot'){ a.vx-=j*ima*nx; a.vz-=j*ima*nz; } if(b.kind!=='robot'){ b.vx+=j*imb*nx; b.vz+=j*imb*nz; } }
+  if(rv<0){ const j=-(1+e)*rv/sum; if(a.kind!=='robot'&&!a.heavy){ a.vx-=j*ima*nx; a.vz-=j*ima*nz; } if(b.kind!=='robot'&&!b.heavy){ b.vx+=j*imb*nx; b.vz+=j*imb*nz; } }
   const A=a.kind, Bk=b.kind;
   if(A==='c'&&(Bk==='coin'||Bk==='ball')) pushCoin(a,b,nx,nz);
   else if((A==='coin'||A==='ball')&&Bk==='c') pushCoin(b,a,-nx,-nz);
   else if(both) bump(a,b,nx,nz,-rv);
+  else if(A==='c'&&Bk==='en'){ if(!physGuest) enHit(b,a); }
+  else if(A==='en'&&Bk==='c'){ if(!physGuest) enHit(a,b); }
   else if(A==='robot'&&Bk==='c') robotHit(b,nx,nz);
   else if(A==='c'&&Bk==='robot') robotHit(a,-nx,-nz);
   else if(cc && -rv>2){ a.w+=rand(-4,4); b.w+=rand(-4,4); }
@@ -1969,6 +2114,8 @@ function bump(a,b,nx,nz,impact){
   b.knockT=Math.max(b.knockT,0.18+kb*0.02); a.knockT=Math.max(a.knockT,0.18+ka*0.02);
   if(aD && b.dashT<=0){ if(setStun(b,0.55+0.25*a.powerMul())){ a.st.stuns++; if(a===me||b===me) sfx('stun'); } }
   if(bD && a.dashT<=0){ if(setStun(a,0.55+0.25*b.powerMul())){ b.st.stuns++; if(a===me||b===me) sfx('stun'); } }
+  if(kb>2.5){ b.lastHitBy=a; b.lastHitT=simTime; } if(ka>2.5){ a.lastHitBy=b; a.lastHitT=simTime; }
+  if(mode==='potato' && MS.bomb && MS.bomb.passCD<=0 && !physGuest){ if(MS.bomb.holder===a && aD) passBomb(a,b); else if(MS.bomb.holder===b && bD) passBomb(b,a); }
   if(a.dashT>0) a.dashT=Math.min(a.dashT,0.04);
   if(b.dashT>0) b.dashT=Math.min(b.dashT,0.04);
   if(a.bumpCD<=0||b.bumpCD<=0){
@@ -2006,6 +2153,7 @@ function physicsStep(h, guest){
   for(const sw of sweepers){ sw.ang+=sw.spd*h; for(const s of sw.segs){ const a=s.armA+sw.ang; s.ax=sw.cx; s.az=sw.cz; s.bx=sw.cx+Math.cos(a)*sw.len; s.bz=sw.cz+Math.sin(a)*sw.len; } }
   if(hap.broom){ hap.broom.ax+=hap.broom.mvx*h; hap.broom.bx=hap.broom.ax; }
   for(const c of creatures){
+    if(c.out){ c.vx=c.vz=0; continue; }
     if(guest && c!==me){ c.x+=c.vx*h; c.z+=c.vz*h; continue; }
     if(c.isRemote && !guest){ c.x+=c.vx*h; c.z+=c.vz*h; c.pvx=c.vx; c.pvz=c.vz; continue; }
     const e=envAt(c.x,c.z); c.hidden=e.hide;
@@ -2049,7 +2197,8 @@ function physicsStep(h, guest){
     for(const r of robots){ r.x+=r.vx*h; r.z+=r.vz*h; }
   }
   _dyn.length=0;
-  for(const c of creatures) _dyn.push(c);
+  for(const c of creatures) if(!c.out) _dyn.push(c);
+  if(!guest) for(const e of ENEMIES){ e.x+=e.vx*h; e.z+=e.vz*h; _dyn.push(e); }
   for(const k of coins) if(k.state==='ground') _dyn.push(k);
   for(const b of balls) _dyn.push(b);
   for(const r of robots) _dyn.push(r);
@@ -2108,8 +2257,8 @@ function physicsStep(h, guest){
    試合の準備
    ========================================================= */
 function randomCpuSkins(n, takenSpecies){
-  const sp=shuffle(Object.keys(SPECIES).filter(s=>!takenSpecies.includes(s)));
-  const all=Object.keys(SPECIES);
+  const sp=shuffle(Object.keys(SPECIES).filter(s=>!takenSpecies.includes(s) && !SPECIES[s].story));
+  const all=Object.keys(SPECIES).filter(s=>!SPECIES[s].story);
   const out=[];
   for(let i=0;i<n;i++){
     const s=sp[i]||all[(Math.random()*all.length)|0];
@@ -2132,9 +2281,10 @@ function mySkin(){ return {...save.equip}; }
 function resolveMap(k, m){ const list=mapsFor(m); if(k==='random' || !list.includes(k)) return list[(Math.random()*list.length)|0]; return k; }
 
 function setupRound(opts){
-  mode=opts.mode; diff=opts.diff; roster=opts.roster; nPlayers=roster.length;
+  mode=opts.mode; diff=opts.diff; roster=opts.roster; nPlayers=roster.length; modeOpt=Object.assign({team:false},opts.opt||{});
   for(const c of creatures) c.dispose(); creatures.length=0;
-  for(const k of coins) k.reset();
+  clearEnemies(); clearMeteors();
+  for(const k of coins){ k.reset(); k.chip=false; }
   clearItems(); clearBananas(); clearFloats();
   hap={k:null,left:0,dx:0,dz:0,x:0,list:[],broom:null};
   buildMap(opts.map, mode, nPlayers);
@@ -2142,16 +2292,17 @@ function setupRound(opts){
   me = creatures.find(c=>c.isLocal) || null;
   placeCreatures();
   sideScore=[0,0]; coinNid=1;
-  timeLeft=ROUND_TIME[mode]; spawnT=1.5; itemT=4; feverOn=false; lastTick=0; simTime=0;
+  timeLeft=opts.time||ROUND_TIME[mode]; spawnT=1.5; itemT=4; feverOn=false; lastTick=0; simTime=0;
+  initMode();
   if(!isGuest){
-    if(mode!=='tag') for(let i=0;i<(mode==='team'?3:4+Math.floor(nPlayers/2));i++) spawnCoin(i<3?10:undefined);
-    else for(let i=0;i<6;i++) spawnCoin(10);
+    if(isCoinMode()) for(let i=0;i<(mode==='team'?3:4+Math.floor(nPlayers/2));i++) spawnCoin(i<3?10:undefined);
+    else if(mode==='tag') for(let i=0;i<6;i++) spawnCoin(10);
     if(mode==='tag') assignOni();
-    const pool=Object.keys(HAPPENINGS); const a=shuffle(pool.slice());
-    hap.list=[{t:mode==='tag'?65:58,k:a[0]},{t:mode==='tag'?35:32,k:a[1]}];
+    const pool=Object.keys(HAPPENINGS).filter(k=>isCoinMode()||mode==='tag'||k!=='coinfest'); const a=shuffle(pool.slice());
+    hap.list=[{at:mode==='tag'?35:32,k:a[0]},{at:mode==='tag'?65:60,k:a[1]}];
   }
   events=[];
-  if(MAP.special==='gatan' && mode!=='tag') events.push({t:66,done:false,kind:'gatan'},{t:44,done:false,kind:'gatan'});
+  if(MAP.special==='gatan' && isCoinMode()) events.push({at:24,done:false,kind:'gatan'},{at:46,done:false,kind:'gatan'});
   $('mapName').textContent=MAP.icon+' '+MAP.name;
   updateHUD();
 }
@@ -2160,8 +2311,10 @@ function placeCreatures(){
   const n=creatures.length;
   creatures.forEach((c,i)=>{
     let x,z;
-    if(mode==='team'){ const s=i%2, idx=Math.floor(i/2), cnt=Math.ceil((n-s)/2); x=(s===0?-1:1)*9; z=(idx-(cnt-1)/2)*4.5; }
-    else if(mode==='tag'){ const a=i/n*TAU+0.4; x=Math.cos(a)*W*0.55; z=Math.sin(a)*H*0.55; }
+    if(isTeam()){ const s=i%2, idx=Math.floor(i/2), cnt=Math.ceil((n-s)/2); x=(s===0?-1:1)*9; z=(idx-(cnt-1)/2)*4.5; }
+    else if(mode==='tag'||mode==='shock'||mode==='potato'||mode==='koth'){ const a=i/n*TAU+0.4; x=Math.cos(a)*W*0.55; z=Math.sin(a)*H*0.55; }
+    else if(mode==='defense'){ const a=i/n*TAU+0.4; x=Math.cos(a)*5; z=Math.sin(a)*5; }
+    else if(mode==='boss'){ x=(i-(n-1)/2)*3; z=H-11; }
     else { x=zones[i].x*0.72; z=zones[i].z*0.62; }
     for(let t=0;t<20 && !standable(x,z,c.r);t++){ x+=rand(-2,2); z+=rand(-2,2); }
     c.x=x; c.z=z; c.rx=x; c.rz=z; c.vx=c.vz=0; c.heading=Math.atan2(-x,-z);
@@ -2172,7 +2325,955 @@ function assignOni(){
   const ids=shuffle(creatures.map((c,i)=>i)).slice(0,cnt);
   creatures.forEach((c,i)=>{ c.oni=ids.includes(i); c.oniFreeze=c.oni?3:0; c.immune=0; });
 }
-function maxCoins(){ if(mode==='tag') return 6+Math.floor(nPlayers/2); const base = mode==='team' ? 4+Math.floor(nPlayers/3) : 5+Math.floor(nPlayers*0.75); return feverOn ? base+4 : base; }
+function maxCoins(){ if(!isCoinMode() && mode!=='tag') return 0; if(mode==='tag') return 6+Math.floor(nPlayers/2); const base = mode==='team' ? 4+Math.floor(nPlayers/3) : 5+Math.floor(nPlayers*0.75); return feverOn ? base+4 : base; }
+
+/* =========================================================
+   追加モード（缶取り合戦・エリア制圧・ショックフロア・サーバー防衛・ホットポテト・ボス戦）
+   ＋ マップ固有の「外部干渉（人間の手）」イベント
+   ========================================================= */
+const MODES = {
+  ffa:    { name:'🐞 個人戦',       desc:'硬貨を自分のふせん（陣地）に集める。いちばん多く集めた虫の勝ち' },
+  team:   { name:'⚽ チーム戦',     desc:'赤と青に分かれて、相手のゴールに硬貨を入れる' },
+  tag:    { name:'👹 鬼ごっこ',     desc:'広いマップで逃げる・追いかける。逃げている間ポイントが増える' },
+  ctf:    { name:'🥫 缶取り合戦',   desc:'中央の「伝説のゴールド缶」をうばって自分のベースへ持ち帰ると1点（チーム戦）。持っている間は少しおそく、攻撃されると落とす' },
+  koth:   { name:'⭕ エリア制圧',   desc:'サークルの中にいるとゲージが増える。100%で勝ち。2チーム以上が入るとうばいあい（ストップ）' },
+  shock:  { name:'⚡ ショック床',   desc:'ふんだ床や古い床が警告のあとで消えたり、電気が流れたりする。最後まで落ちなかった虫の勝ち' },
+  defense:{ name:'🛡 サーバー防衛', desc:'協力プレイ（CPUの味方なし）。5ウェーブの敵からメインサーバーを守りきれ' },
+  potato: { name:'☕ ホット・ポテト', desc:'熱々の缶コーヒーを持っていると毎秒得点。でも爆発すると大減点！ タックルで相手に押しつけろ' },
+};
+const isCoinMode = () => mode==='ffa' || mode==='team';
+let modeOpt = { team:false };
+const isTeam = () => mode==='team' || mode==='ctf' || (mode==='koth' && !!modeOpt.team);
+const isCoop = () => mode==='defense' || mode==='boss';
+const untimed = () => mode==='defense' || mode==='boss';
+let MS = {};            // モードごとの状態
+let modeGroup = null;   // モード用の見た目（マップと一緒に消える）
+let matchT = 0;         // 試合開始からの時間
+let curStory = null;    // ストーリーのステージ
+
+/* ---------- 予約エリア（障害物を置かない場所） ---------- */
+function modeReserved(m){
+  const r=[];
+  if(m==='ctf') r.push({x:-W+4,z:0,r:4.4},{x:W-4,z:0,r:4.4},{x:0,z:0,r:3});
+  if(m==='koth') r.push({x:0,z:0,r:5});
+  if(m==='defense') r.push({x:0,z:0,r:4.4});
+  if(m==='boss') r.push({x:0,z:-H+6,r:5.5},{x:0,z:H-6,r:4.2},{x:0,z:0,r:4});
+  return r;
+}
+
+/* =========================================================
+   外部干渉（人間の手）
+   ========================================================= */
+const INTV = {
+  coinrain:{ name:'人間がコインを投入！', desc:'巨大な硬貨が空から降ってくる！ 影に注意！' },
+  slam:    { name:'台パン！',             desc:'自販機がぶっ叩かれた！ 天井からネジやホコリが降ってくる！' },
+  gale:    { name:'冷却ファン暴走！',     desc:'暴風で全員が風下へ押し流される！' },
+  search:  { name:'補充スタッフ襲来！',   desc:'懐中電灯の光に当たるとはじき飛ばされる！' },
+  suction: { name:'取り出し口が開いた！', desc:'すごい力で吸い込まれる！' },
+  short:   { name:'照明ショート！',       desc:'まっくら！ 足もとしか見えない！' },
+  frost:   { name:'冷凍庫が開いた！',     desc:'床が一気に凍りついてツルツル！' },
+};
+let intv = { k:null, phase:null, left:0, dx:1, lx:0, lz:0, next:18, name:'', desc:'' };
+function intvDef(){ const m=(MAP&&MAP.intv)||{k:'slam'}; const d=INTV[m.k]; return {k:m.k, name:m.name||d.name, desc:m.desc||d.desc}; }
+function scheduleIntv(){ intv.next = matchT + (MS.intvEvery || rand(24,32)); }
+function showAlert(on, name, desc){
+  const el=$('alert'); if(!el) return;
+  if(on){ el.innerHTML=`⚠ 外部干渉発生！ <b>${esc(name||intv.name)}</b><small>${esc(desc||intv.desc)}</small>`; el.classList.remove('hidden'); }
+  else el.classList.add('hidden');
+}
+const intvLog=[];
+function startIntv(){
+  const d=intvDef(); intvLog.push(d.k); intv.k=d.k; intv.name=d.name; intv.desc=d.desc; intv.phase='warn'; intv.left=1.7;
+  showAlert(true); sfxAt('alarm',me?me.x:0,me?me.z:0);
+}
+function fireIntv(){
+  intv.phase='on';
+  switch(intv.k){
+    case 'coinrain': { intv.left=6; const alive=creatures.filter(c=>!c.out); const n=4+Math.ceil(nPlayers*0.8);
+      for(let i=0;i<n;i++){ const tg=alive[i%Math.max(1,alive.length)]; let x,z;
+        if(tg && Math.random()<0.6){ x=tg.x+rand(-3,3); z=tg.z+rand(-3,3); } else { x=rand(-W+3,W-3); z=rand(-H+3,H-3); }
+        addMeteor(clamp(x,-W+2,W-2),clamp(z,-H+2,H-2),1.5+i*0.33, Math.random()<0.3?'big500':'big100'); } break; }
+    case 'slam': intv.left=4; shake=Math.max(shake,1.0); sfxAt('thud',0,0); sfxAt('boom',0,0);
+      for(const c of creatures){ if(c.out) continue; const a=rand(0,TAU), k=c.immuneNow()?0.3:1; addKick(c,Math.cos(a)*6*k,(Math.sin(a)*6+7)*k); c.knockT=0.45; setStun(c,0.35); }
+      for(const k of coins) if(k.state==='ground' && !k.carried){ k.vx+=rand(-5,5); k.vz+=rand(2,7); k.hop=0.3; }
+      for(let i=0;i<8+nPlayers;i++) addMeteor(rand(-W+2,W-2),rand(-H+2,H-2),0.6+Math.random()*2.6,'debris');
+      break;
+    case 'gale': intv.left=7; intv.dx=Math.random()<.5?1:-1; break;
+    case 'search': intv.left=10; intv.dx=Math.random()<.5?1:-1; break;
+    case 'suction': intv.left=6; break;
+    case 'short': intv.left=8; break;
+    case 'frost': intv.left=7; break;
+  }
+}
+function endIntv(){ intv.k=null; intv.phase=null; intv.left=0; showAlert(false); scheduleIntv(); }
+function updateIntv(dt){
+  if(!intv.k){ if(matchT>=intv.next) startIntv(); return; }
+  intv.left-=dt;
+  if(intv.phase==='warn'){ if(intv.left<=0) fireIntv(); return; }
+  if(intv.k==='search'){
+    const p=clamp(1-intv.left/10,0,1); intv.lx=-intv.dx*(W-2)+intv.dx*(2*W-4)*p; intv.lz=Math.sin(p*TAU*1.5)*H*0.6;
+    for(const c of creatures){ if(c.out) continue; c.searchCD=(c.searchCD||0)-dt; if(c.searchCD>0) continue;
+      const dx=c.x-intv.lx, dz=c.z-intv.lz, d=Math.hypot(dx,dz);
+      if(d<3.2){ c.searchCD=1.2; const k=c.immuneNow()?0.3:1, l=d||1; addKick(c,dx/l*12*k,dz/l*12*k); c.knockT=0.4; setStun(c,0.5); emit('spark',c.x,1,c.z,8,{color:0xfff3a0,speed:5,size:.6}); if(c===me) sfx('bump',6); } }
+  }
+  if(intv.left<=0) endIntv();
+}
+function intvEnv(x,z){
+  if(intv.phase!=='on') return;
+  if(intv.k==='gale'){ ENV.wx+=intv.dx*13; }
+  else if(intv.k==='suction'){ const dx=-x, dz=(-H+1.5)-z, d=Math.hypot(dx,dz)||1, f=Math.min(8,70/(d+5)); ENV.wx+=dx/d*f; ENV.wz+=dz/d*f; }
+  else if(intv.k==='frost'){ ENV.ctrl*=0.17; ENV.fr*=0.3; }
+}
+// 見た目（サーチライト・吸い込み口・凍った床）
+let intvVis=null;
+function ensureIntvVis(){
+  if(intvVis) return intvVis;
+  const g=new THREE.Group(); scene.add(g);
+  const disk=new THREE.Mesh(new THREE.CircleGeometry(3.2,40), new THREE.MeshBasicMaterial({color:0xfff6b0,transparent:true,opacity:.45,depthWrite:false,blending:THREE.AdditiveBlending}));
+  disk.rotation.x=-Math.PI/2; disk.position.y=0.08;
+  const cone=new THREE.Mesh(new THREE.CylinderGeometry(0.4,3.2,14,24,1,true), new THREE.MeshBasicMaterial({color:0xfff6b0,transparent:true,opacity:.12,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide}));
+  cone.position.y=7;
+  const light=new THREE.Group(); light.add(disk); light.add(cone); g.add(light);
+  const swirl=new THREE.Mesh(new THREE.RingGeometry(0.6,3,32,1,0,4.6), new THREE.MeshBasicMaterial({color:0xaee8ff,transparent:true,opacity:.5,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide}));
+  swirl.rotation.x=-Math.PI/2; g.add(swirl);
+  const frost=new THREE.Mesh(new THREE.PlaneGeometry(1,1), new THREE.MeshBasicMaterial({color:0xdff6ff,transparent:true,opacity:.3,depthWrite:false}));
+  frost.rotation.x=-Math.PI/2; frost.position.y=0.09; g.add(frost);
+  intvVis={g,light,swirl,frost};
+  return intvVis;
+}
+function updateIntvVis(dt,t){
+  const v=ensureIntvVis(), on=intv.phase==='on';
+  v.light.visible = on && intv.k==='search'; if(v.light.visible) v.light.position.set(intv.lx,0,intv.lz);
+  v.swirl.visible = on && intv.k==='suction'; if(v.swirl.visible){ v.swirl.position.set(0,0.1,-H+1.5); v.swirl.rotation.z+=dt*6; if(Math.random()<dt*25) emit('puff',rand(-W,W),0.3,rand(-H,H),1,{speed:.2,size:.5,life:.6}); }
+  v.frost.visible = on && intv.k==='frost'; if(v.frost.visible){ v.frost.scale.set(W*2,H*2,1); if(Math.random()<dt*15) emit('spark',rand(-W,W),0.3,rand(-H,H),1,{color:0xe0f8ff,speed:.3,size:.5,life:.6}); }
+  if(on && intv.k==='gale' && Math.random()<dt*30) emit('puff',-intv.dx*W,rand(0.3,2),rand(-H,H),1,{speed:0.2,size:.5,life:1.2,color:0xffffff,op:.4});
+  if(on && intv.k==='short' && Math.random()<dt*6) emit('spark',rand(-W,W),rand(2,6),-H,3,{color:0x9fe0ff,speed:4,size:.4,life:.4});
+  if(intv.phase==='warn') $('alert').classList.toggle('blink', Math.sin(t*14)>0);
+}
+
+/* ---------- 落ちてくるもの（巨大硬貨・ネジ・エラー弾） ---------- */
+const meteors=[]; let meteorId=1;
+function addMeteor(x,z,t,kind,id){
+  const g=new THREE.Group(); scene.add(g);
+  let obj;
+  if(kind==='big100'||kind==='big500'){ obj=mesh(coinGeo(100), coinMats(100), g); obj.scale.setScalar(kind==='big500'?2.8:2.2); obj.rotation.x=1.2; }
+  else if(kind==='err'){ obj=mesh(G_SPHERE, new THREE.MeshBasicMaterial({color:0xff2a40}), g); obj.scale.setScalar(0.7); }
+  else { obj=mesh(new THREE.CylinderGeometry(0.18,0.18,0.9,8), MAT(0x9aa0a8,{m:.8,r:.3}), g); obj.rotation.z=1; }
+  const R = kind==='debris'?1.4 : kind==='err'?1.9 : kind==='big500'?3.0:2.5;
+  const ring=new THREE.Mesh(new THREE.RingGeometry(R*0.85,R,32), new THREE.MeshBasicMaterial({color:kind==='err'?0xff2a40:0xff5a3a,transparent:true,opacity:.7,depthWrite:false}));
+  ring.rotation.x=-Math.PI/2; ring.position.set(x,0.1,z); scene.add(ring);
+  const m={id:id||meteorId++, x,z,t,max:t,kind,g,obj,ring,R};
+  meteors.push(m); return m;
+}
+function retireMeteor(m,i){ disposeTree(m.g); disposeTree(m.ring); meteors.splice(i,1); }
+function clearMeteors(){ for(let i=meteors.length-1;i>=0;i--) retireMeteor(meteors[i],i); }
+function updateMeteors(dt, host){
+  for(let i=meteors.length-1;i>=0;i--){
+    const m=meteors[i]; m.t-=dt;
+    if(m.t<=0){ if(host) meteorImpact(m); else { shockwave(m.x,m.z,m.R*1.4,0xffc060); emit('puff',m.x,0.4,m.z,8,{speed:4,size:.9}); } retireMeteor(m,i); }
+  }
+}
+function updateMeteorVis(t){
+  for(const m of meteors){ const y=Math.max(0,m.t)*14; m.g.position.set(m.x,y+0.3,m.z); m.obj.rotation.y+=0.15;
+    const p=1-m.t/m.max; m.ring.scale.setScalar(0.6+p*0.4); m.ring.material.opacity=0.35+Math.sin(t*16)*0.25+p*0.3; }
+}
+function meteorImpact(m){
+  shockwave(m.x,m.z,m.R*1.4,m.kind==='err'?0xff4060:0xffc060);
+  emit('puff',m.x,0.4,m.z,10,{speed:5,size:1});
+  emit('spark',m.x,0.8,m.z,m.kind==='debris'?4:12,{color:0xffe08a,speed:7,size:.7});
+  for(const c of creatures){ if(c.out) continue; const dx=c.x-m.x, dz=c.z-m.z, d=Math.hypot(dx,dz);
+    if(d<m.R+c.r){ const k=c.immuneNow()?0.3:1, l=d||1, f=(m.kind==='debris'?7:13)*k; addKick(c,dx/l*f,dz/l*f); c.knockT=0.4; setStun(c, m.kind==='debris'?0.6:1.1); } }
+  if(m.kind==='big100'||m.kind==='big500'){
+    if(me && Math.hypot(me.x-m.x,me.z-m.z)<16) shake=Math.max(shake,0.45);
+    const n=m.kind==='big500'?2:1;
+    for(let i=0;i<n;i++){
+      if(isCoinMode()){ const k=spawnCoin(100,m.x,m.z,1.2); k.y=0.12; k.state='ground'; }
+      else if(mode!=='shock' || tileSafe(m.x,m.z)) spawnItem(m.x,m.z);
+    }
+  }
+  sfxAt(m.kind==='debris'?'bump':'thud', m.x, m.z, 5);
+}
+
+/* =========================================================
+   モードの初期化・更新（ホスト／ひとり）
+   ========================================================= */
+function initMode(){
+  MS={}; matchT=0; clearMeteors(); intv={k:null,phase:null,left:0,dx:1,lx:0,lz:0,next:18,name:'',desc:''}; showAlert(false);
+  ENEMIES.length=0;
+  modeGroup=new THREE.Group(); mapGroup.add(modeGroup);
+  if(curStory && curStory.intvEvery){ MS.intvEvery=curStory.intvEvery; intv.next=8; }
+  if(curStory && curStory.tips) MS.tips=curStory.tips.map(x=>({t:x[0],txt:x[1],done:false}));
+  if(mode==='ctf') initCtf();
+  else if(mode==='koth') initKoth();
+  else if(mode==='shock') initShock();
+  else if(mode==='potato') initPotato();
+  else if(mode==='defense') initDefense();
+  else if(mode==='boss') initBoss();
+}
+function modeUpdate(dt){
+  matchT+=dt;
+  updateIntv(dt);
+  updateMeteors(dt,true);
+  if(MS.tips) for(const tp of MS.tips) if(!tp.done && matchT>=tp.t){ tp.done=true; centerMsg('💡 '+tp.txt,2600,true); }
+  if(mode==='ctf') ctfUpdate(dt);
+  else if(mode==='koth') kothUpdate(dt);
+  else if(mode==='shock') shockUpdate(dt);
+  else if(mode==='potato') potatoUpdate(dt);
+  else if(mode==='defense') defenseUpdate(dt);
+  else if(mode==='boss') bossUpdate(dt);
+}
+const aliveCreatures = () => creatures.filter(c=>!c.out);
+const nearestTo=(x,z,list)=>{ let b=null,bd=1e9; for(const o of list){ const d=Math.hypot(o.x-x,o.z-z); if(d<bd){ bd=d; b=o; } } return [b,bd]; };
+
+/* ---------- 缶取り合戦 ---------- */
+function initCtf(){
+  MS.bases=[{x:-W+4,z:0,r:3},{x:W-4,z:0,r:3}];
+  MS.can={x:0,z:0,carrier:null,cd:0,idle:0,resp:0,last:null};
+  MS.bases.forEach((b,i)=>{
+    const g=new THREE.Group(); g.position.set(b.x,0,b.z); modeGroup.add(g);
+    const pad=new THREE.Mesh(new THREE.CircleGeometry(b.r,40), new THREE.MeshBasicMaterial({color:SIDES[i].color,transparent:true,opacity:.3,depthWrite:false})); pad.rotation.x=-Math.PI/2; pad.position.y=0.04; g.add(pad);
+    const ring=new THREE.Mesh(new THREE.RingGeometry(b.r-0.2,b.r,40), new THREE.MeshBasicMaterial({color:SIDES[i].color,transparent:true,opacity:.9,depthWrite:false})); ring.rotation.x=-Math.PI/2; ring.position.y=0.05; g.add(ring);
+    for(const [sx,sz] of [[1,1],[1,-1],[-1,1],[-1,-1]]) mesh(new THREE.BoxGeometry(0.45,1.3,0.45), MAT(SIDES[i].color,{r:.5}), g, sx*b.r*0.72,0.65,sz*b.r*0.72);
+    const lab=new THREE.Sprite(new THREE.SpriteMaterial({map:labelTex(i===0?'赤のベース':'青のベース',SIDES[i].css,'#fff'),transparent:true})); lab.scale.set(3.2,1.2,1); lab.position.y=3.2; g.add(lab);
+    b.ring=ring;
+  });
+  const cg=new THREE.Group(); modeGroup.add(cg);
+  const side=MAT(0xffffff,{map:canTex('#c9961a','#fff3c4','金缶','GOLD'),m:.85,r:.25,env:1.6,e:0x442200,ei:.5}), top=MAT(0xffd24a,{m:1,r:.2,env:1.6});
+  mesh(new THREE.CylinderGeometry(0.62,0.62,1.6,24), [side,top,top], cg, 0,0.8,0);
+  const gl=new THREE.Sprite(new THREE.SpriteMaterial({map:TEX_SOFT,color:0xffd24a,transparent:true,opacity:.7,depthWrite:false,blending:THREE.AdditiveBlending})); gl.scale.setScalar(4); gl.position.y=0.8; cg.add(gl);
+  const beam=new THREE.Mesh(new THREE.CylinderGeometry(0.4,0.8,10,16,1,true), new THREE.MeshBasicMaterial({color:0xffe066,transparent:true,opacity:.18,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide})); beam.position.y=5; cg.add(beam);
+  MS.canVis=cg; MS.canBeam=beam;
+}
+function dropCan(c){
+  const can=MS.can; if(!can || can.carrier!==c) return;
+  can.carrier=null; can.last=c; can.cd=1.0; can.idle=0;
+  let x=c.x+rand(-1.5,1.5), z=c.z+rand(-1.5,1.5); if(!standable(x,z,0.8)){ x=c.x; z=c.z; }
+  can.x=clamp(x,-W+1.5,W-1.5); can.z=clamp(z,-H+1.5,H-1.5);
+  floatText('🥫 缶を落とした！',c.x,2.4,c.z,'#ffe066',true);
+}
+function ctfUpdate(dt){
+  const can=MS.can;
+  if(can.resp>0){ can.resp-=dt; if(can.resp<=0){ can.x=0; can.z=0; can.carrier=null; can.idle=0; centerMsg('🥫 ゴールド缶が出現！',1000,true); } return; }
+  if(can.carrier){
+    const c=can.carrier; if(c.out){ dropCan(c); return; }
+    can.x=c.x; can.z=c.z;
+    const b=MS.bases[c.side()];
+    if(Math.hypot(c.x-b.x,c.z-b.z)<b.r){
+      sideScore[c.side()]++; c.st.caps=(c.st.caps||0)+1; c.score++; can.carrier=null; can.resp=2.5;
+      emit('spark',b.x,1,b.z,20,{color:0xffe066,speed:7,up:6,size:.8,g:8}); shockwave(b.x,b.z,5,SIDES[c.side()].color);
+      centerMsg(`${SIDES[c.side()].name} 缶を持ち帰った！`,1100,true);
+      sfxAt(me&&me.side()===c.side()?'coin':'enemyCoin',b.x,b.z,50);
+      updateHUD();
+    }
+  } else {
+    can.cd-=dt; can.idle+=dt;
+    if(can.idle>15){ can.x=0; can.z=0; can.idle=0; centerMsg('🥫 缶が中央にもどった',900,true); }
+    for(const c of creatures){
+      if(c.out || c.stun>0 || (c===can.last && can.cd>0)) continue;
+      if(Math.hypot(c.x-can.x,c.z-can.z)<c.r+0.9){ can.carrier=c; can.idle=0; floatText('🥫 ゲット！',c.x,2.4,c.z,c.teamCss(),true); if(c===me) sfx('item'); break; }
+    }
+  }
+}
+function aiCtf(c,dt){
+  const D=DIFFS[diff], can=MS.can, b=MS.bases[c.side()];
+  let tx=can.x, tz=can.z, dash=false;
+  const foes=creatures.filter(o=>!o.out && foe(c,o));
+  if(can.resp>0){ tx=0; tz=0; }
+  else if(can.carrier===c){ tx=b.x; tz=b.z; }
+  else if(can.carrier && !foe(c,can.carrier)){
+    const [e,d]=nearestTo(can.carrier.x,can.carrier.z,foes);
+    if(e && d<9){ tx=e.x; tz=e.z; if(Math.hypot(e.x-c.x,e.z-c.z)<3.6 && c.dashCD<=0) dash=true; } else { tx=can.carrier.x+rand(-2,2); tz=can.carrier.z+rand(-2,2); }
+  } else if(can.carrier){
+    const e=can.carrier, lead=0.35; tx=e.x+e.vx*lead; tz=e.z+e.vz*lead;
+    if(Math.hypot(e.x-c.x,e.z-c.z)<3.8 && c.dashCD<=0) dash=true;
+  } else {
+    // 1匹は自分のベース近くを守る
+    const mates=creatures.filter(o=>!o.out && !foe(c,o)).sort((a,b2)=>a.slot-b2.slot);
+    if(mates.length>=3 && mates[mates.length-1]===c){ tx=b.x+(b.x<0?5:-5); tz=0; }
+  }
+  for(const it of items){ if(it.active && Math.hypot(it.x-c.x,it.z-c.z)<3.5 && can.carrier!==c){ tx=it.x; tz=it.z; } }
+  steer(c,tx,tz,false,dt);
+  c.wantDash = dash && Math.random()<0.7*D.dash;
+}
+
+/* ---------- エリア制圧 ---------- */
+function initKoth(){
+  MS.hill={x:0,z:0,r:3.6+nPlayers*0.2,moveT:32,cont:false,owner:-1};
+  const g=new THREE.Group(); modeGroup.add(g);
+  const disk=new THREE.Mesh(new THREE.CircleGeometry(1,48), new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.2,depthWrite:false})); disk.rotation.x=-Math.PI/2; disk.position.y=0.05; g.add(disk);
+  const ring=new THREE.Mesh(new THREE.RingGeometry(0.93,1,48), new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.9,depthWrite:false})); ring.rotation.x=-Math.PI/2; ring.position.y=0.06; g.add(ring);
+  const wall=new THREE.Mesh(new THREE.CylinderGeometry(1,1,2.4,48,1,true), new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.14,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending})); wall.position.y=1.2; g.add(wall);
+  const lab=new THREE.Sprite(new THREE.SpriteMaterial({map:labelTex('制圧サークル','#444','#fff'),transparent:true})); lab.scale.set(3.4,1.28,1); lab.position.y=3.6; g.add(lab);
+  MS.hillVis={g,disk,ring,wall};
+}
+function moveHill(){
+  const h=MS.hill; let best=[0,0];
+  for(let i=0;i<30;i++){ const x=rand(-W+7,W-7), z=rand(-H+6,H-6); if(Math.hypot(x-h.x,z-h.z)<9) continue; if(!standable(x,z,2.2)) continue; best=[x,z]; break; }
+  h.x=best[0]; h.z=best[1];
+}
+function kothUpdate(dt){
+  const h=MS.hill;
+  h.moveT-=dt; if(h.moveT<=0){ h.moveT=30; moveHill(); centerMsg('⭕ サークルが移動した！',1000,true); }
+  const inside=creatures.filter(c=>!c.out && c.stun<=0 && Math.hypot(c.x-h.x,c.z-h.z)<h.r);   // 気絶している虫は数えない
+  const groups=new Set(inside.map(c=>isTeam()?c.side():c.slot));
+  h.cont = groups.size>1; h.owner = groups.size===1 ? [...groups][0] : -1;
+  if(groups.size===1){
+    const rate=(isTeam()?100/30:100/15)*dt*(1+0.12*(inside.length-1));
+    if(isTeam()){ const s=h.owner; sideScore[s]=Math.min(100,sideScore[s]+rate); for(const c of inside) c.score+=rate; if(sideScore[s]>=100) endGame(`${SIDES[s].name} 制圧完了！`); }
+    else { const c=inside[0]; c.score=Math.min(100,c.score+rate); if(c.score>=100) endGame(`${c===me?'あなた':c.name} 制圧完了！`); }
+  }
+}
+function aiKoth(c,dt){
+  const D=DIFFS[diff], h=MS.hill;
+  const a=c.slot*2.1+simTime*0.2, rr=h.r*0.45;
+  let tx=h.x+Math.cos(a)*rr, tz=h.z+Math.sin(a)*rr, dash=false;
+  const inMe=Math.hypot(c.x-h.x,c.z-h.z)<h.r;
+  // 中が混んでいたら外で待って、すきを見てタックルで飛びこむ
+  const crowd=creatures.filter(o=>o!==c && !o.out && foe(c,o) && Math.hypot(o.x-h.x,o.z-h.z)<h.r).length;
+  if(!inMe && crowd>=2 && c.dashCD>0.2){ const ang=Math.atan2(c.z-h.z,c.x-h.x)+dt*0.6; tx=h.x+Math.cos(ang)*(h.r+2.2); tz=h.z+Math.sin(ang)*(h.r+2.2); }
+  if(inMe){ for(const o of creatures){ if(o.out||!foe(c,o)) continue; const d=Math.hypot(o.x-c.x,o.z-c.z);
+    if(d<4 && Math.hypot(o.x-h.x,o.z-h.z)<h.r+1 && c.dashCD<=0 && Math.random()<c.aggr*3){ tx=o.x; tz=o.z; dash=true; break; } } }
+  else if(c.dashCD<=0){ for(const o of creatures){ if(o.out||!foe(c,o)||o.stun>0) continue; if(Math.hypot(o.x-h.x,o.z-h.z)<h.r && Math.hypot(o.x-c.x,o.z-c.z)<4.5){ tx=o.x; tz=o.z; dash=true; break; } } }
+  for(const it of items){ if(it.active && Math.hypot(it.x-c.x,it.z-c.z)<3 && !inMe){ tx=it.x; tz=it.z; } }
+  steer(c,tx,tz,inMe,dt);
+  c.wantDash = dash && Math.random()<D.dash;
+}
+
+/* ---------- ショック床（くずれる足場サバイバル） ---------- */
+function initShock(){
+  const TS=4, nx=Math.ceil(W*2/TS), nz=Math.ceil(H*2/TS);
+  MS.TS=TS; MS.nx=nx; MS.nz=nz; MS.x0=-nx*TS/2; MS.z0=-nz*TS/2; MS.tiles=[]; MS.randT=5; MS.dirty=true;
+  intv.next=30;
+  for(let iz=0;iz<nz;iz++) for(let ix=0;ix<nx;ix++){
+    const x=MS.x0+TS*(ix+0.5), z=MS.z0+TS*(iz+0.5);
+    let prot=false; for(const s of statics){ if(s.soft||s.sweep) continue; const q=closestOnSeg(x,z,s); if(Math.hypot(x-q.x,z-q.z)<s.r+TS*0.3) prot=true; }
+    MS.tiles.push({x,z,st:0,t:0,heat:0,prot,base:((ix+iz)%2?0x1f7a3a:0x248a44)});
+  }
+  const n=MS.tiles.length;
+  const tileMesh=new THREE.InstancedMesh(new THREE.BoxGeometry(TS-0.14,0.14,TS-0.14), new THREE.MeshStandardMaterial({color:0xffffff,roughness:.45,metalness:.35}), n);
+  const holeMesh=new THREE.InstancedMesh(new THREE.PlaneGeometry(TS,TS), new THREE.MeshBasicMaterial({color:0x020204}), n);
+  tileMesh.receiveShadow=true; modeGroup.add(tileMesh); modeGroup.add(holeMesh);
+  MS.tileMesh=tileMesh; MS.holeMesh=holeMesh;
+  const col=new THREE.Color();
+  MS.tiles.forEach((t,i)=>{ tileMesh.setColorAt(i,col.setHex(t.prot?0x2a5f8a:t.base)); });
+  // 基板の線
+  const lines=[]; for(let i=0;i<60;i++){ const x=rand(-W,W), z=rand(-H,H), l=rand(2,6), hz=Math.random()<.5; lines.push(x,0.15,z, hz?x+l:x,0.15,hz?z:z+l); }
+  const lg=new THREE.BufferGeometry(); lg.setAttribute('position',new THREE.Float32BufferAttribute(lines,3));
+  modeGroup.add(new THREE.LineSegments(lg,new THREE.LineBasicMaterial({color:0xd8b04a,transparent:true,opacity:.5})));
+  MS.tiles.forEach(t=>t.prevSt=-1);
+}
+function tileAt(x,z){ if(!MS.tiles) return null; const ix=Math.floor((x-MS.x0)/MS.TS), iz=Math.floor((z-MS.z0)/MS.TS); if(ix<0||iz<0||ix>=MS.nx||iz>=MS.nz) return null; return MS.tiles[iz*MS.nx+ix]; }
+function tileSafe(x,z){ const t=tileAt(x,z); return !MS.tiles || (t && t.st===0); }
+function tileBad(x,z){ if(!MS.tiles) return false; const t=tileAt(x,z); return !t || t.st>=1 || (t.heat>1.1 && !t.prot); }
+function setTile(t,st,tt){ t.st=st; t.t=tt!==undefined?tt:(st===1?1.8:0); MS.dirty=true; }
+function shockFall(c){
+  c.out=true; c.outT=matchT; c.fallT=0; c.vx=c.vz=0; if(c.carry){ c.carry.carried=null; c.carry=null; }
+  if(c.lastHitBy && simTime-(c.lastHitT||0)<3 && c.lastHitBy!==c && !c.lastHitBy.out){ c.lastHitBy.score+=10; c.lastHitBy.st.kos=(c.lastHitBy.st.kos||0)+1; floatText('+10 突き落とし！',c.lastHitBy.x,2.4,c.lastHitBy.z,'#ffe066',true); }
+  floatText(`${c===me?'あなた':c.name} が落ちた！`,c.x,2.5,c.z,'#ff8080');
+  sfxAt('slip',c.x,c.z);
+  if(c===me) centerMsg('落ちてしまった…（観戦中）',2000,true,false);
+  netMsg('d',[c.slot]);
+}
+function shockUpdate(dt){
+  const alive=aliveCreatures();
+  for(const c of alive){
+    c.score+=dt;
+    const t=tileAt(c.x,c.z);
+    const air = c.dashT>0 || c.fx.rocket>0;
+    if(!t || t.st===2){ if(!air) shockFall(c); continue; }
+    if(t.st===0 && !t.prot){ t.heat+=dt; if(t.heat>2.2) setTile(t,1); }
+    if(t.st===3){ c.elecCD=(c.elecCD||0)-dt; if(c.elecCD<=0){ c.elecCD=1; if(setStun(c,0.6)){ const a=rand(0,TAU); addKick(c,Math.cos(a)*7,Math.sin(a)*7); emit('spark',c.x,0.8,c.z,10,{color:0x7fe8ff,speed:6,size:.6}); if(c===me){ sfx('stun'); shake=Math.max(shake,0.3); } } } }
+  }
+  MS.randT-=dt;
+  if(MS.randT<=0){
+    MS.randT=Math.max(0.3,2.1-matchT*0.014);
+    const cand=MS.tiles.filter(t=>t.st===0 && !t.prot);
+    if(cand.length) setTile(cand[(Math.random()*cand.length)|0],1);
+    if(matchT>70){ const p=MS.tiles.filter(t=>t.st===0 && t.prot); if(p.length && Math.random()<0.25) setTile(p[(Math.random()*p.length)|0],1); }
+  }
+  for(const t of MS.tiles){
+    if(t.st===1){ t.t-=dt; if(t.t<=0){ if(Math.random()<0.25) setTile(t,3,6); else setTile(t,2); } }
+    else if(t.st===3){ t.t-=dt; if(t.t<=0) setTile(t,2); }
+  }
+  for(const it of items){ if(it.active && !tileSafe(it.x,it.z)){ it.active=false; it.g.visible=false; } }
+  if(alive.length<=1 && creatures.length>1) endGame(alive[0]?`${alive[0]===me?'あなた':alive[0].name} が生き残った！`:'全員落ちた！');
+}
+function shockVis(t){
+  if(!MS.tileMesh) return;
+  const m4=new THREE.Matrix4(), col=new THREE.Color(), q=new THREE.Quaternion(), one=new THREE.Vector3(1,1,1), zero=new THREE.Vector3(0.001,0.001,0.001), p=new THREE.Vector3();
+  let colorDirty=false;
+  MS.tiles.forEach((tl,i)=>{
+    if(MS.dirty && tl.prevSt!==tl.st){
+      const gone=tl.st===2;
+      p.set(tl.x,0.07,tl.z); m4.compose(p,q,gone?zero:one); MS.tileMesh.setMatrixAt(i,m4);
+      p.set(tl.x,0.075,tl.z); m4.makeRotationX(-Math.PI/2); m4.setPosition(p); if(!gone) m4.scale(zero); MS.holeMesh.setMatrixAt(i,m4);
+      if(tl.st===0){ MS.tileMesh.setColorAt(i,col.setHex(tl.prot?0x2a5f8a:tl.base)); colorDirty=true; }
+      tl.prevSt=tl.st;
+    }
+    if(tl.st===1){ MS.tileMesh.setColorAt(i,col.setHex(Math.sin(t*16)>0?0xff3a2a:0xffd23a)); colorDirty=true; }
+    else if(tl.st===3){ MS.tileMesh.setColorAt(i,col.setHSL(0.52,1,0.45+Math.sin(t*30+i)*0.2)); colorDirty=true; if(Math.random()<0.04) emit('spark',tl.x+rand(-1.5,1.5),0.3,tl.z+rand(-1.5,1.5),1,{color:0x9ff0ff,speed:2,size:.4,life:.3}); }
+    else if(tl.st===0 && !tl.prot && tl.heat>0.6){ MS.tileMesh.setColorAt(i,col.setHex(tl.base).lerp(new THREE.Color(0xffa040),Math.min(1,(tl.heat-0.6)))); colorDirty=true; }
+  });
+  if(MS.dirty){ MS.tileMesh.instanceMatrix.needsUpdate=true; MS.holeMesh.instanceMatrix.needsUpdate=true; MS.dirty=false; }
+  if(colorDirty && MS.tileMesh.instanceColor) MS.tileMesh.instanceColor.needsUpdate=true;
+}
+function aiShock(c,dt){
+  const D=DIFFS[diff];
+  c.think-=dt;
+  const here=tileAt(c.x,c.z);
+  if(c.think<=0 || !c.safeT || tileBad(c.safeT.x,c.safeT.z) || (here && (here.st>=1 || here.heat>0.9))){
+    c.think=rand(D.think[0],D.think[1]);
+    let best=null, bs=1e9;
+    for(let i=0;i<16;i++){ const t=MS.tiles[(Math.random()*MS.tiles.length)|0]; if(t.st!==0) continue;
+      const d=Math.hypot(t.x-c.x,t.z-c.z); if(d>14) continue;
+      let bad=0; for(const [ox,oz] of [[MS.TS,0],[-MS.TS,0],[0,MS.TS],[0,-MS.TS]]) if(tileBad(t.x+ox,t.z+oz)) bad++;
+      const s=d*0.4+t.heat*4+bad*2.5-(t.prot?3:0)+(t===here?2:0);
+      if(s<bs){ bs=s; best=t; } }
+    if(best) c.safeT={x:best.x+rand(-1,1),z:best.z+rand(-1,1)};
+  }
+  let tx=c.safeT?c.safeT.x:c.x, tz=c.safeT?c.safeT.z:c.z, dash=false;
+  // 穴の近くにいる相手を突き落とす
+  if(c.dashCD<=0 && Math.random()<c.aggr*0.6){
+    for(const o of creatures){ if(o===c||o.out) continue; const d=Math.hypot(o.x-c.x,o.z-c.z);
+      if(d<3.8){ const dx=(o.x-c.x)/d, dz=(o.z-c.z)/d; if(tileBad(o.x+dx*2.5,o.z+dz*2.5) && !tileBad(c.x+dx*1.5,c.z+dz*1.5)){ tx=o.x; tz=o.z; dash=true; break; } } }
+  }
+  steer(c,tx,tz,true,dt);
+  c.wantDash = dash && Math.random()<D.dash;
+}
+
+/* ---------- ホット・ポテト ---------- */
+function initPotato(){
+  MS.bomb={holder:null,t:0,resp:3,passCD:0,last:null};
+  const g=new THREE.Group(); modeGroup.add(g);
+  const can=mesh(new THREE.CylinderGeometry(0.42,0.42,0.95,20), [MAT(0xffffff,{map:canTex('#5d4037','#d7a86e','熱々','HOT COFFEE'),r:.35,m:.4,e:0x551100,ei:.6}),MAT(0xd8dce2,{m:1,r:.25}),MAT(0xd8dce2,{m:1,r:.25})], g, 0,0,0);
+  const num=new THREE.Sprite(new THREE.SpriteMaterial({transparent:true,depthTest:false})); num.scale.set(1.5,0.56,1); num.position.y=1.0; num.renderOrder=7; g.add(num);
+  g.visible=false; MS.bombVis={g,can,num,last:''};
+}
+function potatoUpdate(dt){
+  const b=MS.bomb;
+  b.passCD-=dt;
+  if(!b.holder){
+    b.resp-=dt;
+    if(b.resp<=0){ const cand=aliveCreatures().filter(c=>c!==b.last); const pool=cand.length?cand:aliveCreatures(); if(!pool.length) return;
+      b.holder=pool[(Math.random()*pool.length)|0]; b.t=rand(13,19); b.passCD=1;
+      centerMsg(`☕ 熱々缶コーヒーが ${b.holder===me?'あなた':b.holder.name} に！`,1200,true); sfxAt('item',b.holder.x,b.holder.z); }
+    return;
+  }
+  const h=b.holder; h.score+=3*dt; b.t-=dt;
+  if(Math.random()<dt*8) emit('puff',h.x,2.2,h.z,1,{speed:.3,up:1.5,size:.5,life:.8,color:0xffffff,op:.5});
+  if(b.t<=0){
+    shockwave(h.x,h.z,7,0xff7a2a); emit('spark',h.x,1,h.z,24,{color:0xff9a3d,speed:9,up:5,size:.9,g:6}); emit('puff',h.x,0.8,h.z,12,{speed:5,size:1.2,color:0x553322});
+    sfxAt('boom',h.x,h.z); if(me && Math.hypot(me.x-h.x,me.z-h.z)<14) shake=Math.max(shake,0.6);
+    h.score-=25; h.st.booms=(h.st.booms||0)+1; h.stun=0; setStun(h,2.0);
+    for(const o of creatures){ if(o.out) continue; const dx=o.x-h.x, dz=o.z-h.z, d=Math.hypot(dx,dz); if(d<6 && o!==h){ const k=(o.immuneNow()?0.3:1)*12*(1-d/8); addKick(o,dx/(d||1)*k,dz/(d||1)*k); o.knockT=0.4; } }
+    floatText('ドカーン！ −25',h.x,2.6,h.z,'#ff8040');
+    b.last=h; b.holder=null; b.resp=2.2;
+  }
+}
+function passBomb(from,to){
+  const b=MS.bomb; if(!b || b.holder!==from || to.out) return;
+  b.holder=to; b.passCD=1.0;
+  floatText('☕ 押しつけた！',to.x,2.4,to.z,'#ffb070',true); sfxAt('tag',to.x,to.z);
+}
+function aiPotato(c,dt){
+  const D=DIFFS[diff], b=MS.bomb;
+  let tx=c.x, tz=c.z, dash=false;
+  if(b.holder===c){
+    if(b.t>4.5){ // 得点をかせぎながら逃げる
+      let fx=0,fz=0; for(const o of creatures){ if(o===c||o.out) continue; const dx=c.x-o.x, dz=c.z-o.z, d=Math.hypot(dx,dz)||0.1; if(d<10){ fx+=dx/(d*d); fz+=dz/(d*d); } }
+      const mx=W-4, mz=H-4; if(c.x>mx) fx-=0.3; if(c.x<-mx) fx+=0.3; if(c.z>mz) fz-=0.3; if(c.z<-mz) fz+=0.3;
+      const l=Math.hypot(fx,fz); if(l>0.001){ tx=c.x+fx/l*5; tz=c.z+fz/l*5; } else { tx=Math.cos(c.wanderA)*W*0.5; tz=Math.sin(c.wanderA)*H*0.5; if(Math.hypot(tx-c.x,tz-c.z)<3) c.wanderA=rand(0,TAU); }
+    } else {
+      const [o,d]=nearestTo(c.x,c.z,creatures.filter(o=>o!==c && !o.out));
+      if(o){ tx=o.x+o.vx*0.3; tz=o.z+o.vz*0.3; if(d<3.8 && c.dashCD<=0) dash=true; }
+    }
+  } else if(b.holder && b.t<7 && Math.hypot(b.holder.x-c.x,b.holder.z-c.z)<10){
+    const h=b.holder, dx=c.x-h.x, dz=c.z-h.z, d=Math.hypot(dx,dz)||1; tx=c.x+dx/d*5; tz=c.z+dz/d*5;
+    if(d<3 && c.dashCD<=0 && Math.random()<0.4) { tx=c.x+(-dz/d)*5; tz=c.z+(dx/d)*5; dash=true; }
+  } else {
+    let bi=null, bd=9; for(const it of items){ if(!it.active) continue; const d=Math.hypot(it.x-c.x,it.z-c.z); if(d<bd){ bd=d; bi=it; } }
+    if(bi){ tx=bi.x; tz=bi.z; } else { tx=Math.cos(c.wanderA)*W*0.5; tz=Math.sin(c.wanderA)*H*0.5; if(Math.hypot(tx-c.x,tz-c.z)<3) c.wanderA=rand(0,TAU); }
+  }
+  steer(c,tx,tz,false,dt);
+  c.wantDash = dash && Math.random()<D.dash;
+}
+
+/* ---------- 敵キャラ（防衛戦・ボス戦） ---------- */
+const ENEMIES=[];
+const ENEMY_TYPES = {
+  bug:  { name:'バグロボ',       hp:1,  spd:3.4, r:0.85, m:1.2, dps:2,   pts:1 },
+  thief:{ name:'コイン泥棒',     hp:1,  spd:5.2, r:0.7,  m:0.8, dps:1.5, pts:1 },
+  tank: { name:'不良品タンク',   hp:4,  spd:2.0, r:1.4,  m:4,   dps:6,   pts:3 },
+  king: { name:'暴走ジャンク王', hp:14, spd:1.7, r:2.2,  m:20,  dps:10,  pts:10, heavy:true },
+};
+function makeEnemyModel(type){
+  const g=new THREE.Group(); const b=new THREE.Group(); g.add(b);
+  const red=MAT(0xff2a2a,{e:0xff0000,ei:1.2});
+  if(type==='bug'){
+    mesh(new THREE.BoxGeometry(1.1,0.7,1.3), MAT(0x8a929a,{m:.7,r:.35,env:1}), b, 0,0.55,0);
+    mesh(new THREE.BoxGeometry(0.7,0.18,0.1), red, b, 0,0.65,0.66,false);
+    for(const s of [-1,1]) for(const z of [-0.4,0.4]){ const l=mesh(new THREE.CylinderGeometry(0.06,0.04,0.7,5), MAT(0x333333), b, s*0.6,0.25,z); l.rotation.z=s*0.6; }
+    const an=mesh(new THREE.CylinderGeometry(0.03,0.03,0.6,4), MAT(0x333333), b, 0.3,1.1,-0.2); mesh(G_SPHERE_LO, red, b, 0.3,1.42,-0.2).scale.setScalar(0.08);
+  } else if(type==='thief'){
+    mesh(G_SPHERE, MAT(0x4a2a6a,{r:.6}), b, 0,0.6,0).scale.setScalar(0.62);
+    const band=mesh(new THREE.TorusGeometry(0.55,0.09,6,20), MAT(0x111111), b, 0,0.72,0); band.rotation.x=Math.PI/2;
+    for(const s of [-1,1]) mesh(G_SPHERE_LO, MAT(0xffffff,{e:0xffffff,ei:.5}), b, s*0.2,0.75,0.52).scale.setScalar(0.08);
+    mesh(G_SPHERE, MAT(0xd9c08a,{r:.8}), b, 0,0.75,-0.65).scale.set(0.45,0.5,0.4);
+  } else {
+    const big=type==='king';
+    const s=big?1.6:1;
+    mesh(new THREE.CylinderGeometry(1.2*s,1.2*s,1.6*s,20), MAT(big?0x2a2a2a:0xa0522d,{m:.6,r:.6,env:.7}), b, 0,0.95*s,0);
+    mesh(new THREE.BoxGeometry(0.9*s,0.25*s,0.1), red, b, 0,1.3*s,1.2*s,false);
+    for(const sx of [-1,1]) mesh(new THREE.BoxGeometry(0.4*s,0.5*s,2.4*s), MAT(0x222222), b, sx*1.25*s,0.25*s,0);
+    if(big) for(let i=0;i<5;i++){ const a=i/5*TAU; mesh(new THREE.ConeGeometry(0.25,0.7,5), MAT(0xffcc33,{m:.9,r:.2}), b, Math.cos(a)*0.9,2.9,Math.sin(a)*0.9); }
+  }
+  const barBg=new THREE.Sprite(new THREE.SpriteMaterial({map:TEX_SOFT,color:0x000000,transparent:true,opacity:.6,depthTest:false})); barBg.scale.set(1.6,0.22,1); barBg.renderOrder=8;
+  const bar=new THREE.Sprite(new THREE.SpriteMaterial({color:0xff4040,transparent:true,depthTest:false})); bar.scale.set(1.5,0.14,1); bar.renderOrder=9; bar.center.set(0,0.5);
+  const hb=new THREE.Group(); hb.add(barBg); hb.add(bar); bar.position.x=-0.75; g.add(hb);
+  hb.position.y = type==='king'?4.2 : type==='tank'?2.6 : 1.7;
+  g.traverse(o=>{ if(o.isMesh) o.castShadow=true; });
+  scene.add(g);
+  return {g,b,bar,hb};
+}
+function spawnEnemy(type,x,z,id){
+  const T=ENEMY_TYPES[type], ds={easy:0.8,normal:1,hard:1.25,oni:1.5}[diff]||1;
+  const hp=Math.max(1,Math.round(T.hp*ds*(1+0.15*Math.max(0,humanCount()-1))));
+  const e={kind:'en', type, id:id||MS.eid++, x,z,vx:0,vz:0,r:T.r,m:T.m,hp,max:hp,stun:0,slow:0,hitCD:0,h:0,atk:false,heavy:!!T.heavy,spd:T.spd*(0.9+0.1*ds)};
+  e.vis=makeEnemyModel(type); e.vis.g.position.set(x,0,z);
+  ENEMIES.push(e); return e;
+}
+function removeEnemy(e){ const i=ENEMIES.indexOf(e); if(i>=0) ENEMIES.splice(i,1); if(e.vis) disposeTree(e.vis.g); }
+function clearEnemies(){ for(const e of ENEMIES.slice()) removeEnemy(e); }
+const humanCount = () => creatures.filter(c=>c.isLocal||c.isRemote).length || 1;
+function enHit(e,c){
+  const attack = c.dashT>0 || c.fx.star>0 || c.fx.rocket>0;
+  if(!attack){ if(e.type!=='thief' && c.robotCD<=0){ const dx=c.x-e.x, dz=c.z-e.z, d=Math.hypot(dx,dz)||1; addKick(c,dx/d*3,dz/d*3); } return; }
+  if(e.hitCD>0) return;
+  e.hitCD=0.3;
+  enDamage(e,(c.fx.star>0||c.fx.rocket>0?2:1)*c.powerMul(),c);
+  const dx=e.x-c.x, dz=e.z-c.z, d=Math.hypot(dx,dz)||1; const k=9/Math.max(1,e.m*0.6);
+  if(!e.heavy){ e.vx+=dx/d*k; e.vz+=dz/d*k; e.stun=Math.max(e.stun,0.45); }
+  if(c.dashT>0) c.dashT=Math.min(c.dashT,0.04);
+}
+function enDamage(e,dmg,by){
+  if(e.dead) return;
+  e.hp-=dmg; emit('spark',e.x,1,e.z,8,{color:0xfff0a0,speed:6,size:.6});
+  if(by===me||!by) sfx('bump',5);
+  if(e.hp<=0){
+    e.dead=true; const T=ENEMY_TYPES[e.type];
+    MS.kills=(MS.kills||0)+1; if(by){ by.st.kills=(by.st.kills||0)+1; by.score+=T.pts; }
+    shockwave(e.x,e.z,3,0xff8040); emit('puff',e.x,0.8,e.z,10,{speed:4,size:1,color:0x555555}); emit('spark',e.x,1,e.z,14,{color:0xffa040,speed:7,size:.7});
+    sfxAt('boom',e.x,e.z);
+    if(Math.random()<0.18) spawnItem(e.x,e.z);
+    removeEnemy(e);
+  }
+}
+function enemyUpdate(dt, target){
+  for(const e of ENEMIES.slice()){
+    e.hitCD-=dt; e.stun-=dt; e.slow-=dt;
+    const dx=target.x-e.x, dz=target.z-e.z, d=Math.hypot(dx,dz)||1;
+    const reach=e.r+target.r+0.3;
+    e.atk=false;
+    if(d<reach){ e.atk=true; e.vx*=0.6; e.vz*=0.6; if(e.stun<=0){ target.hp-=ENEMY_TYPES[e.type].dps*dt*(e.slow>0?0.5:1)*(mode==='boss'?0.5:1); if(Math.random()<dt*4) emit('spark',e.x+dx/d*e.r,0.9,e.z+dz/d*e.r,2,{color:0xff6040,speed:3,size:.4}); } }
+    else if(e.stun>0){ const f=Math.exp(-3*dt); e.vx*=f; e.vz*=f; }
+    else {
+      let ix=dx/d, iz=dz/d;
+      for(const s of statics){ if(s.server||s.boss) continue; const q=closestOnSeg(e.x,e.z,s); const ox=e.x-q.x, oz=e.z-q.z, od=Math.hypot(ox,oz), lim=s.r+e.r+1.2;
+        if(od<lim && od>0.001){ const nxo=ox/od, nzo=oz/od; if(-(ix*nxo+iz*nzo)>0.1){ const side=(ix*-nzo+iz*nxo)>=0?1:-1, k=(1-od/lim)*1.6; ix+=-nzo*side*k; iz+=nxo*side*k; } } }
+      const l=Math.hypot(ix,iz)||1, sp=e.spd*(e.slow>0?0.5:1);
+      e.vx+=(ix/l*sp-e.vx)*Math.min(1,dt*5); e.vz+=(iz/l*sp-e.vz)*Math.min(1,dt*5);
+    }
+    if(Math.hypot(e.vx,e.vz)>0.3) e.h=Math.atan2(e.vx,e.vz);
+  }
+}
+function enemyVis(dt,t){
+  for(const e of ENEMIES){ const v=e.vis; if(!v) continue;
+    v.g.position.set(e.x, e.atk?Math.abs(Math.sin(t*14))*0.15:0, e.z); v.b.rotation.y=angLerp(v.b.rotation.y,e.h||0,Math.min(1,dt*8));
+    if(e.stun>0) v.b.rotation.y+=dt*10;
+    v.b.position.y = e.type==='thief' ? Math.abs(Math.sin(t*10+e.id))*0.2 : 0;
+    v.bar.scale.x=1.5*clamp(e.hp/e.max,0,1); v.hb.visible=e.hp<e.max;
+  }
+}
+
+/* ---------- サーバー防衛 ---------- */
+const WAVES = [ {bug:6}, {bug:8,thief:3}, {bug:9,thief:4,tank:1}, {bug:10,thief:5,tank:2}, {king:1,bug:8,thief:3} ];
+function makeServerVis(x,z,label){
+  const g=new THREE.Group(); g.position.set(x,0,z); modeGroup.add(g);
+  mesh(new THREE.BoxGeometry(2.6,3.4,2.6), MAT(0x2a2e36,{m:.6,r:.35,env:1}), g, 0,1.7,0).receiveShadow=true;
+  const leds=[]; for(let i=0;i<6;i++){ const m=mesh(new THREE.BoxGeometry(1.8,0.12,0.05), new THREE.MeshBasicMaterial({color:0x3fff9a}), g, 0,0.7+i*0.45,1.32,false); leds.push(m); }
+  const lab=new THREE.Sprite(new THREE.SpriteMaterial({map:labelTex(label,'#1f6a3a','#fff'),transparent:true})); lab.scale.set(3.6,1.35,1); lab.position.y=4.6; g.add(lab);
+  return {g,leds};
+}
+function initDefense(){
+  const hp=Math.round(200*(1+0.25*(humanCount()-1)));
+  MS.server={x:0,z:0,r:1.9,hp,max:hp};
+  statics.push({ax:0,az:0,bx:0,bz:0,r:1.9,e:0.5,server:true});
+  MS.serverVis=makeServerVis(0,0,'メインサーバー');
+  MS.wave=0; MS.waveT=3; MS.queue=[]; MS.spawnT=0; MS.kills=0; MS.eid=1; MS.inter=true;
+}
+function startWave(n){
+  const def=WAVES[n-1], mul=(1+0.45*(humanCount()-1))*({easy:0.7,normal:1,hard:1.15,oni:1.3}[diff]||1), q=[];
+  for(const k in def){ const cnt=k==='king'?def[k]:Math.round(def[k]*mul); for(let i=0;i<cnt;i++) q.push(k); }
+  MS.queue=shuffle(q); if(def.king){ MS.queue=MS.queue.filter(x=>x!=='king'); MS.queue.splice(Math.floor(MS.queue.length/2),0,'king'); }
+  MS.spawnT=0.5; MS.inter=false;
+  centerMsg(n===5?'⚠ 最終ウェーブ！ 暴走ジャンク王が来る！':`🛡 ウェーブ ${n} / 5`,1500,true); sfxAt('fever',0,0);
+}
+function edgeSpawnPoint(){
+  for(let i=0;i<20;i++){ const s=(Math.random()*4)|0; let x,z;
+    if(s===0){ x=-W+1.6; z=rand(-H+3,H-3); } else if(s===1){ x=W-1.6; z=rand(-H+3,H-3); } else if(s===2){ x=rand(-W+3,W-3); z=-H+1.6; } else { x=rand(-W+3,W-3); z=H-1.6; }
+    if(standable(x,z,1.5)) return [x,z]; }
+  return [-W+2,0];
+}
+function defenseUpdate(dt){
+  if(MS.won||MS.lost) return;
+  if(MS.inter){ MS.waveT-=dt; if(MS.waveT<=0){ MS.wave++; startWave(MS.wave); } }
+  else {
+    MS.spawnT-=dt;
+    if(MS.queue.length && MS.spawnT<=0){ const [x,z]=edgeSpawnPoint(); spawnEnemy(MS.queue.shift(),x,z); MS.spawnT=Math.max(0.5,(1.5-MS.wave*0.12)/Math.sqrt(humanCount())); }
+    if(!MS.queue.length && !ENEMIES.length){
+      if(MS.wave>=5){ MS.won=true; endGame('🎉 防衛成功！ サーバーを守りきった！'); return; }
+      MS.inter=true; MS.waveT=4.5; centerMsg(`✅ ウェーブ ${MS.wave} クリア！`,1300,true); sfxAt('buy',0,0);
+      MS.server.hp=Math.min(MS.server.max, MS.server.hp+MS.server.max*0.2);
+    }
+  }
+  enemyUpdate(dt, MS.server);
+  if(MS.server.hp<=0){ MS.server.hp=0; MS.lost=true; endGame('💥 サーバーダウン…'); }
+}
+
+/* ---------- ボス戦：エラーコード99（ストーリー最終章） ---------- */
+function initBoss(){
+  MS.server={x:0,z:H-6,r:1.9,hp:240,max:240};
+  statics.push({ax:0,az:H-6,bx:0,bz:H-6,r:1.9,e:0.5,server:true});
+  MS.serverVis=makeServerVis(0,H-6,'サーバーコア');
+  const B={x:0,z:-H+6,r:2.6,hp:100,max:100,shield:true,shieldT:0,phase:1,atkT:7,waveT:11,spawnT:3};
+  MS.boss=B; MS.eid=1; MS.kills=0; MS.wave=0;
+  B.st={ax:0,az:B.z,bx:0,bz:B.z,r:2.6,e:0.9,boss:true}; statics.push(B.st);
+  B.port={x:0,z:B.z+4.2,r:2.3};
+  const md=buildModel({species:'err99',color:'normal',hat:'none',trail:'none'}); md.root.scale.setScalar(3.2); modeGroup.add(md.root); B.md=md;
+  B.shieldVis=new THREE.Mesh(new THREE.SphereGeometry(3.4,28,18), new THREE.MeshBasicMaterial({color:0xff3a5a,transparent:true,opacity:.22,depthWrite:false,blending:THREE.AdditiveBlending})); B.shieldVis.position.y=1.6; modeGroup.add(B.shieldVis);
+  const pr=new THREE.Mesh(new THREE.RingGeometry(B.port.r-0.2,B.port.r,40), new THREE.MeshBasicMaterial({color:0xff3a5a,transparent:true,opacity:.9,depthWrite:false})); pr.rotation.x=-Math.PI/2; pr.position.y=0.06; modeGroup.add(pr); B.portVis=pr;
+  const pl=new THREE.Sprite(new THREE.SpriteMaterial({map:labelTex('エラーポート','#c62838','#fff'),transparent:true})); pl.scale.set(3.2,1.2,1); modeGroup.add(pl); B.portLab=pl;
+  MS.hill={x:-12,z:2,r:3.4,moveT:999,cont:false,owner:-1}; MS.hillG=0;
+  initKothVisOnly();
+}
+function initKothVisOnly(){ const h=MS.hill; initKoth(); MS.hill=h; }
+function bossUpdate(dt){
+  const B=MS.boss; if(MS.won||MS.lost) return;
+  B.x=Math.sin(matchT*0.25)*W*0.42; B.st.ax=B.st.bx=B.x; B.port.x=B.x;
+  // 手下
+  B.spawnT-=dt;
+  if(B.spawnT<=0 && ENEMIES.length<(B.phase===2?7:5)){ B.spawnT=B.phase===2?4.5:6.5; spawnEnemy(Math.random()<0.25?'thief':'bug', B.x+rand(-3,3), B.z+2.5); }
+  enemyUpdate(dt, MS.server);
+  if(MS.server.hp<=0){ MS.server.hp=0; MS.lost=true; endGame('💥 サーバーコアがこわされた…'); return; }
+  // 制圧サークルでシールドを破る
+  const h=MS.hill;
+  if(B.shield){
+    const ins=creatures.filter(c=>!c.out && Math.hypot(c.x-h.x,c.z-h.z)<h.r);
+    const enIn=ENEMIES.some(e=>Math.hypot(e.x-h.x,e.z-h.z)<h.r);
+    h.cont=ins.length>0 && enIn; h.owner=ins.length&&!enIn?0:-1;
+    if(ins.length && !enIn){ MS.hillG+=100/14*dt; if(MS.hillG>=100){ MS.hillG=0; B.shield=false; B.shieldT=13;
+      centerMsg('💥 シールド破壊！ 金色の修復チップをエラーポートへ！',1800,true); sfxAt('fever',0,0);
+      for(let i=0;i<3;i++){ const k=spawnCoin(100, 0, 0, 7); k.chip=true; }
+      for(let i=0;i<25;i++){ const x=rand(-W+7,W-7), z=rand(-H+9,H-9); if(standable(x,z,2.4) && Math.hypot(x-h.x,z-h.z)>9){ h.x=x; h.z=z; break; } } } }
+  } else {
+    B.shieldT-=dt;
+    if(B.shieldT<=0){ B.shield=true; for(const k of coins) if(k.chip && (k.state==='ground'||k.state==='fall')){ k.state='vanish'; k.anim=0; } centerMsg('シールドが復活した…もう一度サークルへ！',1500,true); }
+  }
+  // チップをポートへ
+  for(const k of coins){ if(!k.chip || k.state!=='ground') continue;
+    if(Math.hypot(k.x-B.port.x,k.z-B.port.z)<B.port.r){
+      k.state='score'; k.anim=0; k.chip=false;
+      if(!B.shield){ B.hp-=25; shockwave(B.x,B.z,6,0x7fffb0); emit('spark',B.x,3,B.z,30,{color:0x7fffb0,speed:9,up:6,size:1,g:6}); sfxAt('boom',B.x,B.z); shake=Math.max(shake,0.6);
+        centerMsg(`修復チップ命中！ エラーコード99 残りHP ${Math.max(0,B.hp)}%`,1300,true);
+        if(k.lastTouch) k.lastTouch.score+=25;
+        if(B.hp<=50 && B.phase===1){ B.phase=2; setTimeout(()=>centerMsg('エラーコード99「ヨクモ…ヨクモ…!!」 攻撃がはげしくなった！',1800,true),1400); }
+        if(B.hp<=0){ MS.won=true; endGame('🎉 エラーコード99をたおした！'); return; }
+      }
+    }
+  }
+  // ボスの攻撃
+  B.atkT-=dt;
+  if(B.atkT<=0){ B.atkT=B.phase===2?4.5:7; for(const c of aliveCreatures()) addMeteor(clamp(c.x+c.vx*0.7,-W+2,W-2), clamp(c.z+c.vz*0.7,-H+2,H-2), 1.3,'err'); floatText('エラー弾！',B.x,6,B.z,'#ff6080',true); }
+  B.waveT-=dt;
+  if(B.waveT<=0){ B.waveT=B.phase===2?8:11; shockwave(B.x,B.z,12,0xff3a5a); sfxAt('boom',B.x,B.z);
+    for(const c of aliveCreatures()){ const dx=c.x-B.x, dz=c.z-B.z, d=Math.hypot(dx,dz); if(d<12){ const k=(c.immuneNow()?0.3:1)*14*(1-d/14); addKick(c,dx/(d||1)*k,dz/(d||1)*k); c.knockT=0.4; setStun(c,0.6); } } }
+}
+function bossVis(dt,t){
+  const B=MS.boss; if(!B) return;
+  B.md.root.position.set(B.x,0,B.z); B.md.scaler.rotation.y=Math.sin(t*0.7)*0.3;
+  for(const L of B.md.legs) L.pivot.rotation.y=L.base+Math.sin(t*4+L.ph)*0.3;
+  B.shieldVis.visible=B.shield; B.shieldVis.position.set(B.x,1.6,B.z); B.shieldVis.material.opacity=0.16+Math.sin(t*5)*0.06;
+  B.portVis.position.set(B.port.x,0.06,B.port.z); B.portVis.material.opacity=B.shield?0.3:0.6+Math.sin(t*10)*0.3;
+  B.portLab.position.set(B.port.x,2.6,B.port.z+1.5);
+}
+
+/* ---------- モードの見た目（ホスト・ゲスト共通） ---------- */
+function modeVis(dt,t){
+  updateIntvVis(dt,t); updateMeteorVis(t);
+  if(MS.canVis){ const c=MS.can; MS.canVis.visible=!(c.resp>0);
+    if(c.carrier){ const cr=creatures[c.carrier.slot]||c.carrier; MS.canVis.position.set(cr.rx,2.3+Math.sin(t*6)*0.1,cr.rz); MS.canBeam.visible=false; MS.canVis.scale.setScalar(0.7); }
+    else { MS.canVis.position.set(c.x,Math.abs(Math.sin(t*3))*0.2,c.z); MS.canBeam.visible=true; MS.canVis.scale.setScalar(1); }
+    MS.canVis.rotation.y=t*1.5;
+    for(const b of MS.bases) b.ring.material.opacity=0.6+Math.sin(t*4)*0.3; }
+  if(MS.hillVis && MS.hill){ const h=MS.hill, v=MS.hillVis; v.g.position.set(h.x,0,h.z); v.g.scale.set(h.r,1,h.r);
+    const col = h.cont ? new THREE.Color().setHSL((t*2)%1,1,0.6) : h.owner>=0 ? new THREE.Color(isTeam()?SIDES[h.owner].color:(mode==='boss'?0x7fffb0:SLOT_COLORS[h.owner])) : new THREE.Color(0xffffff);
+    v.disk.material.color.copy(col); v.ring.material.color.copy(col); v.wall.material.color.copy(col); v.wall.material.opacity=0.1+Math.sin(t*4)*0.05+(h.owner>=0?0.08:0);
+    v.g.visible = mode!=='boss' || MS.boss.shield; }
+  if(MS.tiles) shockVis(t);
+  if(MS.bombVis){ const b=MS.bomb, v=MS.bombVis; v.g.visible=!!b.holder;
+    if(b.holder){ const h=creatures[b.holder.slot]||b.holder; v.g.position.set(h.rx,2.6+Math.sin(t*10)*0.1,h.rz); v.can.rotation.z=Math.sin(t*(b.t<4?30:12))*0.25;
+      const n=Math.max(0,Math.ceil(b.t)); const key=String(n); if(v.last!==key){ v.last=key; v.num.material.map=labelTex(key,n<=3?'#d32f2f':'#5d4037','#fff'); v.num.material.needsUpdate=true; } } }
+  if(MS.serverVis){ const f=MS.server.hp/MS.server.max; MS.serverVis.leds.forEach((l,i)=>{ l.material.color.setHex(f>0.5?0x3fff9a:f>0.25?0xffd23a:0xff3a3a); l.visible=Math.sin(t*(f<0.25?20:6)+i)>-0.6; }); }
+  enemyVis(dt,t);
+  bossVis(dt,t);
+}
+
+/* ---------- オンライン同期 ---------- */
+function modeSnap(){
+  const x={ iv:intv.k?[intv.k,intv.phase,r2(intv.left),intv.dx,r2(intv.lx),r2(intv.lz),intv.name,intv.desc]:null, mt:meteors.map(m=>[m.id,r2(m.x),r2(m.z),r2(m.t),m.kind]) };
+  if(MS.can) x.can=[r2(MS.can.x),r2(MS.can.z),MS.can.carrier?MS.can.carrier.slot:-1,r2(MS.can.resp)];
+  if(MS.hill) x.hill=[r2(MS.hill.x),r2(MS.hill.z),r2(MS.hill.r),MS.hill.cont?1:0,MS.hill.owner];
+  if(MS.tiles) x.tl=MS.tiles.map(t=>t.st).join('');
+  if(MS.bomb) x.bm=[MS.bomb.holder?MS.bomb.holder.slot:-1, r2(MS.bomb.t)];
+  if(MS.server) x.sv=[r2(MS.server.hp),MS.server.max];
+  if(mode==='defense') x.en=ENEMIES.map(e=>[e.id,e.type,r2(e.x),r2(e.z),r2(e.hp),e.max,r2(e.h),e.atk?1:0,e.stun>0?1:0]);
+  if(mode==='defense') x.wv=[MS.wave, MS.kills||0, MS.inter?1:0, r2(MS.waveT||0)];
+  return x;
+}
+function applyModeSnap(x){
+  if(!x) return;
+  if(x.iv){ const was=intv.phase; intv.k=x.iv[0]; intv.phase=x.iv[1]; intv.left=x.iv[2]; intv.dx=x.iv[3]; intv.lx=x.iv[4]; intv.lz=x.iv[5]; intv.name=x.iv[6]; intv.desc=x.iv[7];
+    if(!was && intv.phase){ showAlert(true); sfx('alarm'); } }
+  else if(intv.k){ intv.k=null; intv.phase=null; showAlert(false); }
+  const live=new Set(x.mt.map(m=>m[0]));
+  for(let i=meteors.length-1;i>=0;i--){ const m=meteors[i]; if(!live.has(m.id)){ shockwave(m.x,m.z,m.R*1.4,0xffc060); emit('puff',m.x,0.4,m.z,8,{speed:4,size:.9}); retireMeteor(m,i); } }
+  for(const [id,mx,mz,mt,kind] of x.mt){ const m=meteors.find(m=>m.id===id); if(m) m.t=mt; else addMeteor(mx,mz,mt,kind,id); }
+  if(x.can && MS.can){ MS.can.x=x.can[0]; MS.can.z=x.can[1]; MS.can.carrier=x.can[2]>=0?creatures[x.can[2]]:null; MS.can.resp=x.can[3]; }
+  if(x.hill && MS.hill){ Object.assign(MS.hill,{x:x.hill[0],z:x.hill[1],r:x.hill[2],cont:!!x.hill[3],owner:x.hill[4]}); }
+  if(x.tl && MS.tiles){ for(let i=0;i<MS.tiles.length;i++){ const s=+x.tl[i]; if(MS.tiles[i].st!==s){ MS.tiles[i].st=s; MS.dirty=true; } } }
+  if(x.bm && MS.bomb){ MS.bomb.holder=x.bm[0]>=0?creatures[x.bm[0]]:null; MS.bomb.t=x.bm[1]; }
+  if(x.sv && MS.server){ MS.server.hp=x.sv[0]; MS.server.max=x.sv[1]; }
+  if(x.en){ const ids=new Set(x.en.map(e=>e[0]));
+    for(const e of ENEMIES.slice()) if(!ids.has(e.id)){ shockwave(e.x,e.z,3,0xff8040); emit('spark',e.x,1,e.z,10,{color:0xffa040,speed:6,size:.6}); removeEnemy(e); }
+    for(const a of x.en){ let e=ENEMIES.find(e=>e.id===a[0]); if(!e){ e=spawnEnemy(a[1],a[2],a[3],a[0]); }
+      e.x+= (a[2]-e.x)*0.6; e.z+=(a[3]-e.z)*0.6; e.hp=a[4]; e.max=a[5]; e.h=a[6]; e.atk=!!a[7]; e.stun=a[8]?0.2:0; } }
+  if(x.wv){ MS.wave=x.wv[0]; MS.kills=x.wv[1]; MS.inter=!!x.wv[2]; MS.waveT=x.wv[3]; }
+}
+
+/* ---------- HUD・ミニマップ（追加モード） ---------- */
+function hudMode(){
+  const s=me.side();
+  const B=$('board'), set=(lbl,val,unit,sub)=>{ $('hScoreLbl').textContent=lbl; $('hScore').textContent=val; $('hUnit').textContent=unit; $('hCount').textContent=sub; };
+  const best=save.best[mode]||0;
+  const rows=(list,fmt)=>list.map((c,i)=>`<div class="r ${c===me?'me':''}"><span>${i+1}</span><span class="dot" style="background:${c.teamCss()}"></span><span class="nm">${c.out?'💀':''}${esc(c===me?'あなた':c.name)}</span><span class="sc">${fmt(c)}</span></div>`).join('');
+  if(mode==='ctf'){
+    set(SIDES[s].name, sideScore[s], '点', `缶を運んだ ${me.st.caps||0}回`); $('hHigh').textContent=Math.max(best,sideScore[s]);
+    const who=MS.can&&MS.can.carrier; B.innerHTML=`<div class="bt">🥫 缶取り合戦</div><div class="vs"><span class="rd">${sideScore[0]}</span><small>−</small><span class="bl">${sideScore[1]}</span></div><div class="tm">${who?`🥫 ${esc(who===me?'あなた':who.name)} が運んでいる！`:'🥫 缶はだれも持っていない'}</div>`;
+  } else if(mode==='koth'){
+    if(isTeam()){ set(SIDES[s].name, Math.floor(sideScore[s]), '%', MS.hill&&MS.hill.cont?'⚔ うばいあい中！':''); $('hHigh').textContent='100%';
+      B.innerHTML=`<div class="bt">⭕ エリア制圧（チーム）</div><div class="vs"><span class="rd">${Math.floor(sideScore[0])}%</span><small>−</small><span class="bl">${Math.floor(sideScore[1])}%</span></div>`; }
+    else { set('制圧', Math.floor(me.score), '%', MS.hill&&MS.hill.cont?'⚔ うばいあい中！':''); $('hHigh').textContent='100%';
+      B.innerHTML='<div class="bt">⭕ エリア制圧</div>'+rows([...creatures].sort((a,b)=>b.score-a.score),c=>Math.floor(c.score)+'%'); }
+  } else if(mode==='shock'){
+    const alive=creatures.filter(c=>!c.out).length;
+    set('生存', Math.floor(me.score), 'pt', `のこり ${alive}匹`); $('hHigh').textContent=Math.max(best,Math.floor(me.score));
+    B.innerHTML='<div class="bt">⚡ ショック床</div>'+rows([...creatures].sort((a,b)=>(a.out-b.out)||(b.score-a.score)),c=>Math.floor(c.score));
+  } else if(mode==='potato'){
+    set('スコア', Math.floor(me.score), 'pt', MS.bomb&&MS.bomb.holder===me?'☕ 持っている！':''); $('hHigh').textContent=Math.max(best,Math.floor(me.score));
+    B.innerHTML='<div class="bt">☕ ホット・ポテト</div>'+rows([...creatures].sort((a,b)=>b.score-a.score),c=>(MS.bomb&&MS.bomb.holder===c?'☕':'')+Math.floor(c.score));
+  } else if(mode==='defense'){
+    set('ウェーブ', `${MS.wave||0}/5`, '', `撃破 ${MS.kills||0}`); $('hHigh').textContent=save.best.defense||0;
+    B.innerHTML='<div class="bt">🛡 サーバー防衛</div>'+rows(creatures.slice(),c=>`${c.st.kills||0}体`);
+  } else if(mode==='boss'){
+    const Bs=MS.boss; set('ボスHP', Math.max(0,Bs.hp), '%', Bs.shield?`🛡 シールド中（サークル ${Math.floor(MS.hillG)}%）`:`💥 シールドなし！ のこり${Math.ceil(Bs.shieldT)}秒`); $('hHigh').textContent='-';
+    B.innerHTML=`<div class="bt">👾 エラーコード99</div><div class="tm">①サークルでシールドを破る<br>②金のチップをエラーポートへ<br>③サーバーコアを守る</div>`;
+  }
+  // 目的バー
+  const ob=$('obj');
+  if(MS.server){ const f=clamp(MS.server.hp/MS.server.max,0,1);
+    let html=`<div class="bar"><span>${mode==='boss'?'サーバーコア':'メインサーバー'}</span><i style="width:${(f*100).toFixed(0)}%;background:${f>0.5?'#3fd97a':f>0.25?'#ffd23a':'#ff4a3a'}"></i></div>`;
+    if(MS.boss) html=`<div class="bar"><span>エラーコード99</span><i style="width:${Math.max(0,MS.boss.hp)}%;background:#ff3a5a"></i></div>`+html;
+    if(mode==='defense' && MS.inter && MS.wave<5) html+=`<div class="obj-t">つぎのウェーブまで ${Math.ceil(MS.waveT)}秒</div>`;
+    ob.innerHTML=html; ob.classList.remove('hidden'); }
+  else ob.classList.add('hidden');
+}
+function modeBanner(bn){
+  if(mode==='potato' && MS.bomb && MS.bomb.holder){
+    const h=MS.bomb.holder; bn.classList.remove('hidden');
+    if(h===me){ bn.classList.remove('run'); bn.textContent=`☕ 熱々缶を持っている！ のこり${Math.ceil(MS.bomb.t)}秒　タックルで押しつけろ！`; }
+    else { bn.classList.add('run'); bn.textContent=`☕ ${h.name} が持っている（のこり${Math.ceil(MS.bomb.t)}秒）`; }
+    return true;
+  }
+  if(mode==='ctf' && MS.can && MS.can.carrier===me){ bn.classList.add('run'); bn.classList.remove('hidden'); bn.textContent='🥫 缶を持っている！ 自分のベースへ運べ！'; return true; }
+  if(mode==='shock' && me.out){ bn.classList.remove('run'); bn.classList.remove('hidden'); bn.textContent='💀 落ちてしまった… 観戦中'; return true; }
+  if(mode==='koth' && MS.hill && MS.hill.cont && Math.hypot(me.x-MS.hill.x,me.z-MS.hill.z)<MS.hill.r){ bn.classList.remove('run'); bn.classList.remove('hidden'); bn.textContent='⚔ うばいあい中！ 相手を追い出せ！'; return true; }
+  return false;
+}
+function drawModeMinimap(X,Z,sx){
+  if(MS.tiles){ mmg.fillStyle='rgba(0,0,0,.85)'; for(const t of MS.tiles){ if(t.st===2) mmg.fillRect(X(t.x-MS.TS/2),Z(t.z-MS.TS/2),MS.TS*sx,MS.TS*sx); else if(t.st===1){ mmg.fillStyle='rgba(255,80,40,.6)'; mmg.fillRect(X(t.x-MS.TS/2),Z(t.z-MS.TS/2),MS.TS*sx,MS.TS*sx); mmg.fillStyle='rgba(0,0,0,.85)'; } else if(t.st===3){ mmg.fillStyle='rgba(80,230,255,.6)'; mmg.fillRect(X(t.x-MS.TS/2),Z(t.z-MS.TS/2),MS.TS*sx,MS.TS*sx); mmg.fillStyle='rgba(0,0,0,.85)'; } } }
+  if(MS.bases) MS.bases.forEach((b,i)=>{ mmg.fillStyle=i===0?'rgba(255,90,79,.6)':'rgba(77,163,255,.6)'; mmg.beginPath(); mmg.arc(X(b.x),Z(b.z),b.r*sx,0,TAU); mmg.fill(); });
+  if(MS.hill && (mode!=='boss'||MS.boss.shield)){ mmg.strokeStyle='#fff'; mmg.lineWidth=2; mmg.beginPath(); mmg.arc(X(MS.hill.x),Z(MS.hill.z),MS.hill.r*sx,0,TAU); mmg.stroke(); }
+  if(MS.can && !(MS.can.resp>0)){ mmg.fillStyle='#ffd24a'; mmg.beginPath(); mmg.arc(X(MS.can.x),Z(MS.can.z),6,0,TAU); mmg.fill(); }
+  if(MS.server){ mmg.fillStyle='#3fd97a'; mmg.fillRect(X(MS.server.x)-5,Z(MS.server.z)-5,10,10); }
+  if(MS.boss){ mmg.fillStyle='#ff3a5a'; mmg.beginPath(); mmg.arc(X(MS.boss.x),Z(MS.boss.z),MS.boss.r*sx,0,TAU); mmg.fill(); }
+  mmg.fillStyle='#ff4040'; for(const e of ENEMIES){ mmg.beginPath(); mmg.arc(X(e.x),Z(e.z),e.type==='king'?6:3,0,TAU); mmg.fill(); }
+  for(const m of meteors){ mmg.strokeStyle='#ff6040'; mmg.lineWidth=1.5; mmg.beginPath(); mmg.arc(X(m.x),Z(m.z),m.R*sx,0,TAU); mmg.stroke(); }
+  if(intv.phase==='on' && intv.k==='search'){ mmg.fillStyle='rgba(255,246,176,.5)'; mmg.beginPath(); mmg.arc(X(intv.lx),Z(intv.lz),3.2*sx,0,TAU); mmg.fill(); }
+}
+function arrowTarget(c){
+  if(isCoinMode()) return attackPoint(c);
+  if(mode==='ctf' && MS.can){ if(MS.can.carrier===c) return [MS.bases[c.side()].x, MS.bases[c.side()].z]; if(!MS.can.carrier && !(MS.can.resp>0)) return [MS.can.x,MS.can.z]; return null; }
+  if(mode==='koth' && MS.hill) return Math.hypot(c.x-MS.hill.x,c.z-MS.hill.z)<MS.hill.r ? null : [MS.hill.x,MS.hill.z];
+  if(mode==='boss' && MS.boss){ if(MS.boss.shield) return [MS.hill.x,MS.hill.z]; return [MS.boss.port.x,MS.boss.port.z]; }
+  return null;
+}
+
+/* =========================================================
+   ストーリーモード「ジャンク・アンダーグラウンド」
+   ========================================================= */
+const CHARS = {
+  nar:  { name:'', e:'📖' },
+  me:   { name:'あなた', e:'🐞' },
+  kan:  { name:'カンジュー（賞味期限切れの缶ジュース）', e:'🥫' },
+  mog:  { name:'モグ博士（電子モグラ）', e:'🐹' },
+  err:  { name:'エラーコード99', e:'👾' },
+  sabi: { name:'サビ缶の手下', e:'🤖' },
+};
+const STORY = [
+  { id:1, title:'Chapter 1　路地裏ゾーン', icon:'🏮', map:'alley', mode:'ffa', players:3, diff:'easy', time:60,
+    goal:'手下より多く硬貨を集めて1位になれ！', cpuNames:['サビ缶の手下','サビ玉の手下'],
+    tips:[[1,'WASD／矢印キー（iPadは画面ドラッグ）で移動'],[6,'スペース（右下のボタン）でタックル！ 相手を吹っ飛ばそう'],[11,'硬貨を自分の赤いふせんへ押しこもう'],[17,'カプセルを取るとアイテムが使える！']],
+    clear:r=>r.rank===1,
+    intro:[
+      ['nar','ある日の放課後。街外れの、昭和レトロなボロい自販機の前——'],
+      ['nar','10円玉を入れようとしたそのとき、コイン投入口に「シュポン！」と吸い込まれてしまった！'],
+      ['me','うわああっ！？ ……ここどこ？ からだが虫になってる！？'],
+      ['kan','おっ、新入りかい。ここは自販機の裏側「ジャンク・アンダーグラウンド」さ。オイラはカンジュー。賞味期限は……3年前に切れてる。'],
+      ['kan','元の世界に帰りたいなら、メイン基盤を直すしかない。でも基盤は「エラーコード99」ってヤツに乗っ取られてるんだ。'],
+      ['sabi','サビ〜！ 新入りは硬貨を置いていくサビ〜！'],
+      ['kan','出たな、サビ缶ブラザーズ！ 硬貨を自分のふせんに押しこんで、手下どもに勝ってみな！'],
+    ],
+    outro:[
+      ['sabi','ぐぬぬ……ボスに言いつけてやるサビ〜！'],
+      ['kan','やるじゃないか！ つぎは駅前の繁華街ゾーンだ。'],
+      ['kan','あそこは人間がジャンジャン小銭を入れるから、上から巨大な硬貨が降ってくる。影に気をつけな！'],
+    ] },
+  { id:2, title:'Chapter 2　駅前・繁華街ゾーン', icon:'🚉', map:'station', mode:'koth', players:4, diff:'normal', time:150,
+    goal:'降ってくる巨大硬貨をかわしながら、制圧サークルを100%にしろ！', cpuNames:['ネオン虫','切符クワガタ','ガム玉'], intvEvery:13,
+    clear:r=>r.rank===1,
+    intro:[
+      ['mog','ピピッ……ワシは電子モグラのモグ博士。この繁華街を調べておる者じゃ。'],
+      ['mog','この先へ進むには、街のまんなかの「制圧サークル」を100%にせねばならん。'],
+      ['kan','ほかの連中もサークルをねらってる。中に2匹以上いると、うばいあいでゲージが止まるぞ！'],
+      ['mog','そして……人間がコインを入れるたびに、巨大な硬貨が落ちてくる。赤い影が見えたら逃げるのじゃ！'],
+    ],
+    outro:[
+      ['mog','見事じゃ！ メイン基盤への道は、フードコートの床の下を通っておる。'],
+      ['mog','床はソースでベタベタ、温風もビュービューじゃ。しかも……床がボロボロでな。'],
+    ] },
+  { id:3, title:'Chapter 3　フードコートゾーン', icon:'🍜', map:'food', mode:'shock', players:5, diff:'hard', time:100,
+    goal:'くずれる床の上で、最後まで生き残れ！（高難度）', cpuNames:['ソース虫','たこ焼きダンゴ','割り箸グモ','ラーメン渦'],
+    clear:r=>r.rank===1,
+    intro:[
+      ['kan','うぇっ、ソースくさい！ ここの床はふむとすぐ崩れるんだ。'],
+      ['err','ザザ……ジャンク・アンダーグラウンドへ ようこそ。キミの冒険は ココで おわり ダ。'],
+      ['kan','エラーコード99の通信だ！ ベタベタの床はすべるし、温風で流されるぞ。'],
+      ['kan','同じ場所に止まってると床が崩れる。動きまわって、最後の1匹になるまで生き残れ！'],
+    ],
+    outro:[
+      ['err','ナ……ナゼ 落ちナイ……!? メイン基盤で 待ってイル……。'],
+      ['mog','いよいよ心臓部じゃ。ヤツはシールドで守られておる。'],
+      ['mog','制圧サークルに入ってシールドを破り、金色の「修復チップ」をエラーポートに押しこむのじゃ！'],
+      ['kan','手下がサーバーコアを壊しにくるから、守るのも忘れるなよ！'],
+    ] },
+  { id:4, title:'Chapter 4　心臓部・メイン基盤', icon:'💾', map:'board', mode:'boss', players:1, diff:'normal',
+    goal:'エラーコード99をたおして、メイン基盤を復旧せよ！', cpuNames:[],
+    clear:r=>!!r.won,
+    intro:[
+      ['err','ワタシは エラーコード99。この世界の すべての小銭は ワタシのモノ。'],
+      ['me','みんなを元の世界に帰すんだ！ 勝負だ！'],
+      ['nar','①サークルに入ってシールドを破る　②金色の修復チップをエラーポートへ押しこむ　③手下からサーバーコアを守る'],
+      ['err','フフフ……ワタシのシールドは やぶれナイ。'],
+    ],
+    outro:[
+      ['err','エ……ラー……カイ……ジョ……。ワタシは……ただの……おつり返却エラー……だった……。'],
+      ['mog','メイン基盤、復旧完了じゃ！ これで元の世界にもどれるぞい。'],
+      ['kan','行っちまうのか……。たまには自販機の裏ものぞいてくれよな！ オイラはここにいるからさ。'],
+      ['nar','——気がつくと、あなたは自販機の前に立っていた。手には、ピカピカの10円玉がひとつ。'],
+      ['nar','🎉 ストーリー全クリア！ 限定スキン「覚醒テントウ」「エラーコード99」が着せかえで使えるようになった！'],
+    ] },
+];
+/* ---------- 会話ウィンドウ ---------- */
+let dlgQueue=null;
+function playDialog(lines){
+  return new Promise(res=>{
+    if(!lines || !lines.length){ res(); return; }
+    let i=0;
+    const box=$('dlg');
+    const showLine=()=>{
+      const [who,text]=lines[i], ch=CHARS[who]||CHARS.nar;
+      $('dlgFace').textContent = who==='me' ? (SPECIES[save.equip.species]?.e||'🐞') : ch.e;
+      $('dlgName').textContent = who==='me' ? (save.name||'あなた') : ch.name;
+      $('dlgName').classList.toggle('hidden', !ch.name && who!=='me');
+      $('dlgText').textContent=text;
+      box.classList.toggle('narr', who==='nar');
+      $('dlgPage').textContent=`${i+1}/${lines.length}`;
+      sfx('tick');
+    };
+    const next=()=>{ i++; if(i>=lines.length){ close(); } else showLine(); };
+    const close=()=>{ box.classList.add('hidden'); box.onclick=null; $('dlgSkip').onclick=null; removeEventListener('keydown',key); dlgQueue=null; res(); };
+    const key=e=>{ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); next(); } };
+    box.onclick=e=>{ if(e.target.id==='dlgSkip') return; next(); };
+    $('dlgSkip').onclick=e=>{ e.stopPropagation(); close(); };
+    addEventListener('keydown',key);
+    box.classList.remove('hidden'); dlgQueue=true; showLine();
+  });
+}
+/* ---------- ストーリー画面 ---------- */
+function storyCleared(){ return save.story.cleared||0; }
+function renderStory(){
+  const cl=storyCleared();
+  $('storyList').innerHTML=STORY.map((st,i)=>{
+    const lock=i>cl, done=i<cl;
+    return `<button class="card story-card ${lock?'locked':''}" data-i="${i}" ${lock?'disabled':''}><span class="ic">${lock?'🔒':st.icon}</span><b>${st.title}</b><span class="tag">${esc(st.goal)}</span>
+      <span class="feat">${done?'✅ クリア済み（何度でも遊べる）':lock?'前のチャプターをクリアすると挑戦できる':'▶ 挑戦できる！'}</span></button>`;
+  }).join('');
+  $('storyList').querySelectorAll('button[data-i]').forEach(b=>b.onclick=()=>playStory(+b.dataset.i));
+  $('storyReward').textContent = save.story.unlocked ? '🎉 全クリア済み！ 限定スキン「覚醒テントウ」「エラーコード99」を着せかえで使えます' : '全クリアすると、限定スキン「覚醒テントウ」「エラーコード99」が手に入る！（各チャプター初クリアで🪙120＋🎫ガチャ券）';
+}
+async function playStory(i){
+  initAudio();
+  const st=STORY[i];
+  show(null);
+  await playDialog(st.intro);
+  startStoryStage(st);
+}
+function startStoryStage(st){
+  curStory=st; lastSolo=null; isOnline=false; isGuest=false;
+  const roster=makeRoster([{name:save.name||'あなた', skin:mySkin(), human:'local', pid:null}], st.players);
+  roster.forEach((r,j)=>{ if(j>0 && st.cpuNames.length) r.name=st.cpuNames[(j-1)%st.cpuNames.length]; });
+  beginMatch({mode:st.mode, diff:st.diff, players:st.players, map:st.map, roster, time:st.time, opt:{team:false}});
+}
+function storyAfterResult(res, rank, my){
+  const st=curStory; const ok=st.clear({rank, won:res.won});
+  const idx=STORY.indexOf(st), first=ok && idx>=storyCleared();
+  const msgs=[];
+  if(first){
+    save.story.cleared=idx+1; save.money+=120; save.tickets++; const ups=addXp(80);
+    msgs.push('🎉 初クリアボーナス：🪙120＋🎫ガチャ券1枚＋経験値80');
+    for(const lv of ups) toast(`🎉 レベル${lv}にアップ！`,true);
+    if(idx===STORY.length-1){ save.story.unlocked=true; msgs.push('👑 限定スキン「覚醒テントウ」「エラーコード99」解放！'); }
+  }
+  writeSave();
+  $('rTitle').textContent = ok ? '🎉 ステージクリア！' : '😵 ステージ失敗…';
+  $('rRankLbl').textContent = st.title;
+  $('rRank').textContent = ok ? 'CLEAR!' : 'もう一度！';
+  if(msgs.length) $('rMvp').innerHTML=msgs.map(t=>`<span>${esc(t)}</span>`).join('')+$('rMvp').innerHTML;
+  $('rBtnSolo').classList.add('hidden'); $('rBtnOnline').classList.add('hidden'); $('rBtnStory').classList.remove('hidden');
+  $('btnStoryNext').classList.toggle('hidden', !ok || idx>=STORY.length-1);
+  const finish=()=>{ show('scrResult'); $('hud').classList.add('hidden'); };
+  if(ok){ $('hud').classList.add('hidden'); playDialog(st.outro).then(finish); } else finish();
+}
 
 /* =========================================================
    シミュレーション（ホスト／ひとり）
@@ -2183,6 +3284,7 @@ function simulate(dt){
   for(const c of creatures) c.leaderSlow=false;
   if(mode==='ffa'){ const s=[...creatures].sort((a,b)=>b.score-a.score); if(s.length>1 && s[0].score-s[1].score>=40) s[0].leaderSlow=true; }
   for(const c of creatures){
+    if(c.out){ c.ix=c.iz=0; continue; }
     if(c.isRemote){ /* 入力はネットから */ }
     else if(c.isLocal && (state==='play')) playerInput(c);
     else if(state==='play' || state==='title') aiControl(c,dt);
@@ -2211,13 +3313,13 @@ function simulate(dt){
       if(k.y<=0.12){ k.y=0.12; if(k.vy<-6){ k.vy*=-0.3; } else { k.vy=0; k.state='ground'; emit('puff',k.x,0.2,k.z,6,{speed:2.5,size:.7}); } }
     } else if(k.state==='ground'){
       if(mode==='tag'){
-        for(const c of creatures){ if(Math.hypot(k.x-c.x,k.z-c.z)<c.r+k.r+0.1){ k.state='score'; k.anim=0; if(k.carried){k.carried.carry=null;k.carried=null;} c.pts+=3; c.st.coins++; if(state==='play'){ floatText('+3',k.x,1.4,k.z,c.teamCss(),true); if(c===me) sfx('coin',10); } break; } }
+        for(const c of creatures){ if(!c.out && Math.hypot(k.x-c.x,k.z-c.z)<c.r+k.r+0.1){ k.state='score'; k.anim=0; if(k.carried){k.carried.carry=null;k.carried=null;} c.pts+=3; c.st.coins++; if(state==='play'){ floatText('+3',k.x,1.4,k.z,c.teamCss(),true); if(c===me) sfx('coin',10); } break; } }
       } else for(const zn of zones){
         if(Math.hypot(k.x-zn.x,k.z-zn.z)<zn.r-0.35){ scoreCoin(k,zn); break; }
       }
       if(k.state==='ground'){
         if(Math.hypot(k.vx,k.vz)<0.15 && !k.carried) k.idle+=dt; else k.idle=0;
-        if(k.idle>12){ k.state='vanish'; k.anim=0; emit('puff',k.x,0.3,k.z,8,{size:.8}); }
+        if(k.idle>12 && !k.chip){ k.state='vanish'; k.anim=0; emit('puff',k.x,0.3,k.z,8,{size:.8}); }
       }
     } else if(k.state==='score'||k.state==='vanish'){
       k.anim+=dt; if(k.anim>0.6) k.reset();
@@ -2227,7 +3329,7 @@ function simulate(dt){
   for(let i=bananas.length-1;i>=0;i--){
     const b=bananas[i]; b.life-=dt; b.grace-=dt;
     let hit=null;
-    for(const c of creatures){ if((c===b.owner && b.grace>0)) continue; if(Math.hypot(c.x-b.x,c.z-b.z)<c.r+0.45){ hit=c; break; } }
+    for(const c of creatures){ if(c.out || (c===b.owner && b.grace>0)) continue; if(Math.hypot(c.x-b.x,c.z-b.z)<c.r+0.45){ hit=c; break; } }
     if(hit){ if(!hit.immuneNow()){ hit.fx.slip=1.3; const sp=Math.max(6,Math.hypot(hit.vx,hit.vz)*1.3), hd=hit.heading; addKick(hit, Math.sin(hd)*sp-hit.vx, Math.cos(hd)*sp-hit.vz); sfxAt('slip',hit.x,hit.z); floatText('つるっ！',hit.x,1.8,hit.z,'#ffe066',true); } b.life=0; }
     if(b.life<=0){ b.active=false; b.s.visible=false; bananas.splice(i,1); }
   }
@@ -2237,15 +3339,16 @@ function simulate(dt){
     it.life-=dt; it.born+=dt;
     if(it.life<=0){ it.active=false; it.g.visible=false; emit('puff',it.x,0.6,it.z,5,{size:.6}); continue; }
     for(const c of creatures){
-      if(Math.hypot(c.x-it.x,c.z-it.z)<c.r+0.85 && c.stun<=0){
+      if(!c.out && Math.hypot(c.x-it.x,c.z-it.z)<c.r+0.85 && c.stun<=0){
         it.active=false; it.g.visible=false;
         emit('spark',it.x,1,it.z,12,{color:it.col,speed:5,up:4,size:.7,g:6});
         giveItem(c, rollItem(c)); break;
       }
     }
   }
-  // 鬼ごっこ
+  // 鬼ごっこ・追加モード
   if(mode==='tag' && state==='play') tagLogic(dt);
+  if(state==='play') modeUpdate(dt);
   // 振動
   if(beatInfo){ beatInfo.t-=dt; if(beatInfo.t<=0){ beatInfo.t=beatInfo.interval; doBeat(); } }
   // ハプニング
@@ -2258,7 +3361,7 @@ function simulate(dt){
   }
   itemT-=dt;
   if(itemT<=0){
-    const maxItems = mode==='tag' ? 5 : 2+Math.ceil(nPlayers/3);
+    const maxItems = mode==='tag' ? 5 : isCoop() ? 3+humanCount() : 2+Math.ceil(nPlayers/3);
     if(items.filter(i=>i.active).length<maxItems) spawnItem();
     itemT = mode==='tag' ? rand(5,8) : rand(6,10)*(4/Math.max(4,nPlayers));
   }
@@ -2341,11 +3444,11 @@ function scoreCoin(k,zn){
 }
 function runEvents(){
   for(const ev of events){
-    if(ev.done || timeLeft>ev.t) continue;
+    if(ev.done || matchT<ev.at) continue;
     ev.done=true;
     if(ev.kind==='gatan'){ centerMsg('ガタン！ 自販機から硬貨が！',1300,true); sfxAt('thud',0,-H); shake=Math.max(shake,0.5); for(let i=0;i<4;i++) spawnCoin(undefined, rand(-6,6), -H+5); }
   }
-  for(const hp of hap.list){ if(!hp.done && timeLeft<=hp.t){ hp.done=true; startHappening(hp.k); } }
+  for(const hp of hap.list){ if(!hp.done && matchT>=hp.at){ hp.done=true; startHappening(hp.k); } }
 }
 function startHappening(k){
   const d=HAPPENINGS[k]; hap.k=k; hap.left=d.dur;
@@ -2372,7 +3475,7 @@ function buildBroomVis(){
    HUD・ミニマップ
    ========================================================= */
 function updateHUD(){
-  $('hTime').textContent=Math.ceil(Math.max(0,timeLeft));
+  $('hTime').textContent=untimed()?'∞':Math.ceil(Math.max(0,timeLeft));
   $('chipTime').classList.toggle('warn', state==='play' && timeLeft<=10);
   if(!me) return;
   const best=save.best[mode]||0;
@@ -2381,6 +3484,7 @@ function updateHUD(){
     $('hScore').textContent=me.score; $('hCount').textContent=`硬貨 ${me.coinN}枚`;
     $('hHigh').textContent=Math.max(best,me.score);
     const sorted=[...creatures].sort((a,b)=>b.score-a.score);
+    $('obj').classList.add('hidden');
     $('board').innerHTML='<div class="bt">🏁 順位</div>'+sorted.map((c,i)=>`<div class="r ${c===me?'me':''}"><span>${i+1}</span><span class="dot" style="background:${c.teamCss()}"></span><span class="nm">${esc(c===me?'あなた':c.name)}</span><span class="sc">${c.score}</span></div>`).join('');
   } else if(mode==='team'){
     const s=me.side();
@@ -2388,20 +3492,22 @@ function updateHUD(){
     $('hScore').textContent=sideScore[s]; $('hCount').textContent=`ゴール ${me.goals}本`;
     $('hHigh').textContent=Math.max(best,sideScore[s]);
     const red=creatures.filter(c=>c.side()===0).map(c=>c===me?'あなた':c.name), blue=creatures.filter(c=>c.side()===1).map(c=>c===me?'あなた':c.name);
+    $('obj').classList.add('hidden');
     $('board').innerHTML=`<div class="bt">⚽ チーム戦</div><div class="vs"><span class="rd">${sideScore[0]}</span><small>−</small><span class="bl">${sideScore[1]}</span></div><div class="tm"><span style="color:var(--red)">赤</span>：${esc(red.join('・'))}<br><span style="color:var(--blue)">青</span>：${esc(blue.join('・'))}</div>`;
-  } else {
+  } else if(mode==='tag'){
     $('hScoreLbl').textContent='ポイント'; $('hUnit').textContent='pt';
     $('hScore').textContent=Math.floor(me.pts); $('hCount').textContent=me.oni?'👹 鬼':'🏃 にげろ';
     $('hHigh').textContent=Math.max(best,Math.floor(me.pts));
     const sorted=[...creatures].sort((a,b)=>b.pts-a.pts);
+    $('obj').classList.add('hidden');
     $('board').innerHTML='<div class="bt">👹 鬼ごっこ</div>'+sorted.map((c,i)=>`<div class="r ${c===me?'me':''}"><span>${i+1}</span><span class="dot" style="background:${c.teamCss()}"></span><span class="nm">${c.oni?'👹':''}${esc(c===me?'あなた':c.name)}</span><span class="sc">${Math.floor(c.pts)}</span></div>`).join('');
-  }
+  } else hudMode();
   const bn=$('banner');
   if(mode==='tag' && (state==='play'||state==='countdown')){
     bn.classList.remove('hidden');
     if(me.oni){ bn.classList.remove('run'); bn.textContent = me.oniFreeze>0 ? `👹 あなたは鬼！ ${Math.ceil(me.oniFreeze)}…` : '👹 あなたは鬼！ 体当たりでタッチ！'; }
     else { bn.classList.add('run'); bn.textContent = me.immune>0 ? '🛡 タッチ返しされない時間' : '🏃 鬼から逃げろ！'; }
-  } else bn.classList.add('hidden');
+  } else if(!modeBanner(bn)) bn.classList.add('hidden');
   if(hap.k && hap.left>0){ $('mapName').textContent=`⚠ ${HAPPENINGS[hap.k].name} 残り${Math.ceil(hap.left)}秒`; }
   else $('mapName').textContent=MAP?(MAP.icon+' '+MAP.name+(feverOn?'　🔥硬貨1.5倍':'')+(isOnline?netStatusText():'')):'';
   $('combo').textContent = me.comboN>0 && me.comboT>0 ? `🔥 コンボ ×${me.comboN+1}` : '';
@@ -2437,7 +3543,9 @@ function drawMinimap(){
     mmg.fillStyle = k.value>=50?'#e6f4ff':k.value===10?'#ffae5c':k.value===5?'#ffd94a':'#cfd4dc';
     mmg.beginPath(); mmg.arc(X(k.x),Z(k.z),k.value>=100?5:3.5,0,TAU); mmg.fill(); }
   for(const it of items){ if(!it.active) continue; const x=X(it.x), z=Z(it.z); mmg.fillStyle='#fff'; mmg.beginPath(); mmg.moveTo(x,z-5); mmg.lineTo(x+4,z); mmg.lineTo(x,z+5); mmg.lineTo(x-4,z); mmg.fill(); }
+  drawModeMinimap(X,Z,sx);
   for(const c of creatures){
+    if(c.out) continue;
     if(c!==me && me && (c.fx.cloak>0 || (c.hidden && mode==='tag' && foe(me,c) && Math.hypot(c.x-me.x,c.z-me.z)>6))) continue;
     mmg.fillStyle=c.teamCss(); mmg.beginPath(); mmg.arc(X(c.x),Z(c.z),c===me?6:4.5,0,TAU); mmg.fill();
     if(c.oni){ mmg.strokeStyle='#ff2020'; mmg.lineWidth=3; mmg.stroke(); }
@@ -2506,7 +3614,7 @@ function rollGacha(){
 /* =========================================================
    画面
    ========================================================= */
-const screens=['scrTitle','scrSetup','scrOnline','scrLobby','scrHow','scrPause','scrResult','scrWard','scrGacha','scrMis'];
+const screens=['scrTitle','scrSetup','scrOnline','scrLobby','scrHow','scrPause','scrResult','scrWard','scrGacha','scrMis','scrStory'];
 function show(id){ for(const s of screens) $(s).classList.toggle('hidden', s!==id); if(id==='scrWard') startPreview(); else stopPreview(); }
 function refreshTitle(){
   $('tLv').textContent='Lv'+save.level; $('tXp').style.width=(save.xp/xpNeed(save.level)*100).toFixed(0)+'%'; $('tXpTxt').textContent=`${save.xp}/${xpNeed(save.level)}`;
@@ -2516,6 +3624,7 @@ function refreshTitle(){
 }
 function goTitle(){
   if(isOnline) netLeave();
+  curStory=null; showAlert(false); $('dlg').classList.add('hidden');
   state='title'; show('scrTitle'); $('hud').classList.add('hidden');
   refreshTitle();
   // 背景デモ
@@ -2533,9 +3642,13 @@ function openSetup(forWhat){
 }
 function renderSetup(){
   const s=save.settings;
-  const modes={ffa:['🐞 個人戦','4〜7匹で陣取り'],team:['⚽ チーム戦','赤と青に分かれてゴールをねらう'],tag:['👹 鬼ごっこ','広いマップで逃げる・追いかける']};
-  $('segMode').innerHTML=Object.entries(modes).map(([k,v])=>`<button data-k="${k}" class="${s.mode===k?'on':''}">${v[0]}</button>`).join('');
-  $('modeDesc').textContent=modes[s.mode][1];
+  $('segMode').innerHTML=Object.entries(MODES).map(([k,v])=>`<button data-k="${k}" class="${s.mode===k?'on':''}">${v.name}</button>`).join('');
+  $('modeDesc').textContent=MODES[s.mode].desc;
+  $('kothOpt').classList.toggle('hidden', s.mode!=='koth');
+  $('segKoth').innerHTML=[[false,'👤 個人戦（1匹ずつ）'],[true,'👥 チーム戦（赤と青）']].map(([v,l])=>`<button data-v="${v?1:0}" class="${!!s.kothTeam===v?'on':''}">${l}</button>`).join('');
+  $('segKoth').querySelectorAll('button').forEach(b=>b.onclick=()=>{ s.kothTeam=b.dataset.v==='1'; writeSave(); renderSetup(); });
+  const coop=s.mode==='defense';
+  $('coopNote').classList.toggle('hidden',!coop); $('segPlayers').classList.toggle('hidden',coop); $('playersH').classList.toggle('hidden',coop);
   $('segMode').querySelectorAll('button').forEach(b=>b.onclick=()=>{ s.mode=b.dataset.k; if(!mapsFor(s.mode).includes(s.map)) s.map='random'; writeSave(); renderSetup(); });
   const feat=featuredMap();
   const list=mapsFor(s.mode);
@@ -2551,7 +3664,7 @@ function renderSetup(){
 let lastSolo=null;
 function startSolo(){
   const s=save.settings;
-  const opts={mode:s.mode, diff:s.diff, players:s.players, map:resolveMap(s.map,s.mode)};
+  const opts={mode:s.mode, diff:s.diff, players:s.mode==='defense'?1:s.players, map:resolveMap(s.map,s.mode), opt:{team:!!s.kothTeam}};
   opts.roster=makeRoster([{name:save.name||'あなた', skin:mySkin(), human:'local', pid:null}], opts.players);
   lastSolo={...opts, mapSetting:s.map};
   beginMatch(opts);
@@ -2563,31 +3676,37 @@ function beginMatch(opts){
   if(IS_TOUCH) $('joyHint').classList.remove('hidden');
   setupRound(opts);
   state='countdown'; countT=3.2; lastTick=4;
-  centerMsg(mode==='tag'?'鬼ごっこスタート！':mode==='team'?`${me?SIDES[me.side()].name:''}：${me&&me.side()===0?'右の青ゴール':'左の赤ゴール'}をねらえ！`:'自分のふせんに集めろ！',1300,true,false);
+  const sm={tag:'鬼ごっこスタート！', ctf:'ゴールド缶をうばって自分のベースへ！', koth:'制圧サークルを100%にしろ！', shock:'床がくずれる！ 最後まで生き残れ！', defense:'メインサーバーを守れ！', potato:'熱々缶コーヒーに注意！', boss:'エラーコード99をたおせ！'};
+  centerMsg(curStory ? curStory.goal : sm[mode] || (mode==='team'?`${me?SIDES[me.side()].name:''}：${me&&me.side()===0?'右の青ゴール':'左の赤ゴール'}をねらえ！`:'自分のふせんに集めろ！'),1600,true,false);
   camSnap=true; canvas.focus();
 }
 function pauseGame(){ if(state!=='play'||isOnline) return; state='paused'; show('scrPause'); joy.active=false; $('joy').classList.add('hidden'); }
 function resumeGame(){ show(null); state='play'; last=performance.now(); }
 function computeResult(){
   // 全員の結果（オンラインでもホストが作って配る）
-  const list=creatures.map(c=>({slot:c.slot,name:c.name,css:c.teamCss(),score:c.score,coins:c.coinN,goals:c.goals,gv:c.goalValue,pts:Math.floor(c.pts),oni:c.oni,side:c.side(),st:{...c.st}}));
-  const res={mode,map:mapKey,diff,n:creatures.length,list,side:sideScore.slice()};
+  const list=creatures.map(c=>({slot:c.slot,name:c.name,css:c.teamCss(),score:Math.round(c.score*10)/10,coins:c.coinN,goals:c.goals,gv:c.goalValue,pts:Math.floor(c.pts),oni:c.oni,side:c.side(),st:{...c.st},out:c.out,outT:c.outT,human:c.isLocal||c.isRemote}));
+  const res={mode,map:mapKey,diff,n:creatures.length,list,side:sideScore.map(v=>Math.round(v*10)/10),opt:modeOpt,won:!!MS.won,wave:MS.wave||0,kills:MS.kills||0,story:curStory?curStory.id:0};
   // MVP
   const top=(f)=>{ let b=null; for(const x of list) if(f(x)>0 && (!b||f(x)>f(b))) b=x; return b; };
   const mv=[]; let t;
   if((t=top(x=>x.st.stuns))) mv.push(`💥 タックル王：${t.name}（${t.st.stuns}回）`);
   if((t=top(x=>x.st.items))) mv.push(`🎁 アイテム名人：${t.name}（${t.st.items}個）`);
-  if(mode!=='tag' && (t=top(x=>x.st.coins))) mv.push(`🪙 運び屋：${t.name}（${t.st.coins}枚）`);
+  if(isCoinMode() && (t=top(x=>x.st.coins))) mv.push(`🪙 運び屋：${t.name}（${t.st.coins}枚）`);
+  if((t=top(x=>x.st.caps))) mv.push(`🥫 缶運び名人：${t.name}（${t.st.caps}回）`);
+  if((t=top(x=>x.st.kills))) mv.push(`🛡 撃破王：${t.name}（${t.st.kills}体）`);
+  if((t=top(x=>x.st.kos))) mv.push(`⚡ 突き落とし名人：${t.name}（${t.st.kos}回）`);
   if(mode==='tag' && (t=top(x=>x.st.tags))) mv.push(`👹 タッチ名人：${t.name}（${t.st.tags}回）`);
   res.mvp=mv;
   return res;
 }
-function endGame(){
-  state='timeup'; sfx('end'); centerMsg('タイムアップ！',1400);
+function endGame(msg){
+  if(state!=='play') return;
+  state='timeup'; sfx('end'); centerMsg(msg||'タイムアップ！',1800, !!msg);
+  showAlert(false);
   joy.active=false; $('joy').classList.add('hidden');
   roundResult=computeResult();
   if(isOnline && !isGuest) netSendNow();
-  setTimeout(()=>showResult(roundResult),1500);
+  setTimeout(()=>showResult(roundResult),1800);
 }
 function showResult(res){
   if(state==='result') return;
@@ -2610,6 +3729,33 @@ function showResult(res){
     $('rRankLbl').textContent=`赤 ${res.side[0]}円 − ${res.side[1]}円 青`;
     $('rBoard').innerHTML=res.list.map(x=>`<div class="${x.slot===mySlot?'me':''}"><span><span style="color:${x.css}">●</span> ${esc(x.slot===mySlot?'あなた':x.name)}</span><b>${x.goals}ゴール</b></div>`).join('');
     rows.push(['チームの得点',a+'円'],['あなたのゴール',`${my.goals}本（${my.gv}円）`],['勝敗ボーナス','×'+mult.toFixed(2)]);
+  } else if(res.mode==='ctf' || (res.mode==='koth' && res.opt && res.opt.team)){
+    const ms=my.side, a=res.side[ms], b=res.side[1-ms], ctf=res.mode==='ctf';
+    outcome=a>b?'win':a<b?'lose':'draw'; mult=outcome==='win'?1.5:outcome==='draw'?1.2:1; rank=outcome==='win'?1:2; myScore=Math.floor(a);
+    base = ctf ? a*12+(my.st.caps||0)*10+5 : Math.floor(a/4)+5; unit=ctf?'点':'%';
+    headline=outcome==='win'?'🎉 勝利！':outcome==='draw'?'引き分け':'敗北…';
+    $('rRankLbl').textContent=`赤 ${Math.floor(res.side[0])}${unit} − ${Math.floor(res.side[1])}${unit} 青`;
+    $('rBoard').innerHTML=res.list.map(x=>`<div class="${x.slot===mySlot?'me':''}"><span><span style="color:${x.css}">●</span> ${esc(x.slot===mySlot?'あなた':x.name)}</span><b>${ctf?(x.st.caps||0)+'回':Math.floor(x.score)+'%'}</b></div>`).join('');
+    rows.push([ctf?'チームの得点':'チームのゲージ',Math.floor(a)+unit], ctf?['缶を運んだ回数',(my.st.caps||0)+'回']:['あなたの制圧',Math.floor(my.score)+'%'], ['勝敗ボーナス','×'+mult.toFixed(2)]);
+  } else if(res.mode==='koth' || res.mode==='shock' || res.mode==='potato'){
+    const val = x => res.mode==='shock' ? (x.out?x.outT:1e6)+x.score/1e4 : x.score;
+    const s=[...res.list].sort((a,b)=>val(b)-val(a)); rank=s.findIndex(x=>x.slot===mySlot)+1; while(rank>1 && val(s[rank-2])===val(my)) rank--;
+    mult=[0,1.5,1.3,1.15,1.05,1,1,1][rank]||1; myScore=Math.floor(my.score);
+    base = res.mode==='koth' ? Math.floor(my.score/3)+5 : res.mode==='shock' ? Math.floor(my.score/3)+(my.st.kos||0)*4+5 : Math.floor(Math.max(0,my.score)/4)+5;
+    unit = res.mode==='koth'?'%':'pt';
+    headline=`${rank}位`; $('rRankLbl').textContent=rank===1?{koth:'🎉 制圧王！',shock:'🎉 最後の生き残り！',potato:'🎉 ホット・ポテト王！'}[res.mode]+' あなたの順位':'あなたの順位';
+    $('rBoard').innerHTML=s.map((x,i)=>`<div class="${x.slot===mySlot?'me':''}"><span><span style="color:${x.css}">●</span> ${i+1}位 ${res.mode==='shock'&&!x.out?'🏆':''}${res.mode==='shock'&&x.out?'💀':''}${esc(x.slot===mySlot?'あなた':x.name)}</span><b>${Math.floor(x.score)}${unit}</b></div>`).join('');
+    rows.push([res.mode==='koth'?'制圧ゲージ':res.mode==='shock'?'生存ポイント':'スコア',Math.floor(my.score)+unit]);
+    if(res.mode==='shock') rows.push(['突き落とし',(my.st.kos||0)+'回']);
+    if(res.mode==='potato') rows.push(['爆発した回数',(my.st.booms||0)+'回']);
+    rows.push(['順位ボーナス','×'+mult.toFixed(2)]);
+  } else if(res.mode==='defense' || res.mode==='boss'){
+    outcome=res.won?'win':'lose'; rank=res.won?1:2; mult=res.won?1.6:1; myScore=res.mode==='defense'?res.wave:0;
+    base = res.mode==='boss' ? (res.won?60:10) : (my.st.kills||0)*2+res.wave*8+5; unit='';
+    headline = res.mode==='boss' ? (res.won?'🎉 撃破！':'敗北…') : (res.won?'🎉 防衛成功！':'サーバーダウン…');
+    $('rRankLbl').textContent = res.mode==='defense' ? `ウェーブ ${res.wave}/5　撃破 ${res.kills}体` : 'エラーコード99戦';
+    $('rBoard').innerHTML=res.list.map(x=>`<div class="${x.slot===mySlot?'me':''}"><span><span style="color:${x.css}">●</span> ${esc(x.slot===mySlot?'あなた':x.name)}</span><b>${x.st.kills||0}体</b></div>`).join('');
+    rows.push(['到達ウェーブ',res.mode==='defense'?`${res.wave}/5`:'-'],['あなたの撃破',(my.st.kills||0)+'体'],['結果ボーナス','×'+mult.toFixed(2)]);
   } else {
     const s=[...res.list].sort((a,b)=>b.pts-a.pts); rank=s.findIndex(x=>x.slot===mySlot)+1; while(rank>1 && s[rank-2].pts===my.pts) rank--;
     mult=[0,1.5,1.3,1.15,1.05,1,1,1][rank]||1; base=Math.floor(my.pts/3)+5; myScore=my.pts; unit='pt';
@@ -2630,7 +3776,7 @@ function showResult(res){
   const newBest = myScore>(save.best[res.mode]||0); if(newBest) save.best[res.mode]=myScore;
   $('rNew').classList.toggle('hidden',!newBest);
   save.money+=gain; save.games++;
-  const won = rank===1 && (res.mode!=='team' || outcome==='win'); if(won) save.wins++;
+  const won = outcome ? outcome==='win' : rank===1; if(won) save.wins++;
   save.total.coins+=my.st.coins; save.total.stuns+=my.st.stuns; save.total.items+=my.st.items; save.total.tags+=my.st.tags;
   save.played[res.map]=(save.played[res.map]||0)+1;
   const xp = 25 + (rank===1?35:rank===2?22:rank===3?14:8) + Math.min(30, my.st.coins*2 + my.st.stuns + my.st.tags*3);
@@ -2641,6 +3787,9 @@ function showResult(res){
   $('rLv').textContent='Lv'+save.level; $('rXp').style.width=(save.xp/xpNeed(save.level)*100).toFixed(0)+'%'; $('rXpTxt').textContent=`+${xp}経験値`;
   for(const lv of ups){ toast(`🎉 レベル${lv}にアップ！ 🎫ガチャ券＋🪙40${LV_REWARDS[lv]?'　'+LV_REWARDS[lv]:''}`,true); sfx('level'); }
   for(const m of done) toast(`📋 ミッション達成：${missionText(m)}（ミッション画面で受け取ろう）`);
+  $('rTitle').textContent='⏰ 試合終了！';
+  $('rBtnStory').classList.add('hidden');
+  if(curStory){ storyAfterResult(res, rank, my); return; }
   $('rBtnSolo').classList.toggle('hidden', isOnline);
   $('rBtnOnline').classList.toggle('hidden', !isOnline);
   $('btnToLobby').textContent = isGuest ? '🏠 ロビーで待つ' : '🏠 ロビーにもどる';
@@ -2666,14 +3815,14 @@ function renderWard(){
   $('wardTabs').innerHTML=Object.entries(tabs).map(([k,v])=>`<button data-k="${k}" class="${wardTab===k?'on':''}">${v}</button>`).join('');
   $('wardTabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{ wardTab=b.dataset.k; renderWard(); });
   let html='';
-  if(wardTab==='species') html=Object.entries(SPECIES).map(([k,s])=>{ const lock=s.lv>save.level; return `<button data-k="${k}" class="${save.equip.species===k?'on':''} ${lock?'lock':''}"><span class="e">${s.e}</span>${s.name}${lock?`<small>🔒Lv${s.lv}で解放</small>`:''}</button>`; }).join('');
+  if(wardTab==='species') html=Object.entries(SPECIES).map(([k,s])=>{ const lock=speciesLocked(k); return `<button data-k="${k}" class="${save.equip.species===k?'on':''} ${lock?'lock':''}"><span class="e">${s.e}</span>${s.name}${lock?`<small>${s.story?'🔒ストーリー全クリアで解放':'🔒Lv'+s.lv+'で解放'}</small>`:''}</button>`; }).join('');
   else { const src = wardTab==='color'?COLORS:wardTab==='hat'?HATS:TRAILS;
     html=Object.entries(src).map(([k,d])=>{ const own=save.owned[wardTab].includes(k); const e = wardTab==='color' ? `<span class="e" style="display:inline-block;width:28px;height:28px;border-radius:50%;background:${d.css}"></span>` : `<span class="e">${d.e}</span>`;
       return `<button data-k="${k}" class="${save.equip[wardTab]===k?'on':''} ${own?'':'lock'}">${e}<span class="r-${d.r}">${d.name}</span>${own?'':'<small>🎰ガチャで入手</small>'}</button>`; }).join(''); }
   $('wardGrid').innerHTML=html;
   $('wardGrid').querySelectorAll('button').forEach(b=>b.onclick=()=>{
     const k=b.dataset.k;
-    if(wardTab==='species'){ if(SPECIES[k].lv>save.level) return; save.equip.species=k; }
+    if(wardTab==='species'){ if(speciesLocked(k)) return; save.equip.species=k; }
     else { if(!save.owned[wardTab].includes(k)) return; save.equip[wardTab]=k; }
     writeSave(); rebuildPreview(); renderWard();
   });
@@ -2724,7 +3873,13 @@ let pendingHow=false;
 $('btnSetupBack').onclick=()=>{ if(setupFor==='online') showLobby(); else show('scrTitle'); };
 $('btnSetupGo').onclick=()=>{ if(setupFor==='online'){ lobbySettingsDirty=true; showLobby(); } else startSolo(); };
 $('btnRetry').onclick=()=>{ if(lastSolo){ const o={...lastSolo, map:resolveMap(lastSolo.mapSetting,lastSolo.mode)}; o.roster=makeRoster([{name:save.name||'あなた', skin:mySkin(), human:'local', pid:null}], o.players); beginMatch(o); } else openSetup('solo'); };
-$('btnRetryP').onclick=()=>$('btnRetry').onclick();
+$('btnRetryP').onclick=()=>{ if(curStory) startStoryStage(curStory); else $('btnRetry').onclick(); };
+$('btnStory').onclick=()=>{ initAudio(); curStory=null; renderStory(); show('scrStory'); };
+$('btnStoryClose').onclick=()=>{ show('scrTitle'); refreshTitle(); };
+$('btnStoryRetry').onclick=()=>{ if(curStory) startStoryStage(curStory); };
+$('btnStoryNext').onclick=()=>{ const i=STORY.indexOf(curStory); if(i>=0 && i<STORY.length-1) playStory(i+1); };
+$('btnStoryBack').onclick=()=>{ curStory=null; state='title'; renderStory(); show('scrStory'); goTitleQuiet(); };
+function goTitleQuiet(){ const m=Math.random()<0.6?'ffa':'team'; state='title'; setupRound({mode:m, diff:'normal', players:5, map:resolveMap('random',m), roster:makeRoster([],5)}); }
 $('btnChange').onclick=()=>openSetup('solo');
 $('btnHow').onclick=()=>show('scrHow');
 $('btnHowClose').onclick=()=>{ save.seenHow=true; writeSave(); if(pendingHow){ pendingHow=false; openSetup('solo'); } else show(state==='title'?'scrTitle':'scrTitle'); };
@@ -2773,7 +3928,7 @@ $('btnOnline').onclick=()=>{
 };
 $('btnOnlineBack').onclick=()=>show('scrTitle');
 function readName(){ const n=$('inName').value.trim().replace(/[<>&"'`\\]/g,'').slice(0,8); if(!n){ $('onlineMsg').textContent='名前を入れてね'; return null; } save.name=n; writeSave(); return n; }
-function netSettings(){ const s=save.settings; return {mode:s.mode, map:s.map, players:Math.max(s.players, lobbyHumans()), diff:s.diff}; }
+function netSettings(){ const s=save.settings; return {mode:s.mode, map:s.map, players:s.mode==='defense'?lobbyHumans():Math.max(s.players, lobbyHumans()), diff:s.diff, opt:{team:!!s.kothTeam}}; }
 $('btnCreate').onclick=async()=>{
   const name=readName(); if(!name) return;
   $('onlineMsg').textContent='部屋をつくっています…';
@@ -2798,8 +3953,9 @@ function showLobby(){
   $('lobPlayers').innerHTML=html;
   const ss = net.role==='host' ? netSettings() : s;
   const mm=ss.map==='random'?'🎲 おまかせ':(MAPS[ss.map]?MAPS[ss.map].icon+' '+MAPS[ss.map].name:'');
-  $('lobSettings').textContent=`モード：${{ffa:'個人戦',team:'チーム戦',tag:'鬼ごっこ'}[ss.mode]||''}　マップ：${mm}　人数：${Math.max(ss.players,m.players.length)}人　CPU：${DIFFS[ss.diff]?.name||''}`;
+  $('lobSettings').textContent=`モード：${(MODES[ss.mode]?MODES[ss.mode].name:'')+(ss.mode==='koth'?(ss.opt&&ss.opt.team?'（チーム）':'（個人）'):'')}　マップ：${mm}　人数：${Math.max(ss.players,m.players.length)}人　CPU：${DIFFS[ss.diff]?.name||''}`;
   $('lobHost').classList.toggle('hidden', net.role!=='host'); $('lobGuest').classList.toggle('hidden', net.role==='host');
+  updateConnBox();
   show('scrLobby');
 }
 function startLobbyPoll(){
@@ -2823,11 +3979,11 @@ $('btnLobSet').onclick=()=>openSetup('online');
 $('btnLobStart').onclick=async()=>{
   const m=net.meta; if(!m) return;
   const s=netSettings();
-  nPlayers=Math.max(s.players, m.players.length); mode=s.mode;
+  const np=s.mode==='defense'?m.players.length:Math.max(s.players, m.players.length);
   const humans=m.players.map(p=>({name:p.name, skin:p.skin||{species:'ladybug',color:'normal',hat:'none',trail:'none'}, human:p.pid===net.pid?'local':'remote', pid:p.pid}));
-  const roster=makeRoster(humans, nPlayers);
+  const roster=makeRoster(humans, np);
   const map=resolveMap(s.map, s.mode);
-  const settings={mode:s.mode, map, players:nPlayers, diff:s.diff, roster:roster.map(r=>({name:r.name,skin:r.skin,pid:r.pid}))};
+  const settings={mode:s.mode, map, players:np, diff:s.diff, opt:s.opt, roster:roster.map(r=>({name:r.name,skin:r.skin,pid:r.pid}))};
   $('lobMsg').textContent='スタートしています…';
   try{ const r=await gcall('net_start', net.code, net.pid, settings); if(r.err) throw new Error(r.err); net.meta=r; net.gameId=r.gameId; }
   catch(e){ $('lobMsg').textContent='⚠ '+(e.message||'通信エラー'); return; }
@@ -2835,7 +3991,7 @@ $('btnLobStart').onclick=async()=>{
   const bmsg='B'+JSON.stringify(net.meta);
   for(const d of [0,300,800]) setTimeout(()=>{ for(const P of Object.values(rtc.peers)) rtcSend(P.dc,bmsg); }, d);
   isOnline=true; isGuest=false; net.msgs=[]; net.msgSeq=0;
-  beginMatch({mode:settings.mode, diff:settings.diff, players:settings.players, map, roster});
+  beginMatch({mode:settings.mode, diff:settings.diff, players:settings.players, map, roster, opt:settings.opt});
   for(const c of creatures) c.lastIn=performance.now();
   startHostLoop();
 };
@@ -2843,7 +3999,7 @@ function guestStart(m){
   const s=m.settings;
   isOnline=true; isGuest=true; net.lastSeen=0; net.lastSnapT=-1; net.lastSnapAt=performance.now(); net.kSeen={x:0,z:0}; net.stunSeen=0; net.tpSeen=0; net.lastRes=null; net.coinMap=new Map();
   const roster=s.roster.map(r=>({name:r.name, skin:r.skin, human:r.pid? (r.pid===net.pid?'local':'remote') : null, pid:r.pid}));
-  beginMatch({mode:s.mode, diff:s.diff, players:s.players, map:s.map, roster});
+  beginMatch({mode:s.mode, diff:s.diff, players:s.players, map:s.map, roster, opt:s.opt});
   startGuestLoop();
 }
 $('btnLobLeave').onclick=()=>{ netLeave(); show('scrOnline'); };
@@ -2858,7 +4014,7 @@ function netLeave(){ if(net.code){ const c=net.code, p=net.pid; gcall('net_leave
 function buildSnap(){
   const S={ t:r2(simTime), tl:r2(timeLeft), st:state, ct:r2(countT), ss:sideScore, fe:feverOn?1:0, hp:hap.k?[hap.k,r2(hap.left),r2(hap.dx),r2(hap.dz),hap.broom?r2(hap.broom.ax):null]:null };
   S.c=creatures.map(c=>{ const fx={}; for(const k of BUFF_KEYS) if(c.fx[k]>0) fx[k]=r2(c.fx[k]);
-    return [r2(c.x),r2(c.z),r2(c.vx),r2(c.vz),r2(c.heading),r2(c.stun),c.dashT>0?1:0,r2(c.r),fx,c.score,c.coinN,c.goals,c.oni?1:0,r2(c.oniFreeze),r2(c.immune),r2(c.kx),r2(c.kz),c.stunSeq,c.tpSeq,r2(c.tpX),r2(c.tpZ),Math.floor(c.pts),c.comboN,r2(c.comboT),c.hidden?1:0,c.goalValue]; });
+    return [r2(c.x),r2(c.z),r2(c.vx),r2(c.vz),r2(c.heading),r2(c.stun),c.dashT>0?1:0,r2(c.r),fx,c.score,c.coinN,c.goals,c.oni?1:0,r2(c.oniFreeze),r2(c.immune),r2(c.kx),r2(c.kz),c.stunSeq,c.tpSeq,r2(c.tpX),r2(c.tpZ),Math.floor(c.pts),c.comboN,r2(c.comboT),c.hidden?1:0,c.goalValue,c.out?1:0,c.st.caps||0,c.st.kills||0,c.st.kos||0,c.st.booms||0]; });
   S.k=coins.filter(k=>k.state!=='off').map(k=>[k.nid,k.value,r2(k.x),r2(k.z),r2(k.vx),r2(k.vz),{fall:1,ground:2,score:3,vanish:4}[k.state],r2(k.y),k.carried?k.carried.slot:-1]);
   S.it=items.filter(i=>i.active).map(i=>[i.id,r2(i.x),r2(i.z),r2(i.life),i.col]);
   S.bn=bananas.map(b=>[r2(b.x),r2(b.z)]);
@@ -2866,6 +4022,7 @@ function buildSnap(){
   S.rb=robots.map(r=>[r2(r.x),r2(r.z),r2(r.vx),r2(r.vz),r2(r.h)]);
   S.sw=sweepers.map(s=>r2(s.ang));
   S.m=net.msgs;
+  S.x=modeSnap();
   if(roundResult && (state==='timeup'||state==='result')) S.res=roundResult;
   return JSON.stringify(S);
 }
@@ -2908,7 +4065,7 @@ async function rtcHostOffer(pid, tries){
   const pc=new RTCPeerConnection(ICE);
   const dc=pc.createDataChannel('g',{ordered:false, maxRetransmits:0});
   const P={pc,dc,since:performance.now(),answered:false,failed:false,tries}; rtc.peers[pid]=P;
-  dc.onopen=()=>{ if(!$('scrLobby').classList.contains('hidden')) showLobby(); };
+  dc.onopen=()=>{ const p=net.meta&&net.meta.players.find(p=>p.pid===pid); toast(`⚡ ${p?p.name:'ゲスト'} と直接つながりました！`); if(!$('scrLobby').classList.contains('hidden')) showLobby(); };
   dc.onmessage=e=>rtcHostMsg(pid, e.data);
   try{
     await pc.setLocalDescription(await pc.createOffer()); await waitIce(pc);
@@ -2940,7 +4097,7 @@ async function rtcGuestAnswer(offer){
   if(!RTC_OK) return;
   if(rtc.pc){ try{ rtc.pc.close(); }catch(e){} }
   const pc=new RTCPeerConnection(ICE); rtc.pc=pc; rtc.dc=null; rtc.since=performance.now(); rtc.guestFailed=false;
-  pc.ondatachannel=e=>{ const dc=e.channel; rtc.dc=dc; dc.onmessage=ev=>rtcGuestMsg(ev.data); dc.onopen=()=>{ net.ping=0; if(!$('scrLobby').classList.contains('hidden')) showLobby(); }; };
+  pc.ondatachannel=e=>{ const dc=e.channel; rtc.dc=dc; dc.onmessage=ev=>rtcGuestMsg(ev.data); dc.onopen=()=>{ net.ping=0; toast('⚡ ホストと直接つながりました！ ほぼ遅れなしで遊べます'); if(!$('scrLobby').classList.contains('hidden')) showLobby(); }; };
   try{
     await pc.setRemoteDescription(JSON.parse(offer));
     await pc.setLocalDescription(await pc.createAnswer()); await waitIce(pc);
@@ -2950,7 +4107,7 @@ async function rtcGuestAnswer(offer){
 function rtcGuestLobby(r){
   if(!RTC_OK) return;
   if(r.offer && r.offer!==rtc.lastOffer){ rtc.lastOffer=r.offer; rtcGuestAnswer(r.offer); }
-  if(rtc.pc && !rtcGuestOpen() && performance.now()-rtc.since>20000) rtc.guestFailed=true;
+  if(rtc.pc && !rtcGuestOpen() && !rtc.guestFailed && performance.now()-rtc.since>20000){ rtc.guestFailed=true; toast('📡 直接つながらなかったので、GAS中継で遊びます'); }
 }
 function rtcGuestMsg(data){
   const t=data[0], body=data.slice(1);
@@ -2958,6 +4115,26 @@ function rtcGuestMsg(data){
   else if(t==='Q'){ notePing(performance.now()-(+body)); }
   else if(t==='B'){ let m; try{ m=JSON.parse(body); }catch(e){ return; }
     if(net.role==='guest' && m.started && m.gameId!==net.gameId && m.settings && m.settings.roster && state!=='play' && state!=='countdown'){ net.gameId=m.gameId; net.meta=m; net.polling=false; guestStart(m); } }
+}
+function updateConnBox(){
+  const box=$('lobConn'), m=net.meta; if(!box||!m) return;
+  const guests=m.players.filter(p=>p.pid!==m.host);
+  let html='', ok=false;
+  if(!guests.length){ html='👥 友だちが入るのを待っています…'; }
+  else if(!RTC_OK){ html='📡 この端末は直接接続に対応していないので、GAS中継で遊びます'; }
+  else if(net.role==='host'){
+    const st=guests.map(p=>connLabel(p.pid)), dir=st.filter(x=>x==='⚡直接').length, gas=st.filter(x=>x==='📡GAS').length, wait=guests.length-dir-gas;
+    if(wait>0) html=`⏳ <b>直接接続の準備中…</b>（5〜20秒ほど待ってね）<br>参加者の横が「⚡直接」か「📡GAS」になってからスタートするのがおすすめ。<br>今：⚡直接 ${dir}人 ／ 接続中 ${wait}人 ／ 📡GAS ${gas}人`;
+    else if(gas===0){ html='✅ <b>全員と直接つながりました！</b> ほぼ遅れなしで遊べます。スタートしてOK！'; ok=true; }
+    else html=`⚡直接 ${dir}人 ／ 📡GAS中継 ${gas}人<br>「📡GAS」の人は直接つながらなかった（学校のWi‑Fiの設定など）ので、少しおくれますが遊べます。`;
+    $('btnLobStart').textContent = wait>0 ? '▶ スタート（接続中の人はGAS中継）' : '▶ スタート';
+  } else {
+    const l=connLabel(net.pid);
+    if(l==='⚡直接'){ html='✅ <b>ホストと直接つながりました！</b>（ほぼ遅れなし）<br>ホストのスタートを待ってね'; ok=true; }
+    else if(l==='📡GAS') html='📡 直接はつながらなかったので、GAS中継で遊びます（少しおくれます）';
+    else html='⏳ <b>ホストと直接つながる準備中…</b>（5〜20秒ほど待ってね）<br>つながると「⚡直接」と表示されます';
+  }
+  box.innerHTML=html; box.classList.toggle('ok',ok);
 }
 function connLabel(pid){
   if(!RTC_OK) return '📡GAS';
@@ -3056,6 +4233,8 @@ function applySnap(str){
       c.nx=a[0]; c.nz=a[1]; c.vx=a[2]; c.vz=a[3]; c.netH=a[4]; c.stun=a[5]; c.dashT=a[6]?0.1:0; c.fx=fx; c.netAt=performance.now(); c.hidden=!!a[24];
       if(first || Math.hypot(c.x-a[0],c.z-a[1])>6){ c.x=a[0]; c.z=a[1]; c.rx=c.x; c.rz=c.z; }
     }
+    if(a[26] && !c.out){ c.out=true; c.fallT=0; if(c===me) centerMsg('落ちてしまった…（観戦中）',2000,true,false); }
+    c.st.caps=a[27]; c.st.kills=a[28]; c.st.kos=a[29]; c.st.booms=a[30];
     c.r=a[7]; c.score=a[9]; c.coinN=a[10]; c.goals=a[11]; c.oni=!!a[12]; c.oniFreeze=a[13]; c.immune=a[14]; c.pts=a[21]; c.comboN=a[22]; c.comboT=a[23]; c.goalValue=a[25];
   });
   // 硬貨
@@ -3087,6 +4266,7 @@ function applySnap(str){
   S.bl.forEach((a,i)=>{ const b=balls[i]; if(!b) return; if(Math.hypot(b.x-a[0],b.z-a[1])>3){ b.x=a[0]; b.z=a[1]; } else { b.x+=(a[0]-b.x)*0.5; b.z+=(a[1]-b.z)*0.5; } b.vx=a[2]; b.vz=a[3]; });
   S.rb.forEach((a,i)=>{ const r=robots[i]; if(!r) return; r.x+=(a[0]-r.x)*0.6; r.z+=(a[1]-r.z)*0.6; r.vx=a[2]; r.vz=a[3]; r.h=a[4]; });
   S.sw.forEach((a,i)=>{ if(sweepers[i]) sweepers[i].ang=a; });
+  applyModeSnap(S.x);
   // メッセージ
   for(const [seq,type,d] of S.m){
     if(seq<=net.lastSeen) continue; net.lastSeen=seq;
@@ -3101,7 +4281,8 @@ function applySnap(str){
 }
 function guestSimulate(dt){
   // 自分の虫だけ自分で動かす（すぐ反応する）。ほかはホストの情報をなめらかに補間
-  if(state==='play') playerInput(me); else { me.ix=0; me.iz=0; }
+  if(state==='play' && !me.out) playerInput(me); else { me.ix=0; me.iz=0; }
+  updateMeteors(dt,false);
   for(const k of BUFF_KEYS) if(me.fx[k]>0) me.fx[k]=Math.max(0,me.fx[k]-dt);
   if(me.fx.battery>0) me.dashCD=Math.min(me.dashCD,0.45);
   if(me.wantDash && me.dashCD<=0 && me.stun<=0 && me.oniFreeze<=0){ doDash(me); guestDash=true; }
@@ -3137,6 +4318,8 @@ const TRAIL_FX = {
 function updateVisuals(dt, t){
   for(const c of creatures){
     const md=c.model, spd=Math.hypot(c.vx,c.vz);
+    if(c.out){ c.fallT=(c.fallT||0)+dt; md.root.position.set(c.rx,-Math.min(5,c.fallT*c.fallT*9),c.rz); md.root.visible=c.fallT<1.3; md.scaler.rotation.y+=dt*8; continue; }
+    md.root.visible=true;
     // 表示位置はなめらかに（オンラインのとき）
     if(c.isRemote && !isGuest){ c.rx+= (c.x-c.rx)*Math.min(1,dt*12); c.rz+=(c.z-c.rz)*Math.min(1,dt*12); } else { c.rx=c.x; c.rz=c.z; }
     md.root.position.set(c.rx,0,c.rz);
@@ -3176,7 +4359,7 @@ function updateVisuals(dt, t){
     else c.buffIcon.visible=false;
     // 王冠（トップ）
     let lead=false;
-    if(mode==='ffa'||mode==='tag'){ const v=x=>mode==='tag'?x.pts:x.score; const mx=Math.max(...creatures.map(v)); lead = v(c)>0 && v(c)===mx && creatures.filter(x=>v(x)===mx).length===1; }
+    if(!isTeam() && !isCoop()){ const v=x=>mode==='tag'?x.pts:x.score; const mx=Math.max(...creatures.map(v)); lead = v(c)>0 && v(c)===mx && creatures.filter(x=>v(x)===mx).length===1; }
     c.crown.visible=lead && c.label.visible; c.crown.position.y=c.label.position.y+(c.buffIcon.visible?1.9:1.0);
     // 足あと
     const tr=TRAIL_FX[md.trail];
@@ -3184,8 +4367,8 @@ function updateVisuals(dt, t){
     if(c.fx.star>0 && Math.random()<dt*20) emit('spark',c.rx,0.8,c.rz,1,{color:new THREE.Color().setHSL(Math.random(),1,0.6).getHex(),speed:2,size:.5,life:.5});
     if(c.fx.rocket>0 && Math.random()<dt*30) emit('spark',c.rx-Math.sin(c.heading),0.5,c.rz-Math.cos(c.heading),1,{color:0xff9a3d,speed:1,size:.6,life:.4});
     if(c===me){
-      const [ax,az]=attackPoint(c); c.arrow.rotation.y=Math.atan2(-(ax-c.x),-(az-c.z));
-      c.arrow.visible = state==='play' && mode!=='tag' && Math.hypot(ax-c.x,az-c.z)>4.5;
+      const at=arrowTarget(c);
+      if(at){ c.arrow.rotation.y=Math.atan2(-(at[0]-c.x),-(at[1]-c.z)); c.arrow.visible = state==='play' && Math.hypot(at[0]-c.x,at[1]-c.z)>4.5; } else c.arrow.visible=false;
       const R=c.fx.magnet>0?6.5:0; c.magRing.visible=R>0; if(R>0){ c.magRing.scale.setScalar(R); c.magRing.material.opacity=0.18+Math.sin(t*3)*0.08; }
     }
   }
@@ -3227,7 +4410,8 @@ function updateVisuals(dt, t){
   for(const v of nestVis){ v.pulse.scale.setScalar(lerp(v.pulse.scale.x,1,Math.min(1,dt*4))); v.pulse.material.opacity=0.25+Math.sin(t*3+v.id)*0.15+(v.pulse.scale.x-1)*0.8; v.flag.rotation.y=Math.sin(t*3+v.id)*0.25; }
   for(const v of goalVis){ v.pulse.scale.setScalar(lerp(v.pulse.scale.x,1,Math.min(1,dt*4))); v.pulse.material.opacity=0.25+Math.sin(t*3+v.side)*0.15+(v.pulse.scale.x-1)*0.8; }
   // 明るさ（停電・夜）
-  const blackout = hap.k==='blackout' && hap.left>0;
+  const blackout = (hap.k==='blackout' && hap.left>0) || (intv.k==='short' && intv.phase==='on');
+  modeVis(dt,t);
   const dim = blackout ? 0.12 : 1;
   hemi.intensity=lerp(hemi.intensity, lightBase.hemi*dim, Math.min(1,dt*3));
   sun.intensity=lerp(sun.intensity, lightBase.sun*dim, Math.min(1,dt*3));
@@ -3286,14 +4470,14 @@ function loop(now){
   }
   else if(state==='play'){
     simulate(dt);
-    timeLeft-=dt;
+    if(!untimed()) timeLeft-=dt;
     runEvents();
-    if(!feverOn && timeLeft<=20 && mode!=='tag'){
+    if(!feverOn && timeLeft<=20 && isCoinMode()){
       feverOn=true; centerMsg('ラストスパート！ 硬貨がぜんぶ1.5倍！',1700,true); sfxAt('fever',0,0);
       for(let i=0;i<3;i++) spawnCoin();
     }
     if(timeLeft<=10 && Math.ceil(timeLeft)!==lastTick){ lastTick=Math.ceil(timeLeft); if(lastTick>0) sfx('tick'); }
-    if(timeLeft<=0){ timeLeft=0; endGame(); }
+    if(timeLeft<=0 && state==='play'){ timeLeft=0; endGame(); }
     if(++hudTick%4===0) updateHUD(); updateDashUI(); updateBuffUI();
   }
   else if(state==='timeup' && isOnline && !isGuest){ /* 結果配信中 */ }
@@ -3328,7 +4512,7 @@ goTitle();
 onResize();
 $('loading').classList.add('hidden');
 window.__gameReady=true;
-window.__dbg={ get state(){return state;}, get mode(){return mode;}, creatures, coins, items, get me(){return me;}, get sideScore(){return sideScore;}, get timeLeft(){return timeLeft;}, set timeLeft(v){timeLeft=v;}, get map(){return mapKey;}, statics, save:()=>save, startHappening, simulate, runEvents, setState:v=>{state=v;}, setFever:v=>{feverOn=v;}, setupRound, makeRoster, mapsFor, MAPS, net };
+window.__dbg={ get state(){return state;}, get mode(){return mode;}, creatures, coins, items, get me(){return me;}, get sideScore(){return sideScore;}, get timeLeft(){return timeLeft;}, set timeLeft(v){timeLeft=v;}, get map(){return mapKey;}, statics, save:()=>save, startHappening, simulate, runEvents, enemies:()=>ENEMIES, ms:()=>MS, endGame:(m)=>endGame(m), forceIntv:()=>{ intv.next=matchT; }, bossInfo:()=>({shield:MS.boss.shield,hill:MS.hill,port:MS.boss.port}), msInfo:()=>({won:MS.won,lost:MS.lost,wave:MS.wave,kills:MS.kills,server:MS.server&&Math.floor(MS.server.hp),boss:MS.boss&&MS.boss.hp,gone:MS.tiles&&MS.tiles.filter(t=>t.st===2).length,intvSeen:intvLog.join('/')}), setState:v=>{state=v;}, setFever:v=>{feverOn=v;}, setupRound, makeRoster, mapsFor, MAPS, net };
 requestAnimationFrame(loop);
 </script>
 </body>
