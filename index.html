@@ -1930,6 +1930,15 @@ function steer(c,tx,tz,precise,dt){
       if(toward>0.1){ const side=(ix*-nzo+iz*nxo)>=0?1:-1; const k=(1-od/lim)*1.6; ix+=-nzo*side*k+nxo*k*0.4; iz+=nxo*side*k+nzo*k*0.4; } }
   }
   for(const b of bananas){ const ox=c.x-b.x, oz=c.z-b.z, od=Math.hypot(ox,oz); if(od<2.6 && od>0.01 && b.owner!==c){ ix+=ox/od*0.8; iz+=oz/od*0.8; } }
+  // 落ちてくる硬貨・ネジ・エラー弾の影から逃げる（強いCPUほどよく気づく）
+  const aware = c.aware!==undefined ? c.aware : (c.aware = Math.random() < DIFFS[diff].item+0.15);
+  if(aware){
+    for(const m of meteors){ if(m.t>2.4) continue; let ox=c.x-m.x, oz=c.z-m.z, od=Math.hypot(ox,oz); const lim=m.R+c.r+1.0;
+      if(od<lim){ if(od<0.05){ ox=Math.cos(c.slot); oz=Math.sin(c.slot); od=1; } const k=(1.2-od/lim)*3.2; ix+=ox/od*k; iz+=oz/od*k; } }
+    if(intv.phase==='on' && intv.k==='search'){ const p=clamp(1-intv.left/10,0,1), vx=intv.dx*(2*W-4)/10, vz=Math.cos(p*TAU*1.5)*TAU*1.5*H*0.6/10;
+      const lx=intv.lx+vx*0.6, lz=intv.lz+vz*0.6, ox=c.x-lx, oz=c.z-lz, od=Math.hypot(ox,oz)||0.01;
+      if(od<6){ const k=(1-od/6)*3; ix+=ox/od*k; iz+=oz/od*k; } }
+  }
   const spd=Math.hypot(c.vx,c.vz);
   if(dl>1 && spd<1.2 && c.stun<=0) c.stuckT+=dt; else c.stuckT=Math.max(0,c.stuckT-dt);
   if(c.stuckT>0.6){ c.stuckT=0; c.detourT=rand(0.5,0.9); c.detourA=Math.atan2(iz,ix)+(Math.random()<.5?1:-1)*rand(1.3,2.4);
@@ -1937,9 +1946,17 @@ function steer(c,tx,tz,precise,dt){
   if(c.detourT>0){ c.detourT-=dt; ix=Math.cos(c.detourA); iz=Math.sin(c.detourA); }
   else if(spd>3) c.stuckN=0;
   if(c.fx.confuse>0){ if(Math.random()<dt*2) c.wanderA=rand(0,TAU); ix=Math.cos(c.wanderA); iz=Math.sin(c.wanderA); }
-  if(MS.tiles){ const l=Math.hypot(ix,iz);
-    if(l>0.1) for(const look of [1.3,2.6]){ if(tileBad(c.x+ix/l*look,c.z+iz/l*look)){ let fix=null;
-      for(const a of [0.7,-0.7,1.4,-1.4,2.2,-2.2,Math.PI]){ const ca=Math.cos(a), sa=Math.sin(a), rx=ix*ca-iz*sa, rz=ix*sa+iz*ca; if(!tileBad(c.x+rx/l*look,c.z+rz/l*look)){ fix=[rx,rz]; break; } }
+  if(MS.tiles){
+    const sp=Math.hypot(c.vx,c.vz);
+    const slick=envAt(c.x,c.z).ctrl<0.6;   // ソースや氷の上はすべるので遠くまで先読み
+    if(sp>2 && !tileBad(c.x,c.z)){ for(const tt of (slick?[0.25,0.5,0.85,1.2]:[0.25,0.5])){ const px=c.x+c.vx*tt, pz=c.z+c.vz*tt; if(tileBad(px,pz)){ ix=-c.vx/sp; iz=-c.vz/sp;
+      // 横に安全な床があればそっちへ
+      for(const a of [1.2,-1.2]){ const ca=Math.cos(a), sa=Math.sin(a), rx=ix*ca-iz*sa, rz=ix*sa+iz*ca; if(!tileBad(c.x+rx*1.5,c.z+rz*1.5)){ ix=rx; iz=rz; break; } }
+      c.ix=ix; c.iz=iz; c.wantDash=false; return; } } }
+    const l=Math.hypot(ix,iz), cur=tileAt(c.x,c.z);
+    const badAhead=(x,z)=>{ const tl=tileAt(x,z); return !tl || (tl!==cur && (tl.st>=1 || (tl.heat>1.1 && !tl.prot))); };
+    if(l>0.1) for(const look of [1.3,2.6]){ if(badAhead(c.x+ix/l*look,c.z+iz/l*look)){ let fix=null;
+      for(const a of [0.7,-0.7,1.4,-1.4,2.2,-2.2,Math.PI]){ const ca=Math.cos(a), sa=Math.sin(a), rx=ix*ca-iz*sa, rz=ix*sa+iz*ca; if(!badAhead(c.x+rx/l*look,c.z+rz/l*look)){ fix=[rx,rz]; break; } }
       if(fix){ ix=fix[0]; iz=fix[1]; } else if(!tileBad(c.x,c.z)){ ix=0; iz=0; } break; } } }
   const il=Math.hypot(ix,iz); if(il>1){ ix/=il; iz/=il; }
   c.ix=ix; c.iz=iz;
@@ -1970,9 +1987,16 @@ function aiControl(c, dt){
     }
     setTarget(c,best);
     c.itemT=null;
-    let bi=null, bd=c.target?7.5:14;
+    let bi=null, bd=(c.target?7.5:14)+Math.max(0,rankFactor(c)-0.5)*8;
     for(const it of items){ if(!it.active) continue; const d=Math.hypot(it.x-c.x,it.z-c.z); if(d<bd){ bd=d; bi=it; } }
     if(bi && (Math.random()<D.item || bd<3)) c.itemT=bi;
+    // もうすぐ相手の陣地に硬貨が入りそうなら、押している虫をタックルで止める
+    if(D.aggr>=0.8 && c.dashCD<=0.2 && !c.attack && Math.random()<D.aggr*0.6){
+      for(const k of coins){ if(k.state!=='ground' || !k.lastTouch || !canStun(c,k.lastTouch)) continue; const o=k.lastTouch;
+        if(o.stun>0 || Math.hypot(o.x-k.x,o.z-k.z)>2.6) continue;
+        const zn = mode==='ffa' ? zones[o.slot] : zones.find(z=>z.scoreSide===o.side());
+        if(zn && Math.hypot(k.x-zn.x,k.z-zn.z)<zn.r+6 && Math.hypot(o.x-c.x,o.z-c.z)<9){ c.attack=o; c.attackT=2; break; } }
+    }
     if(c.dashCD<=0.3 && Math.random()<c.aggr && !c.attack){
       let victim=null, vd=6.5;
       for(const o of creatures){ if(!canStun(c,o)||o.stun>0||o.immuneNow()||!visibleTo(o,c)) continue; const d=Math.hypot(o.x-c.x,o.z-c.z);
@@ -2381,7 +2405,7 @@ function showAlert(on, name, desc){
   if(on){ el.innerHTML=`⚠ 外部干渉発生！ <b>${esc(name||intv.name)}</b><small>${esc(desc||intv.desc)}</small>`; el.classList.remove('hidden'); }
   else el.classList.add('hidden');
 }
-const intvLog=[];
+const intvLog=[]; let hazardHits=0;
 function startIntv(){
   const d=intvDef(); intvLog.push(d.k); intv.k=d.k; intv.name=d.name; intv.desc=d.desc; intv.phase='warn'; intv.left=1.7;
   showAlert(true); sfxAt('alarm',me?me.x:0,me?me.z:0);
@@ -2414,7 +2438,7 @@ function updateIntv(dt){
     const p=clamp(1-intv.left/10,0,1); intv.lx=-intv.dx*(W-2)+intv.dx*(2*W-4)*p; intv.lz=Math.sin(p*TAU*1.5)*H*0.6;
     for(const c of creatures){ if(c.out) continue; c.searchCD=(c.searchCD||0)-dt; if(c.searchCD>0) continue;
       const dx=c.x-intv.lx, dz=c.z-intv.lz, d=Math.hypot(dx,dz);
-      if(d<3.2){ c.searchCD=1.2; const k=c.immuneNow()?0.3:1, l=d||1; addKick(c,dx/l*12*k,dz/l*12*k); c.knockT=0.4; setStun(c,0.5); emit('spark',c.x,1,c.z,8,{color:0xfff3a0,speed:5,size:.6}); if(c===me) sfx('bump',6); } }
+      if(d<3.2){ hazardHits++; c.searchCD=1.2; const k=c.immuneNow()?0.3:1, l=d||1; addKick(c,dx/l*12*k,dz/l*12*k); c.knockT=0.4; setStun(c,0.5); emit('spark',c.x,1,c.z,8,{color:0xfff3a0,speed:5,size:.6}); if(c===me) sfx('bump',6); } }
   }
   if(intv.left<=0) endIntv();
 }
@@ -2482,7 +2506,7 @@ function meteorImpact(m){
   emit('puff',m.x,0.4,m.z,10,{speed:5,size:1});
   emit('spark',m.x,0.8,m.z,m.kind==='debris'?4:12,{color:0xffe08a,speed:7,size:.7});
   for(const c of creatures){ if(c.out) continue; const dx=c.x-m.x, dz=c.z-m.z, d=Math.hypot(dx,dz);
-    if(d<m.R+c.r){ const k=c.immuneNow()?0.3:1, l=d||1, f=(m.kind==='debris'?7:13)*k; addKick(c,dx/l*f,dz/l*f); c.knockT=0.4; setStun(c, m.kind==='debris'?0.6:1.1); } }
+    if(d<m.R+c.r){ hazardHits++; const k=c.immuneNow()?0.3:1, l=d||1, f=(m.kind==='debris'?7:13)*k; addKick(c,dx/l*f,dz/l*f); c.knockT=0.4; setStun(c, m.kind==='debris'?0.6:1.1); } }
   if(m.kind==='big100'||m.kind==='big500'){
     if(me && Math.hypot(me.x-m.x,me.z-m.z)<16) shake=Math.max(shake,0.45);
     const n=m.kind==='big500'?2:1;
@@ -2579,13 +2603,23 @@ function aiCtf(c,dt){
   let tx=can.x, tz=can.z, dash=false;
   const foes=creatures.filter(o=>!o.out && foe(c,o));
   if(can.resp>0){ tx=0; tz=0; }
-  else if(can.carrier===c){ tx=b.x; tz=b.z; }
+  else if(can.carrier===c){
+    tx=b.x; tz=b.z;
+    // 進む先の敵をよける
+    const gx=b.x-c.x, gz=b.z-c.z, gl=Math.hypot(gx,gz)||1; let ax=gx/gl, az=gz/gl;
+    for(const o of foes){ const ox=c.x-o.x, oz=c.z-o.z, od=Math.hypot(ox,oz); if(od<5.5 && od>0.1){ const k=(1-od/5.5)*1.6; ax+=ox/od*k; az+=oz/od*k; } }
+    const al=Math.hypot(ax,az)||1; tx=c.x+ax/al*4; tz=c.z+az/al*4;
+    if(gl<6 && c.dashCD<=0) dash=true;   // ベースの前ならダッシュでかけこむ
+  }
   else if(can.carrier && !foe(c,can.carrier)){
     const [e,d]=nearestTo(can.carrier.x,can.carrier.z,foes);
     if(e && d<9){ tx=e.x; tz=e.z; if(Math.hypot(e.x-c.x,e.z-c.z)<3.6 && c.dashCD<=0) dash=true; } else { tx=can.carrier.x+rand(-2,2); tz=can.carrier.z+rand(-2,2); }
   } else if(can.carrier){
-    const e=can.carrier, lead=0.35; tx=e.x+e.vx*lead; tz=e.z+e.vz*lead;
-    if(Math.hypot(e.x-c.x,e.z-c.z)<3.8 && c.dashCD<=0) dash=true;
+    const e=can.carrier, eb=MS.bases[e.side()], d=Math.hypot(e.x-c.x,e.z-c.z);
+    if(d>5){ // 相手のベースとのあいだに先回り
+      const bx=eb.x-e.x, bz=eb.z-e.z, bl=Math.hypot(bx,bz)||1, lead=Math.min(6,bl*0.4); tx=e.x+bx/bl*lead; tz=e.z+bz/bl*lead; }
+    else { tx=e.x+e.vx*0.3; tz=e.z+e.vz*0.3; }
+    if(d<3.8 && c.dashCD<=0) dash=true;
   } else {
     // 1匹は自分のベース近くを守る
     const mates=creatures.filter(o=>!o.out && !foe(c,o)).sort((a,b2)=>a.slot-b2.slot);
@@ -2629,10 +2663,22 @@ function aiKoth(c,dt){
   let tx=h.x+Math.cos(a)*rr, tz=h.z+Math.sin(a)*rr, dash=false;
   const inMe=Math.hypot(c.x-h.x,c.z-h.z)<h.r;
   // 中が混んでいたら外で待って、すきを見てタックルで飛びこむ
-  const crowd=creatures.filter(o=>o!==c && !o.out && foe(c,o) && Math.hypot(o.x-h.x,o.z-h.z)<h.r).length;
+  const crowd=creatures.filter(o=>o!==c && !o.out && o.stun<=0 && foe(c,o) && Math.hypot(o.x-h.x,o.z-h.z)<h.r).length;
   if(!inMe && crowd>=2 && c.dashCD>0.2){ const ang=Math.atan2(c.z-h.z,c.x-h.x)+dt*0.6; tx=h.x+Math.cos(ang)*(h.r+2.2); tz=h.z+Math.sin(ang)*(h.r+2.2); }
-  if(inMe){ for(const o of creatures){ if(o.out||!foe(c,o)) continue; const d=Math.hypot(o.x-c.x,o.z-c.z);
-    if(d<4 && Math.hypot(o.x-h.x,o.z-h.z)<h.r+1 && c.dashCD<=0 && Math.random()<c.aggr*3){ tx=o.x; tz=o.z; dash=true; break; } } }
+  if(inMe){
+    // 中にいる相手のうち、ゲージが多い相手を優先
+    let tg=null, ts=-1;
+    for(const o of creatures){ if(o.out||!foe(c,o)||o.stun>0) continue; const dIn=Math.hypot(o.x-h.x,o.z-h.z); if(dIn>h.r+0.5) continue;
+      const d=Math.hypot(o.x-c.x,o.z-c.z), sc=(isTeam()?0:o.score)*0.05+6-d; if(sc>ts){ ts=sc; tg=o; } }
+    if(tg){
+      const d=Math.hypot(tg.x-c.x,tg.z-c.z);
+      if(c.dashCD<=0 && d<4.2 && Math.random()<0.5+c.aggr*2){
+        // サークルの中心がわから外へ向けて突き飛ばす
+        const ox=tg.x-h.x, oz=tg.z-h.z, ol=Math.hypot(ox,oz)||1; const bx=tg.x-ox/ol*1.2, bz=tg.z-oz/ol*1.2;
+        if(Math.hypot(bx-c.x,bz-c.z)<1.4){ tx=tg.x+ox/ol; tz=tg.z+oz/ol; dash=true; } else { tx=bx; tz=bz; }
+      } else { const ox=tg.x-h.x, oz=tg.z-h.z, ol=Math.hypot(ox,oz)||1; tx=tg.x+ox/ol*0.6; tz=tg.z+oz/ol*0.6; }   // 体で外へ押す
+    }
+  }
   else if(c.dashCD<=0){ for(const o of creatures){ if(o.out||!foe(c,o)||o.stun>0) continue; if(Math.hypot(o.x-h.x,o.z-h.z)<h.r && Math.hypot(o.x-c.x,o.z-c.z)<4.5){ tx=o.x; tz=o.z; dash=true; break; } } }
   for(const it of items){ if(it.active && Math.hypot(it.x-c.x,it.z-c.z)<3 && !inMe){ tx=it.x; tz=it.z; } }
   steer(c,tx,tz,inMe,dt);
@@ -2721,22 +2767,44 @@ function aiShock(c,dt){
   const D=DIFFS[diff];
   c.think-=dt;
   const here=tileAt(c.x,c.z);
-  if(c.think<=0 || !c.safeT || tileBad(c.safeT.x,c.safeT.z) || (here && (here.st>=1 || here.heat>0.9))){
+  const hereHot = here && (here.st>=1 || (!here.prot && here.heat>1.3));
+  if(here && (here.st===1 || here.st===3)){
+    let best=null, bd=1e9;
+    for(const t of MS.tiles){ if(t.st!==0 || (t.heat>1.4 && !t.prot)) continue; const dd=Math.hypot(t.x-c.x,t.z-c.z); if(dd>9) continue;
+      const mx=(t.x+c.x)/2, mz=(t.z+c.z)/2, mid=tileAt(mx,mz); const pen=(mid && mid!==here && mid.st===2)?8:0;
+      if(dd+pen<bd){ bd=dd+pen; best=t; } }
+    if(best){ c.safeT={x:best.x,z:best.z}; c.think=0.4;
+      steer(c,best.x,best.z,false,dt);
+      c.wantDash = here.st===1 && here.t<0.8 && c.dashCD<=0 && bd>2;
+      return; }
+  }
+  if(c.think<=0 || !c.safeT || tileBad(c.safeT.x,c.safeT.z) || hereHot){
     c.think=rand(D.think[0],D.think[1]);
     let best=null, bs=1e9;
-    for(let i=0;i<16;i++){ const t=MS.tiles[(Math.random()*MS.tiles.length)|0]; if(t.st!==0) continue;
-      const d=Math.hypot(t.x-c.x,t.z-c.z); if(d>14) continue;
-      let bad=0; for(const [ox,oz] of [[MS.TS,0],[-MS.TS,0],[0,MS.TS],[0,-MS.TS]]) if(tileBad(t.x+ox,t.z+oz)) bad++;
-      const s=d*0.4+t.heat*4+bad*2.5-(t.prot?3:0)+(t===here?2:0);
+    const tries = 10+Math.round(D.item*20);
+    for(let i=0;i<tries;i++){ const t=MS.tiles[(Math.random()*MS.tiles.length)|0]; if(t.st!==0) continue;
+      const d=Math.hypot(t.x-c.x,t.z-c.z); if(d>12) continue;
+      let bad=0; for(const [ox,oz] of [[MS.TS,0],[-MS.TS,0],[0,MS.TS],[0,-MS.TS],[MS.TS,MS.TS],[-MS.TS,-MS.TS],[MS.TS,-MS.TS],[-MS.TS,MS.TS]]) if(tileBad(t.x+ox,t.z+oz)) bad++;
+      // 行くまでの道に穴がないか
+      let pathBad=0; const steps=Math.ceil(d/1.5); for(let k=1;k<steps;k++){ if(tileBad(c.x+(t.x-c.x)*k/steps, c.z+(t.z-c.z)*k/steps)) pathBad++; }
+      // ほかの虫が多い場所はさける（押し出されやすい）
+      let crowd=0; for(const o of creatures){ if(o!==c && !o.out && Math.hypot(o.x-t.x,o.z-t.z)<4) crowd++; }
+      const slip=envAt(t.x,t.z).ctrl<0.6?4:0;   // すべる床は足場にしない
+      const s=d*0.35+t.heat*3+bad*1.8+pathBad*6+crowd*1.5+slip-(t.prot?3.5:0)+(t===here?1.5:0);
       if(s<bs){ bs=s; best=t; } }
-    if(best) c.safeT={x:best.x+rand(-1,1),z:best.z+rand(-1,1)};
+    if(best) c.safeT={x:best.x+rand(-0.8,0.8),z:best.z+rand(-0.8,0.8)};
   }
   let tx=c.safeT?c.safeT.x:c.x, tz=c.safeT?c.safeT.z:c.z, dash=false;
   // 穴の近くにいる相手を突き落とす
-  if(c.dashCD<=0 && Math.random()<c.aggr*0.6){
+  if(c.dashCD<=0 && Math.random()<c.aggr*0.8){
     for(const o of creatures){ if(o===c||o.out) continue; const d=Math.hypot(o.x-c.x,o.z-c.z);
-      if(d<3.8){ const dx=(o.x-c.x)/d, dz=(o.z-c.z)/d; if(tileBad(o.x+dx*2.5,o.z+dz*2.5) && !tileBad(c.x+dx*1.5,c.z+dz*1.5)){ tx=o.x; tz=o.z; dash=true; break; } } }
+      if(d<3.8){ const dx=(o.x-c.x)/d, dz=(o.z-c.z)/d;
+        // 相手の向こうが穴で、自分の足もとと突っこむ先は安全なときだけ
+        if(tileBad(o.x+dx*2.5,o.z+dz*2.5) && !tileBad(c.x+dx*1.5,c.z+dz*1.5) && !tileBad(c.x+dx*3,c.z+dz*3) && !tileBad(c.x,c.z)){ tx=o.x; tz=o.z; dash=true; break; } } }
   }
+  // タックルされそうなら横へよける
+  for(const o of creatures){ if(o===c||o.out||o.dashT<=0) continue; const dx=c.x-o.x, dz=c.z-o.z, d=Math.hypot(dx,dz);
+    if(d<4 && (o.vx*dx+o.vz*dz)/d>4 && Math.random()<D.item){ const sx=-dz/d, sz=dx/d; const side=tileBad(c.x+sx*2,c.z+sz*2)?-1:1; tx=c.x+sx*side*3; tz=c.z+sz*side*3; break; } }
   steer(c,tx,tz,true,dt);
   c.wantDash = dash && Math.random()<D.dash;
 }
@@ -2784,12 +2852,18 @@ function aiPotato(c,dt){
       const mx=W-4, mz=H-4; if(c.x>mx) fx-=0.3; if(c.x<-mx) fx+=0.3; if(c.z>mz) fz-=0.3; if(c.z<-mz) fz+=0.3;
       const l=Math.hypot(fx,fz); if(l>0.001){ tx=c.x+fx/l*5; tz=c.z+fz/l*5; } else { tx=Math.cos(c.wanderA)*W*0.5; tz=Math.sin(c.wanderA)*H*0.5; if(Math.hypot(tx-c.x,tz-c.z)<3) c.wanderA=rand(0,TAU); }
     } else {
-      const [o,d]=nearestTo(c.x,c.z,creatures.filter(o=>o!==c && !o.out));
-      if(o){ tx=o.x+o.vx*0.3; tz=o.z+o.vz*0.3; if(d<3.8 && c.dashCD<=0) dash=true; }
+      // 気絶していない、近くの相手をねらう（逃げる向きを先読み）
+      let o=null, bd=1e9; for(const x of creatures){ if(x===c||x.out) continue; const dd=Math.hypot(x.x-c.x,x.z-c.z)*(x.stun>0?0.7:1); if(dd<bd){ bd=dd; o=x; } }
+      if(o){ const lead=Math.min(0.6,bd/12); tx=o.x+o.vx*lead; tz=o.z+o.vz*lead; if(bd<3.8 && c.dashCD<=0 && b.passCD<=0) dash=true; }
     }
-  } else if(b.holder && b.t<7 && Math.hypot(b.holder.x-c.x,b.holder.z-c.z)<10){
-    const h=b.holder, dx=c.x-h.x, dz=c.z-h.z, d=Math.hypot(dx,dz)||1; tx=c.x+dx/d*5; tz=c.z+dz/d*5;
-    if(d<3 && c.dashCD<=0 && Math.random()<0.4) { tx=c.x+(-dz/d)*5; tz=c.z+(dx/d)*5; dash=true; }
+  } else if(b.holder && b.t<9 && Math.hypot(b.holder.x-c.x,b.holder.z-c.z)<11){
+    const h=b.holder, dx=c.x-h.x, dz=c.z-h.z, d=Math.hypot(dx,dz)||1; let fx=dx/d, fz=dz/d;
+    // 壁ぎわに追いこまれないように
+    const mx=W-4, mz=H-4; if(c.x>mx) fx-=0.8; if(c.x<-mx) fx+=0.8; if(c.z>mz) fz-=0.8; if(c.z<-mz) fz+=0.8;
+    const fl=Math.hypot(fx,fz)||1; tx=c.x+fx/fl*5; tz=c.z+fz/fl*5;
+    // 相手がタックルしてきたら横にダッシュでよける
+    if(d<4 && h.dashT>0 && c.dashCD<=0 && Math.random()<D.item){ tx=c.x+(-dz/d)*5; tz=c.z+(dx/d)*5; dash=true; }
+    else if(d<2.6 && c.dashCD<=0 && Math.random()<0.3){ tx=c.x+(-dz/d)*5; tz=c.z+(dx/d)*5; dash=true; }
   } else {
     let bi=null, bd=9; for(const it of items){ if(!it.active) continue; const d=Math.hypot(it.x-c.x,it.z-c.z); if(d<bd){ bd=d; bi=it; } }
     if(bi){ tx=bi.x; tz=bi.z; } else { tx=Math.cos(c.wanderA)*W*0.5; tz=Math.sin(c.wanderA)*H*0.5; if(Math.hypot(tx-c.x,tz-c.z)<3) c.wanderA=rand(0,TAU); }
@@ -4512,7 +4586,7 @@ goTitle();
 onResize();
 $('loading').classList.add('hidden');
 window.__gameReady=true;
-window.__dbg={ get state(){return state;}, get mode(){return mode;}, creatures, coins, items, get me(){return me;}, get sideScore(){return sideScore;}, get timeLeft(){return timeLeft;}, set timeLeft(v){timeLeft=v;}, get map(){return mapKey;}, statics, save:()=>save, startHappening, simulate, runEvents, enemies:()=>ENEMIES, ms:()=>MS, endGame:(m)=>endGame(m), forceIntv:()=>{ intv.next=matchT; }, bossInfo:()=>({shield:MS.boss.shield,hill:MS.hill,port:MS.boss.port}), msInfo:()=>({won:MS.won,lost:MS.lost,wave:MS.wave,kills:MS.kills,server:MS.server&&Math.floor(MS.server.hp),boss:MS.boss&&MS.boss.hp,gone:MS.tiles&&MS.tiles.filter(t=>t.st===2).length,intvSeen:intvLog.join('/')}), setState:v=>{state=v;}, setFever:v=>{feverOn=v;}, setupRound, makeRoster, mapsFor, MAPS, net };
+window.__dbg={ get state(){return state;}, get mode(){return mode;}, creatures, coins, items, get me(){return me;}, get sideScore(){return sideScore;}, get timeLeft(){return timeLeft;}, set timeLeft(v){timeLeft=v;}, get map(){return mapKey;}, statics, save:()=>save, startHappening, simulate, runEvents, enemies:()=>ENEMIES, ms:()=>MS, endGame:(m)=>endGame(m), forceIntv:()=>{ intv.next=matchT; }, bossInfo:()=>({shield:MS.boss.shield,hill:MS.hill,port:MS.boss.port}), hazard:()=>hazardHits, resetHazard:()=>{hazardHits=0;}, msInfo:()=>({won:MS.won,lost:MS.lost,wave:MS.wave,kills:MS.kills,server:MS.server&&Math.floor(MS.server.hp),boss:MS.boss&&MS.boss.hp,gone:MS.tiles&&MS.tiles.filter(t=>t.st===2).length,intvSeen:intvLog.join('/')}), setState:v=>{state=v;}, setFever:v=>{feverOn=v;}, setupRound, makeRoster, mapsFor, MAPS, net };
 requestAnimationFrame(loop);
 </script>
 </body>
