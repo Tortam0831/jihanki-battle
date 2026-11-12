@@ -2883,7 +2883,7 @@ function netPump(lanes, once, alive){
   net.inflight=0; net.lastLaunch=0;
   const iv=setInterval(()=>{
     if(!alive()){ clearInterval(iv); return; }
-    const want=clamp(Math.ceil((net.ping||700)/350),2,lanes);
+    const want=clamp(Math.ceil((net.ping||700)/170),2,lanes);   // 約0.17秒ごとに1回とどくように
     const now=performance.now(), gap=Math.max(110, (net.ping||700)/want);
     if(net.inflight>=want) return;
     if(net.inflight<lanes && now-net.lastLaunch>=gap){
@@ -2903,7 +2903,7 @@ function startHostLoop(){
     for(const c of creatures){ if(c.isRemote && now-c.lastIn>9000){ c.isRemote=false; c.name+='(CPU)'; floatText(`${c.name} が切断…CPUが代わりに動かします`,c.x,2.5,c.z,'#fff',true); } }
     if(state==='result' && performance.now()-resultSentAt>12000) net.loopOn=false;
   };
-  netPump(4, once, ()=>net.loopOn && isOnline && !isGuest);
+  netPump(6, once, ()=>net.loopOn && isOnline && !isGuest);
 }
 let resultSentAt=0;
 function netSendNow(){ resultSentAt=performance.now(); }
@@ -2939,7 +2939,8 @@ function startGuestLoop(){
     if(state==='result') net.loopOn=false;
   };
   // 人が多いときはGASの同時実行数の上限（30）をこえないように本数を減らす
-  netPump(clamp(Math.floor(22/Math.max(1,humans-1)),2,4), once, ()=>net.loopOn && isOnline && isGuest);
+  // GASの同時実行の上限（30）をこえないように：ホスト6本＋ゲスト全員で合計24本まで
+  netPump(clamp(Math.floor(18/Math.max(1,humans-1)),2,6), once, ()=>net.loopOn && isOnline && isGuest);
 }
 function applySnap(str){
   let S; try{ S=JSON.parse(str); }catch(e){ return; }
