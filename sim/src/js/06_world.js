@@ -95,7 +95,8 @@ function canPlace(id, x, y, rot, opt) {
     if (!isLand(xx, yy)) return { ok: false, reason: '水の上には置けません' };
     const i = idx(xx, yy);
     if (G.occ[i] && G.occ[i] !== opt.ignoreUid) return { ok: false, reason: 'ほかの建物と重なっています' };
-    const f = G.floor[i];
+    // 移動中の自分の滑走路・駐機場の床は、芝生とみなす
+    const f = opt.ignoreUid && G.occ[i] === opt.ignoreUid && (def.kind === 'runway' || def.kind === 'stand') ? FLOOR.NONE : G.floor[i];
     if (def.zone === 'term') { if (f !== FLOOR.TERM) return { ok: false, reason: 'ターミナル床の上に置いてください' }; }
     else if (def.zone === 'any') {
       const t = f === FLOOR.TERM ? 'T' : f === FLOOR.NONE ? 'N' : 'X';
@@ -130,11 +131,25 @@ function placeBuilding(id, x, y, rot, opt) {
   }
   G.blds[uid] = b;
   if (def.kind === 'runway' || def.kind === 'stand') clearTreesAround(x, y, w, h, def.kind === 'runway' ? 4 : 3);
-  if (!opt.free && !opt.move && !G.free) { G.money -= chk.cost; G.stat.buildCost += chk.cost; }
+  if (!opt.free && !opt.move && !G.free) { pay(chk.cost, 'build'); G.stat.buildCost += chk.cost; }
   spawnBuildingMesh(b);
   worldChanged(def);
   if (!opt.silent) { Bus.emit('built', b); }
   return b;
+}
+// 建物を消さずに、場所や向きを変える
+function relocateBuilding(uid, x, y, rot) {
+  const b = G.blds[uid]; if (!b) return null;
+  const chk = canPlace(b.id, x, y, rot, { move: true, ignoreUid: uid, ignoreRank: true });
+  if (!chk.ok) return null;
+  const keep = Object.assign({}, b); delete keep.mesh;
+  removeBuilding(uid, { move: true });
+  const nb = placeBuilding(b.id, x, y, rot, { move: true, uid, lv: b.lv, num: b.num, silent: true, ignoreRank: true });
+  if (!nb) return null;
+  for (const k of ['salesTotal', 'salesToday', 'salesYest', 'visits', 'day', 'ckToday']) if (keep[k] != null) nb[k] = keep[k];
+  if (B[b.id].kind === 'runway') nb.num = runwayNumber(rot);
+  Bus.emit('moved', nb);
+  return nb;
 }
 function runwayNumber(rot) { return rot % 2 ? 36 : 9; }
 function nextNum(kind) {
@@ -155,9 +170,9 @@ function removeBuilding(uid, opt) {
   delete G.blds[uid];
   if (b.mesh) { World.bldGroup.remove(b.mesh); disposeObj(b.mesh); }
   if (!opt.move) {
-    const refund = Math.floor(def.cost * 0.5 * (1 + (b.lv - 1) * 0.5));
-    if (!opt.noRefund) G.money += refund;
-    Bus.emit('removed', b, refund);
+    const back = Math.floor(def.cost * 0.5 * (1 + (b.lv - 1) * 0.5));
+    if (!opt.noRefund) refund(back, 'build');
+    Bus.emit('removed', b, back);
   }
   worldChanged(def);
 }
@@ -203,7 +218,7 @@ function paintApply(id, x0, y0, x1, y1) {
   const { tiles, cost } = paintCheck(id, x0, y0, x1, y1);
   if (!tiles.length) return 0;
   if (G.money < cost && !G.free) { toast('お金が足りません', 'bad'); Sound.se('error'); return -1; }
-  if (!G.free) { G.money -= cost; G.stat.buildCost += cost; }
+  if (!G.free) { pay(cost, 'build'); G.stat.buildCost += cost; }
   if (typeof UI !== 'undefined') { UI.lastPaint = tiles.map(i => [i, G.floor[i]]); UI.lastPaintCost = G.free ? 0 : cost; }
   for (const i of tiles) { G.floor[i] = def.paint; G.trees[i] = 0; markChunk(i % W, Math.floor(i / W)); if (def.paint === FLOOR.TAXI) clearTreesAround(i % W, Math.floor(i / W), 1, 1, 2); }
   worldChanged(def);
@@ -213,7 +228,7 @@ function paintApply(id, x0, y0, x1, y1) {
 }
 function clearFloor(x0, y0, x1, y1) {
   const xa = Math.min(x0, x1), xb = Math.max(x0, x1), ya = Math.min(y0, y1), yb = Math.max(y0, y1);
-  let n = 0, refund = 0;
+  let n = 0, back = 0;
   for (let y = ya; y <= yb; y++) for (let x = xa; x <= xb; x++) {
     if (!inMap(x, y) || !unlocked(x, y)) continue;
     const i = idx(x, y);
@@ -222,10 +237,10 @@ function clearFloor(x0, y0, x1, y1) {
     if (f === FLOOR.NONE || f === FLOOR.RUNWAY || f === FLOOR.APRON) { if (G.trees[i]) { G.trees[i] = 0; markChunk(x, y); n++; } continue; }
     if (isFixedRoad(x, y)) continue;
     const def = Object.values(B).find(d => d.paint === f);
-    refund += def ? def.cost * 0.5 : 0;
+    back += def ? def.cost * 0.5 : 0;
     G.floor[i] = FLOOR.NONE; n++; markChunk(x, y);
   }
-  if (n) { G.money += refund; worldChanged(null); World.dirtyWalls = true; }
+  if (n) { refund(back, 'build'); worldChanged(null); World.dirtyWalls = true; }
   return n;
 }
 function isFixedRoad(x, y) { return y <= 12 + OY && (x === 35 + OX || x === 36 + OX) && G.floor[idx(x, y)] === FLOOR.ROAD; }
@@ -250,7 +265,7 @@ function buySector(sx, sy) {
   const p = sectorPrice(sx, sy);
   if (!canBuySector(sx, sy)) return false;
   if (G.money < p && !G.free) { toast('お金が足りません', 'bad'); Sound.se('error'); return false; }
-  if (!G.free) G.money -= p;
+  pay(p, 'land');
   G.sectors[sy * SECW + sx] = 1;
   G.landBought = (G.landBought || 0) + 1;
   for (let y = sy * SEC; y < sy * SEC + SEC; y++) for (let x = sx * SEC; x < sx * SEC + SEC; x++) markChunk(x, y);
@@ -588,15 +603,16 @@ function getField(b) {
 // ============================================================
 //  飛行機の通り道
 // ============================================================
-function planePath(fromTile, toTile, allowStands) {
-  const key = fromTile + '>' + toTile + ':' + allowStands.join(',');
+function planePath(fromTile, toTile, allowStands, noRunway) {
+  const key = fromTile + '>' + toTile + ':' + allowStands.join(',') + (noRunway ? 'n' : '');
   if (RT.planePathCache.has(key)) return RT.planePathCache.get(key);
   const prev = new Int32Array(W * H).fill(-2);
   const q = [fromTile]; prev[fromTile] = -1;
   let found = false;
   const ok = i => {
     const f = G.floor[i];
-    if (f === FLOOR.TAXI || f === FLOOR.RUNWAY) return true;
+    if (f === FLOOR.TAXI) return true;
+    if (f === FLOOR.RUNWAY) return !noRunway || i === toTile || i === fromTile;
     if (f === FLOOR.APRON) return allowStands.includes(G.occ[i]);
     return false;
   };

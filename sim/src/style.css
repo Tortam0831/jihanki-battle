@@ -205,3 +205,25 @@ input[type=text]{font-family:inherit;font-size:16px;padding:8px;border:3px solid
 .guideMark{position:absolute;transform:translate(-50%,-100%);pointer-events:none;background:#3a7bd5;color:#fff;border:3px solid var(--ink);border-radius:6px;padding:3px 8px;font-size:13px;white-space:nowrap;animation:bob .8s infinite}
 #mission .ob.cur{background:#fff2b0;border-radius:4px;padding:2px 3px;margin:0 -3px}
 #mission .gbtn{margin:4px 0 2px;display:flex;gap:6px;flex-wrap:wrap}
+/* 一日のまとめ */
+.dHead{text-align:center;margin-bottom:8px}
+.dProfit{font-size:34px;font-weight:900;font-family:ui-monospace,Menlo,monospace;letter-spacing:1px;text-shadow:0 2px 0 #0002}
+.dProfit.pos{color:var(--good)}.dProfit.neg{color:var(--bad)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:640px){.grid2{grid-template-columns:1fr}}
+.drow{display:grid;grid-template-columns:7.5em 1fr auto;gap:6px;align-items:center;font-size:12px;margin:2px 0}
+.drow .dn{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.drow .dbar{height:9px;background:#0001;border-radius:3px;overflow:hidden}.drow .dbar>i{display:block;height:100%}
+.drow .dv{font-family:ui-monospace,Menlo,monospace;text-align:right}
+.dStats{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:8px 0}
+@media (max-width:640px){.dStats{grid-template-columns:repeat(3,1fr)}}
+.dStats>div{border:3px solid var(--ink);border-radius:6px;background:#fffdf6;display:flex;flex-direction:column;align-items:center;padding:4px 2px;font-size:11px;color:var(--ink2)}
+.dStats b{font-size:17px;color:var(--ink);font-family:ui-monospace,Menlo,monospace}
+.dFoot{display:flex;align-items:center;gap:8px;margin-top:10px}.dFoot .grow{flex:1}
+.li.jump{cursor:pointer}.li.jump:hover{background:#fff3c4}
+.bankTop{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:640px){.bankTop{grid-template-columns:1fr}}
+.bankTop .big{font-size:24px;font-weight:900;font-family:ui-monospace,Menlo,monospace;margin:2px 0 4px}.bankTop .big.neg{color:var(--bad)}
+.btnrow{display:flex;gap:6px;flex-wrap:wrap}
+.pbtn[disabled]{opacity:.45;pointer-events:none}
+#money.loan::after{content:' 借';font-size:10px;color:var(--bad);vertical-align:top}

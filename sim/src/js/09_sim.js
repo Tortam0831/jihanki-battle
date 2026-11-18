@@ -37,6 +37,17 @@ function earn(amount, cat, b) {
   RT.earnAcc = (RT.earnAcc || 0) + amount;
   if (b && amount > 0) Bus.emit('earn', b, amount);
 }
+// 建設・研究などの支払い（今日の支出にも記録）
+function pay(amount, cat) {
+  if (G.free || !amount) return;
+  G.money -= amount;
+  const ex = G.stat.today.expense; ex[cat] = (ex[cat] || 0) + amount;
+}
+function refund(amount, cat) {
+  if (G.free || !amount) return;
+  G.money += amount;
+  const ex = G.stat.today.expense; ex[cat] = (ex[cat] || 0) - amount;
+}
 function spend(amount, cat) {
   G.money -= amount;
   const ex = G.stat.today.expense;
@@ -73,17 +84,21 @@ function closeDay() {
   const sat = t.satW > 0 ? t.sat / t.satW : (G.satHist.length ? G.satHist[G.satHist.length - 1] : 50);
   const up = dailyUpkeep();
   spend(up, 'upkeep');
+  Bank.daily();
+  const prevRating = G.rating;
   // ホテル
   for (const b of Object.values(G.blds)) {
     const d = B[b.id];
     if (d.kind === 'hotel') { const v = (t.paxArr + t.paxDep) * 60 * d.income * (1 + comboBonus(b)) * (1 + (b.lv - 1) * 0.2) + 20000 * d.income; earn(v, 'hotel', b); }
   }
   const inc = Object.values(t.income).reduce((a, b) => a + b, 0), exp = Object.values(t.expense).reduce((a, b) => a + b, 0);
-  G.hist.push({ day: G.day, pax: t.paxArr + t.paxDep, inc, exp, sat, flights: t.flights, visitors: t.visitors, cancel: t.cancel + t.divert, income: Object.assign({}, t.income), ontime: t.ontime, late: t.late, unmet: Object.assign({}, t.unmet), missed: t.missed });
+  G.hist.push({ day: G.day, pax: t.paxArr + t.paxDep, inc, exp, sat, flights: t.flights, visitors: t.visitors, cancel: t.cancel + t.divert, income: Object.assign({}, t.income), ontime: t.ontime, late: t.late, unmet: Object.assign({}, t.unmet), missed: t.missed, expense: Object.assign({}, t.expense), paxArr: t.paxArr, paxDep: t.paxDep, divert: t.divert, money: G.money });
   if (G.hist.length > 72) G.hist.shift();
   if (t.satW > 0) G.satHist.push(sat);
   if (G.satHist.length > 4) G.satHist.shift();
   updateRating();
+  G.hist[G.hist.length - 1].rating0 = prevRating; G.hist[G.hist.length - 1].rating = G.rating;
+  G.hist[G.hist.length - 1].top = Object.values(G.blds).filter(b => b.salesToday > 0).sort((a, b) => b.salesToday - a.salesToday).slice(0, 3).map(b => [b.id, b.lv || 1, Math.round(b.salesToday)]);
   for (const b of Object.values(G.blds)) { b.salesYest = b.salesToday || 0; b.salesToday = 0; b.ckToday = 0; }
   RT.lastDay = G.hist[G.hist.length - 1];
   Extra.daily();
@@ -252,7 +267,7 @@ function canResearch(r) {
 function doResearch(id) {
   const r = RESEARCH_BY[id]; const c = canResearch(r);
   if (!c.ok) { toast(c.why, 'bad'); Sound.se('error'); return false; }
-  if (!G.free) { G.dev -= r.dev; G.money -= r.cost; }
+  if (!G.free) { G.dev -= r.dev; pay(r.cost, 'research'); }
   G.research[id] = G.day + 1;
   Sound.se('levelup');
   Bus.emit('research', r);
@@ -266,7 +281,7 @@ function upgradeBuilding(b) {
   if (b.lv >= maxLevel()) { toast(maxLevel() < 5 ? '開発「施設改装」でもっと上げられます' : '最大レベルです', 'bad'); return false; }
   const c = upgradeCost(b);
   if (G.money < c && !G.free) { toast('お金が足りません', 'bad'); Sound.se('error'); return false; }
-  if (!G.free) G.money -= c;
+  pay(c, 'build');
   b.lv++;
   refreshBuildingMesh(b);
   Sound.se('levelup');
@@ -332,7 +347,7 @@ function maxFreq(airlineId) { const rel = (G.airlines[airlineId] || {}).rel || 0
 function openRoute(airlineId, cityId, freq, type) {
   const c = routeCheck(airlineId, cityId, type);
   if (!c.ok) { toast(c.why, 'bad'); Sound.se('error'); return null; }
-  if (!G.free) G.money -= c.cost;
+  pay(c.cost, 'route');
   const r = { id: airlineId + '-' + cityId, airline: airlineId, city: cityId, type: c.type, freq: clamp(freq || 1, 1, maxFreq(airlineId)), active: true, opened: G.day, flights: 0, pax: 0, seats: 0, ontime: 0 };
   G.routes.push(r);
   G.stamps[cityId] = G.day + 1;

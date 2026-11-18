@@ -214,6 +214,28 @@ input[type=text]{font-family:inherit;font-size:16px;padding:8px;border:3px solid
 .guideMark{position:absolute;transform:translate(-50%,-100%);pointer-events:none;background:#3a7bd5;color:#fff;border:3px solid var(--ink);border-radius:6px;padding:3px 8px;font-size:13px;white-space:nowrap;animation:bob .8s infinite}
 #mission .ob.cur{background:#fff2b0;border-radius:4px;padding:2px 3px;margin:0 -3px}
 #mission .gbtn{margin:4px 0 2px;display:flex;gap:6px;flex-wrap:wrap}
+/* 一日のまとめ */
+.dHead{text-align:center;margin-bottom:8px}
+.dProfit{font-size:34px;font-weight:900;font-family:ui-monospace,Menlo,monospace;letter-spacing:1px;text-shadow:0 2px 0 #0002}
+.dProfit.pos{color:var(--good)}.dProfit.neg{color:var(--bad)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:640px){.grid2{grid-template-columns:1fr}}
+.drow{display:grid;grid-template-columns:7.5em 1fr auto;gap:6px;align-items:center;font-size:12px;margin:2px 0}
+.drow .dn{color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.drow .dbar{height:9px;background:#0001;border-radius:3px;overflow:hidden}.drow .dbar>i{display:block;height:100%}
+.drow .dv{font-family:ui-monospace,Menlo,monospace;text-align:right}
+.dStats{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:8px 0}
+@media (max-width:640px){.dStats{grid-template-columns:repeat(3,1fr)}}
+.dStats>div{border:3px solid var(--ink);border-radius:6px;background:#fffdf6;display:flex;flex-direction:column;align-items:center;padding:4px 2px;font-size:11px;color:var(--ink2)}
+.dStats b{font-size:17px;color:var(--ink);font-family:ui-monospace,Menlo,monospace}
+.dFoot{display:flex;align-items:center;gap:8px;margin-top:10px}.dFoot .grow{flex:1}
+.li.jump{cursor:pointer}.li.jump:hover{background:#fff3c4}
+.bankTop{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:640px){.bankTop{grid-template-columns:1fr}}
+.bankTop .big{font-size:24px;font-weight:900;font-family:ui-monospace,Menlo,monospace;margin:2px 0 4px}.bankTop .big.neg{color:var(--bad)}
+.btnrow{display:flex;gap:6px;flex-wrap:wrap}
+.pbtn[disabled]{opacity:.45;pointer-events:none}
+#money.loan::after{content:' 借';font-size:10px;color:var(--bad);vertical-align:top}
 
 </style>
 </head>
@@ -1281,15 +1303,28 @@ function makeStandTexture(sz, num) {
     if (x % 32 === 0 || y % 32 === 0) col = '#a0a0a8';
     px(ctx, x, y, col);
   }
+  // 上＝うしろ（誘導路から入る側）、下＝正面（ターミナル側）
+  const cx = c.width / 2, Hh = c.height, stopY = Hh - Math.round(S * 0.6);
   ctx.fillStyle = '#f2c230';
-  const cx = c.width / 2;
-  ctx.fillRect(cx - 1, 6, 2, c.height - 6);           // 誘導線
-  ctx.fillRect(cx - 10, c.height * 0.3, 20, 2);        // 停止線
+  ctx.fillRect(cx - 1, 0, 2, stopY);                    // 誘導線（入口から停止線まで）
+  for (let y = 10; y < stopY - 10; y += 14) {             // 進む向きの矢印
+    for (let k = 0; k < 4; k++) { ctx.fillRect(cx - 4 + k, y + k, 1, 2); ctx.fillRect(cx + 3 - k, y + k, 1, 2); }
+  }
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(cx - 9, stopY, 18, 3);   // 停止線
+  ctx.fillStyle = '#f2c230'; ctx.fillRect(cx - 9, stopY + 3, 18, 1);
+  // 正面の帯（ターミナル側）
+  ctx.fillStyle = '#3d7fd6'; ctx.fillRect(2, Hh - 6, c.width - 4, 4);
+  ctx.fillStyle = '#ffffff';
+  for (let x = 6; x < c.width - 6; x += 10) { ctx.fillRect(x, Hh - 5, 3, 1); ctx.fillRect(x + 1, Hh - 4, 1, 1); }
+  // 翼の安全線（左右と正面）
   ctx.fillStyle = '#e5484d';
-  ctx.fillRect(2, 2, c.width - 4, 1); ctx.fillRect(2, 2, 1, c.height - 4); ctx.fillRect(c.width - 3, 2, 1, c.height - 4);
+  ctx.fillRect(2, 8, 1, Hh - 10); ctx.fillRect(c.width - 3, 8, 1, Hh - 10);
+  // 入口の番号
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(String(num), cx + 12, c.height - 10);
+  ctx.fillText(String(num), cx + 10, 8);
+  ctx.font = 'bold 6px monospace'; ctx.fillStyle = '#20304a';
+  if (sz >= 4) ctx.fillText('STOP', cx + 16, stopY + 2);
   return c;
 }
 
@@ -3177,6 +3212,10 @@ function standModel(def, num) {
   m.position.y = 0.015; m.receiveShadow = true; g.add(m);
   const mb = new ModelBuilder();
   mb.box(0, -0.2, 0, def.w, 0.205, def.h, '#9a9aa4', { skip: 't' });
+  // 正面（+z）に駐機誘導の表示板（VDGS）。機首はこちらを向いてとまる
+  mb.cyl(0.5, 0, def.h / 2 - 0.05, 0.03, 0.035, 1.1, '#6a6a76', 4);
+  mb.box(0.5, 1.1, def.h / 2 - 0.05, 0.42, 0.26, 0.08, '#2a2a34');
+  mb.box(0.5, 1.12, def.h / 2 - 0.1, 0.34, 0.18, 0.02, '#ffd84a', { glow: '#ffcc33' });
   mb.cyl(def.w / 2 - 0.25, 0, -def.h / 2 + 0.25, 0.04, 0.05, 1.8, '#9a9aa6', 4);
   mb.box(def.w / 2 - 0.25, 1.8, -def.h / 2 + 0.25, 0.3, 0.12, 0.3, '#5a5a66'); mb.box(def.w / 2 - 0.25, 1.76, -def.h / 2 + 0.25, 0.24, 0.04, 0.24, '#fff8e0', { glow: '#ffe8a0' });
   g.add(mb.build());
@@ -3519,7 +3558,8 @@ function canPlace(id, x, y, rot, opt) {
     if (!isLand(xx, yy)) return { ok: false, reason: '水の上には置けません' };
     const i = idx(xx, yy);
     if (G.occ[i] && G.occ[i] !== opt.ignoreUid) return { ok: false, reason: 'ほかの建物と重なっています' };
-    const f = G.floor[i];
+    // 移動中の自分の滑走路・駐機場の床は、芝生とみなす
+    const f = opt.ignoreUid && G.occ[i] === opt.ignoreUid && (def.kind === 'runway' || def.kind === 'stand') ? FLOOR.NONE : G.floor[i];
     if (def.zone === 'term') { if (f !== FLOOR.TERM) return { ok: false, reason: 'ターミナル床の上に置いてください' }; }
     else if (def.zone === 'any') {
       const t = f === FLOOR.TERM ? 'T' : f === FLOOR.NONE ? 'N' : 'X';
@@ -3554,11 +3594,25 @@ function placeBuilding(id, x, y, rot, opt) {
   }
   G.blds[uid] = b;
   if (def.kind === 'runway' || def.kind === 'stand') clearTreesAround(x, y, w, h, def.kind === 'runway' ? 4 : 3);
-  if (!opt.free && !opt.move && !G.free) { G.money -= chk.cost; G.stat.buildCost += chk.cost; }
+  if (!opt.free && !opt.move && !G.free) { pay(chk.cost, 'build'); G.stat.buildCost += chk.cost; }
   spawnBuildingMesh(b);
   worldChanged(def);
   if (!opt.silent) { Bus.emit('built', b); }
   return b;
+}
+// 建物を消さずに、場所や向きを変える
+function relocateBuilding(uid, x, y, rot) {
+  const b = G.blds[uid]; if (!b) return null;
+  const chk = canPlace(b.id, x, y, rot, { move: true, ignoreUid: uid, ignoreRank: true });
+  if (!chk.ok) return null;
+  const keep = Object.assign({}, b); delete keep.mesh;
+  removeBuilding(uid, { move: true });
+  const nb = placeBuilding(b.id, x, y, rot, { move: true, uid, lv: b.lv, num: b.num, silent: true, ignoreRank: true });
+  if (!nb) return null;
+  for (const k of ['salesTotal', 'salesToday', 'salesYest', 'visits', 'day', 'ckToday']) if (keep[k] != null) nb[k] = keep[k];
+  if (B[b.id].kind === 'runway') nb.num = runwayNumber(rot);
+  Bus.emit('moved', nb);
+  return nb;
 }
 function runwayNumber(rot) { return rot % 2 ? 36 : 9; }
 function nextNum(kind) {
@@ -3579,9 +3633,9 @@ function removeBuilding(uid, opt) {
   delete G.blds[uid];
   if (b.mesh) { World.bldGroup.remove(b.mesh); disposeObj(b.mesh); }
   if (!opt.move) {
-    const refund = Math.floor(def.cost * 0.5 * (1 + (b.lv - 1) * 0.5));
-    if (!opt.noRefund) G.money += refund;
-    Bus.emit('removed', b, refund);
+    const back = Math.floor(def.cost * 0.5 * (1 + (b.lv - 1) * 0.5));
+    if (!opt.noRefund) refund(back, 'build');
+    Bus.emit('removed', b, back);
   }
   worldChanged(def);
 }
@@ -3627,7 +3681,7 @@ function paintApply(id, x0, y0, x1, y1) {
   const { tiles, cost } = paintCheck(id, x0, y0, x1, y1);
   if (!tiles.length) return 0;
   if (G.money < cost && !G.free) { toast('お金が足りません', 'bad'); Sound.se('error'); return -1; }
-  if (!G.free) { G.money -= cost; G.stat.buildCost += cost; }
+  if (!G.free) { pay(cost, 'build'); G.stat.buildCost += cost; }
   if (typeof UI !== 'undefined') { UI.lastPaint = tiles.map(i => [i, G.floor[i]]); UI.lastPaintCost = G.free ? 0 : cost; }
   for (const i of tiles) { G.floor[i] = def.paint; G.trees[i] = 0; markChunk(i % W, Math.floor(i / W)); if (def.paint === FLOOR.TAXI) clearTreesAround(i % W, Math.floor(i / W), 1, 1, 2); }
   worldChanged(def);
@@ -3637,7 +3691,7 @@ function paintApply(id, x0, y0, x1, y1) {
 }
 function clearFloor(x0, y0, x1, y1) {
   const xa = Math.min(x0, x1), xb = Math.max(x0, x1), ya = Math.min(y0, y1), yb = Math.max(y0, y1);
-  let n = 0, refund = 0;
+  let n = 0, back = 0;
   for (let y = ya; y <= yb; y++) for (let x = xa; x <= xb; x++) {
     if (!inMap(x, y) || !unlocked(x, y)) continue;
     const i = idx(x, y);
@@ -3646,10 +3700,10 @@ function clearFloor(x0, y0, x1, y1) {
     if (f === FLOOR.NONE || f === FLOOR.RUNWAY || f === FLOOR.APRON) { if (G.trees[i]) { G.trees[i] = 0; markChunk(x, y); n++; } continue; }
     if (isFixedRoad(x, y)) continue;
     const def = Object.values(B).find(d => d.paint === f);
-    refund += def ? def.cost * 0.5 : 0;
+    back += def ? def.cost * 0.5 : 0;
     G.floor[i] = FLOOR.NONE; n++; markChunk(x, y);
   }
-  if (n) { G.money += refund; worldChanged(null); World.dirtyWalls = true; }
+  if (n) { refund(back, 'build'); worldChanged(null); World.dirtyWalls = true; }
   return n;
 }
 function isFixedRoad(x, y) { return y <= 12 + OY && (x === 35 + OX || x === 36 + OX) && G.floor[idx(x, y)] === FLOOR.ROAD; }
@@ -3674,7 +3728,7 @@ function buySector(sx, sy) {
   const p = sectorPrice(sx, sy);
   if (!canBuySector(sx, sy)) return false;
   if (G.money < p && !G.free) { toast('お金が足りません', 'bad'); Sound.se('error'); return false; }
-  if (!G.free) G.money -= p;
+  pay(p, 'land');
   G.sectors[sy * SECW + sx] = 1;
   G.landBought = (G.landBought || 0) + 1;
   for (let y = sy * SEC; y < sy * SEC + SEC; y++) for (let x = sx * SEC; x < sx * SEC + SEC; x++) markChunk(x, y);
@@ -4012,15 +4066,16 @@ function getField(b) {
 // ============================================================
 //  飛行機の通り道
 // ============================================================
-function planePath(fromTile, toTile, allowStands) {
-  const key = fromTile + '>' + toTile + ':' + allowStands.join(',');
+function planePath(fromTile, toTile, allowStands, noRunway) {
+  const key = fromTile + '>' + toTile + ':' + allowStands.join(',') + (noRunway ? 'n' : '');
   if (RT.planePathCache.has(key)) return RT.planePathCache.get(key);
   const prev = new Int32Array(W * H).fill(-2);
   const q = [fromTile]; prev[fromTile] = -1;
   let found = false;
   const ok = i => {
     const f = G.floor[i];
-    if (f === FLOOR.TAXI || f === FLOOR.RUNWAY) return true;
+    if (f === FLOOR.TAXI) return true;
+    if (f === FLOOR.RUNWAY) return !noRunway || i === toTile || i === fromTile;
     if (f === FLOOR.APRON) return allowStands.includes(G.occ[i]);
     return false;
   };
@@ -5155,8 +5210,7 @@ function updatePlane(pl, dt) {
           pl.x -= cross * hz; pl.z += cross * hx;
           pl.y = 0; pl.state = 'roll'; pl.rollT = 0; pl.hdg = pl.ax.hdg; pl.bank = 0;
           // 滑走路の残りで止まれるように減速度を決める
-          const remain = Math.max(4, pl.ax.len - (pl.td && Math.abs(along)) - 5);
-          pl.decel = (pl.spd * pl.spd - V_TAXI * V_TAXI) / (2 * Math.min(remain, Math.max(5, pl.ax.len * 0.55)));
+          planRollout(pl, r);
           Sound.se('land'); if (P.eng !== 'prop') setTimeout(() => Sound.se('jet'), 300);
           Bus.emit('touchdown', pl);
           fl.status = 'landed'; fl.landT = G.min;
@@ -5202,47 +5256,58 @@ function updatePlane(pl, dt) {
       const st = pl.spd * dt;
       pl.x += Math.sin(pl.hdg) * st; pl.z += Math.cos(pl.hdg) * st;
       pl.rollT += st;
-      if (pl.spd <= V_TAXI * 1.02 || pl.rollT > pl.ax.len - 4) {
+      if (axS(pl.ax, pl) >= pl.rollHand || pl.rollT > pl.ax.len - 2.5) {
         const stand = G.blds[pl.stand];
-        const cur = idx(clamp(Math.floor(pl.x), 0, W - 1), clamp(Math.floor(pl.z), 0, H - 1));
-        if (!stand) { pl.state = 'taxi_out'; break; }
-        const sc = bCenter(stand), goal = idx(Math.floor(sc.x), Math.floor(sc.z));
-        let path = planePath(cur, goal, [stand.uid]);
-        if (!path) path = planePath(runwayInfo(r).endTile(G.windDir ? 0 : 1), goal, [stand.uid]);
-        pl.path = smoothPath(path ? path.map(tilePt) : [], pl);
-        pl.path.push({ x: sc.x, z: sc.z });
-        pl.pi = 0; pl.state = 'taxi_in'; pl.leaveRw = true;
+        taxiInRail(pl, r, stand);
+        pl.state = 'taxi_in'; pl.leaveRw = true;
         Bus.emit('taxiIn', pl);
       }
       break;
     }
-    case 'taxi_in':
-    case 'taxi_out': {
+    case 'taxi_in': {
       // 滑走路を出たら使用中を解除
       if (pl.leaveRw && r && r.busy === pl && !onRunway(pl, r)) { r.busy = null; pl.leaveRw = false; r.wakeUntil = G.min + (P.cls >= 3 ? 2.5 : 1); }
+      const stand = G.blds[pl.stand];
+      // 駐機場に入ったら誘導員の合図でゆっくり
+      const inStand = stand && G.occ[idx(clamp(Math.floor(pl.x), 0, W - 1), clamp(Math.floor(pl.z), 0, H - 1))] === stand.uid;
+      if (railFollow(pl, dt, { vmax: inStand ? 0.45 : V_TAXI })) {
+        if (!stand) { removePlane(pl); fl.status = 'cancel'; fl.why = '駐機場がなくなった'; break; }
+        pl.state = 'parking'; pl.parkT = 0; pl.spd = 0;
+        const f = frontDir(stand.rot); pl.tHdg = Math.atan2(f[0], f[1]);
+      }
+      break;
+    }
+    case 'taxi_out': {
       // 離陸前は滑走路の手前で一時停止（ホールドショート）
-      if (pl.state === 'taxi_out' && pl.holdIdx != null && !pl.rwCleared && (pl.pi > pl.holdIdx || (pl.pi === pl.holdIdx && Math.hypot(pl.path[pl.pi].x - pl.x, pl.path[pl.pi].z - pl.z) < 0.6))) {
-        pl.spd = Math.max(0, pl.spd - dt * 0.8);
+      const holding = !pl.rwCleared && pl.holdS != null;
+      if (holding && pl.rs >= pl.holdS - 0.05 && pl.spd < 0.05) {
         pl.wait += dt;
         if (runwayFreeFor(r, pl) && !landingClose(r, pl)) { pl.rwCleared = true; r.busy = pl; }
         if (pl.wait > 220) removePlane(pl);
         break;
       }
-      if (followPath(pl, dt)) {
-        if (pl.state === 'taxi_in') {
-          pl.state = 'parking'; const stand = G.blds[pl.stand];
-          pl.tHdg = stand ? Math.atan2(frontDir(stand.rot)[0], frontDir(stand.rot)[1]) : pl.hdg;
-        } else { pl.state = 'align'; pl.wait = 0; if (!pl.rwCleared) { pl.rwCleared = true; r.busy = pl; } }
+      railFollow(pl, dt, { stopS: holding ? pl.holdS : null });
+      if (pl.rs >= pl.rail.len - 0.02) {
+        if (!pl.rwCleared) {
+          pl.wait += dt;
+          if (runwayFreeFor(r, pl) && !landingClose(r, pl)) { pl.rwCleared = true; r.busy = pl; }
+          else break;
+        }
+        // 滑走路の中心線にのって正対 → 離陸滑走
+        const tp = pl.ax.P(pl.takeS || 1.2, 0);
+        pl.hdg = pl.ax.hdg; pl.x = tp.x; pl.z = tp.z;
+        pl.state = 'takeoff'; pl.spd = Math.max(0.05, pl.spd); pl.rollT = pl.takeS || 1.2;
+        pl.acc = vRot(P) * vRot(P) / (2 * Math.max(4, (pl.ax.len - pl.rollT) * (P.eng === 'prop' ? 0.34 : 0.5)));
+        Sound.se(P.eng === 'prop' ? 'prop' : 'jet');
       }
       break;
     }
     case 'parking': {
-      // 停止線に向かってゆっくり旋回して止まる
-      const dA = turnToward(pl, pl.tHdg, 0.6, dt);
-      pl.spd = 0.15;
-      const stp = G.blds[pl.stand]; if (stp) { const c = bCenter(stp), k = Math.min(1, dt * 0.5); pl.x += (c.x - pl.x) * k; pl.z += (c.z - pl.z) * k; }
-      if (Math.abs(dA) < 0.01 && (!stp || Math.hypot(bCenter(stp).x - pl.x, bCenter(stp).z - pl.z) < 0.05)) {
-        pl.hdg = pl.tHdg; pl.state = 'parked'; pl.spd = 0; pl.engines = false;
+      // 停止線でとまって、エンジンを切る
+      pl.parkT += dt; pl.spd = 0;
+      pl.hdg = lerpAngle(pl.hdg, pl.tHdg, Math.min(1, dt * 3));
+      if (pl.parkT > 1.2) {
+        pl.hdg = pl.tHdg; pl.state = 'parked'; pl.engines = false;
         fl.status = 'parked'; fl.parkT = G.min;
         spawnTurnVehicles(pl);
       }
@@ -5250,38 +5315,32 @@ function updatePlane(pl, dt) {
     }
     case 'parked': break;
     case 'pushback': {
-      // トーイングカーで後ろに押し出し、誘導路の向きへ回す
+      // トーイングカーが後ろへ押し出しながら、機首を進む向きへ回す
       if (updateDeice(pl, dt)) break;
       pl.pbT += dt;
-      const back = pl.pbDist || 1.5;
-      if (pl.pbDone < back) {
-        const sp = 0.18 * dt; pl.pbDone += sp;
-        pl.x -= Math.sin(pl.hdg) * sp; pl.z -= Math.cos(pl.hdg) * sp;
-        if (pl.pbDone > back * 0.45 && pl.pbTurn) turnToward(pl, pl.pbTurn, 0.22, dt);
-      } else if (pl.pbT < pl.pbEnd) {
-        // エンジン始動・トーイングカーが離れる
+      const tugAt = () => { if (!pl.tug) return; const nx = pl.x + Math.sin(pl.hdg) * (P.len / 2 + 0.35), nz = pl.z + Math.cos(pl.hdg) * (P.len / 2 + 0.35); pl.tug.position.set(nx, 0, nz); pl.tug.rotation.y = pl.hdg + Math.PI; };
+      if (pl.pbPhase === 0) {
+        // 後ろを通る飛行機がいたら待つ
+        const busy = RT.planes.some(o => o !== pl && !o.gone && o.y < 0.5 && (o.state === 'taxi_in' || o.state === 'taxi_out') && Math.hypot(o.x - pl.pbEnd.x, o.z - pl.pbEnd.z) < 2.5 + o.P.len * 0.5);
+        if (!busy || pl.pbT > 25) { pl.pbPhase = 1; pl.rail = pl.pbRail; pl.rs = 0; pl.ri = 0; pl.spd = 0; }
+        tugAt();
+      } else if (pl.pbPhase === 1) {
+        if (railFollow(pl, dt, { reverse: true, vmax: 0.22 })) { pl.pbPhase = 2; pl.pbT2 = 0; pl.spd = 0; }
+        if (pl.rs > 0.5 && !pl.engines) { pl.engines = true; Sound.se(P.eng === 'prop' ? 'prop' : 'jet'); }
+        tugAt();
+      } else if (pl.pbPhase === 2) {
+        // トーイングカーが離れる
+        pl.pbT2 += dt;
         if (!pl.engines) { pl.engines = true; Sound.se(P.eng === 'prop' ? 'prop' : 'jet'); }
-      } else {
-        if (pl.tug) { R.scene.remove(pl.tug); pl.tug = null; }
-        pl.state = 'taxi_out'; pl.pi = 0; pl.spd = 0.1;
-        // 自分の駐機場の中の経路点はとばす
-        while (pl.pi < pl.path.length - 1 && G.floor[idx(Math.floor(pl.path[pl.pi].x), Math.floor(pl.path[pl.pi].z))] === FLOOR.APRON) pl.pi++;
-      }
-      if (pl.tug) { const nx = pl.x + Math.sin(pl.hdg) * (P.len / 2 + 0.4), nz = pl.z + Math.cos(pl.hdg) * (P.len / 2 + 0.4); pl.tug.position.set(nx, 0, nz); pl.tug.rotation.y = pl.hdg + Math.PI; }
-      break;
-    }
-    case 'align': {
-      // 滑走路の端で中心線にのって正対する
-      const tp = pl.ax.P(Math.min(1.2, P.len * 0.4), 0);
-      const dx = tp.x - pl.x, dz = tp.z - pl.z, d = Math.hypot(dx, dz);
-      const k = Math.min(1, dt * 0.6);
-      pl.x += dx * k; pl.z += dz * k;
-      const dA = turnToward(pl, pl.ax.hdg, 0.7, dt);
-      pl.spd = 0.2;
-      if (Math.abs(dA) < 0.01 && d < 0.12) {
-        pl.hdg = pl.ax.hdg; pl.x = tp.x; pl.z = tp.z; pl.state = 'takeoff'; pl.spd = 0.05; pl.rollT = 0;
-        pl.acc = vRot(P) * vRot(P) / (2 * Math.max(4, pl.ax.len * (P.eng === 'prop' ? 0.32 : 0.48)));
-        Sound.se(P.eng === 'prop' ? 'prop' : 'jet');
+        if (pl.tug) {
+          const k = Math.min(1, pl.pbT2 / 3), side = pl.hdg + Math.PI / 2;
+          const nx = pl.x + Math.sin(pl.hdg) * (P.len / 2 + 0.35 + k * 0.6) + Math.sin(side) * k * 1.6, nz = pl.z + Math.cos(pl.hdg) * (P.len / 2 + 0.35 + k * 0.6) + Math.cos(side) * k * 1.6;
+          pl.tug.position.set(nx, 0, nz); pl.tug.rotation.y = pl.hdg + Math.PI + k * 1.2;
+        }
+        if (pl.pbT2 > 3.5) {
+          if (pl.tug) { R.scene.remove(pl.tug); pl.tug = null; }
+          pl.state = 'taxi_out'; pl.rail = pl.fwdRail; pl.rs = 0; pl.ri = 0; pl.spd = 0; pl.wait = 0;
+        }
       }
       break;
     }
@@ -5342,74 +5401,24 @@ function onRunway(pl, r) {
 function centerOnTaxi(pts) {
   const T = pts.map(p => [Math.floor(p.x), Math.floor(p.z)]);
   const isT = (x, y) => inMap(x, y) && G.floor[idx(x, y)] === FLOOR.TAXI;
-  const side = (x, y, dx, dy) => { let c = 0; for (let k = 1; k <= 2; k++) { if (isT(x + dx * k, y + dy * k)) c++; else break; } return c; };
-  for (let i = 0; i < pts.length; i++) {
-    const [x, y] = T[i]; if (!isT(x, y)) continue;
-    const a = T[Math.max(0, i - 1)], b = T[Math.min(pts.length - 1, i + 1)];
-    const mx = Math.sign(b[0] - a[0]), my = Math.sign(b[1] - a[1]);
-    if (my !== 0) pts[i].x += (side(x, y, 1, 0) - side(x, y, -1, 0)) * 0.5;
-    if (mx !== 0) pts[i].z += (side(x, y, 0, 1) - side(x, y, 0, -1)) * 0.5;
+  // 横どなりのマスが「並んで走る誘導路」のときだけ幅に数える（横に出る連絡路は数えない）
+  const side = (x, y, dx, dy) => { let c = 0; for (let k = 1; k <= 2; k++) { const nx = x + dx * k, ny = y + dy * k; if (isT(nx, ny) && (isT(nx + dy, ny + dx) || isT(nx - dy, ny - dx))) c++; else break; } return c; };
+  const sx = t => (side(t[0], t[1], 1, 0) - side(t[0], t[1], -1, 0)) * 0.5;
+  const sz = t => (side(t[0], t[1], 0, 1) - side(t[0], t[1], 0, -1)) * 0.5;
+  const n = pts.length, off = pts.map(() => [0, 0]);
+  for (let i = 0; i < n; i++) {
+    const t = T[i]; if (!isT(t[0], t[1])) continue;
+    const a = T[Math.max(0, i - 1)], b = T[Math.min(n - 1, i + 1)];
+    const inV = a[1] !== t[1], outV = b[1] !== t[1], inH = a[0] !== t[0], outH = b[0] !== t[0];
+    // 角のマスは、たて向きの区間のマスで横ずれを、よこ向きの区間のマスで縦ずれを測る
+    if (inV || outV) { const ref = inV && (inH || outH) ? a : outV && (inH || outH) ? b : t; if (isT(ref[0], ref[1])) off[i][0] = sx(ref); }
+    if (inH || outH) { const ref = inH && (inV || outV) ? a : outH && (inV || outV) ? b : t; if (isT(ref[0], ref[1])) off[i][1] = sz(ref); }
   }
-}
-function smoothPath(pts, pl, keep) {
-  centerOnTaxi(pts);
-  if (pts.length < 3) return pts;
-  const out = [pts[0]];
-  for (let i = 1; i < pts.length - 1; i++) {
-    const a = out[out.length - 1], b = pts[i], c = pts[i + 1];
-    const cr = (b.x - a.x) * (c.z - b.z) - (b.z - a.z) * (c.x - b.x);
-    if (Math.abs(cr) > 0.01 || i === keep) out.push(b);
-  }
-  out.push(pts[pts.length - 1]);
-  return out;
+  for (let i = 0; i < n; i++) { pts[i].x += off[i][0]; pts[i].z += off[i][1]; }
 }
 function tilePt(i) { return { x: i % W + 0.5, z: Math.floor(i / W) + 0.5 }; }
 function angDiff(a, b) { let d = b - a; while (d > Math.PI) d -= TAU; while (d < -Math.PI) d += TAU; return d; }
 function lerpAngle(a, b, t) { return a + angDiff(a, b) * t; }
-// 目標点を少し先に置いて追いかける（カーブがなめらかになる）
-function followPath(pl, dt) {
-  let blocked = false;
-  for (const o of RT.planes) {
-    if (o === pl || o.y > 0.5 || o.gone) continue;
-    const dx = o.x - pl.x, dz = o.z - pl.z, d = Math.hypot(dx, dz);
-    const minD = (pl.P.len + o.P.len) * 0.45 + 0.4;
-    if (d < minD && d > 0.01) {
-      const fwd = (dx * Math.sin(pl.hdg) + dz * Math.cos(pl.hdg)) / d;
-      if (fwd > 0.6 && (o.state !== 'parked' || d < minD * 0.6)) { blocked = true; break; }
-    }
-  }
-  if (blocked) { pl.blockT = (pl.blockT || 0) + dt; pl.spd = Math.max(0, pl.spd - dt * 1.2); if (pl.blockT < 8) return false; }
-  else pl.blockT = 0;
-  // 目標点
-  // 近い点・うしろの点はとばす（最後の点以外）
-  const rMin = 0.45 + pl.P.len * 0.12;   // 最小旋回半径
-  while (pl.pi < pl.path.length - 1) {
-    const q = pl.path[pl.pi], qd = Math.hypot(q.x - pl.x, q.z - pl.z);
-    const fwd = (q.x - pl.x) * Math.sin(pl.hdg) + (q.z - pl.z) * Math.cos(pl.hdg);
-    if (qd < 0.4 || (qd < rMin * 1.6 && fwd < qd * 0.2)) pl.pi++; else break;
-  }
-  if (pl.pi >= pl.path.length) return true;
-  const t = pl.path[pl.pi];
-  const last = pl.pi === pl.path.length - 1;
-  const dx = t.x - pl.x, dz = t.z - pl.z, d = Math.hypot(dx, dz);
-  const want = Math.atan2(dx, dz);
-  const diff = Math.abs(angDiff(pl.hdg, want));
-  // 曲がるときと止まる前はゆっくり
-  let vt = diff > 0.9 ? 0.3 : diff > 0.4 ? V_TAXI_TURN : V_TAXI;
-  // 目標が旋回円の内側にあるときは、ほぼその場で向きを変える（前輪ステアリング）
-  const tight = diff > 0.8 && d < rMin * 1.6;
-  if (tight) vt = 0.1;
-  if (pl.pi + 1 < pl.path.length) { const n = pl.path[pl.pi + 1]; const nd = Math.abs(angDiff(want, Math.atan2(n.x - t.x, n.z - t.z))); if (nd > 0.6 && d < 1.6) vt = Math.min(vt, V_TAXI_TURN); }
-  if (last) vt = Math.min(vt, Math.max(0.15, d * 0.5));
-  if (pl.state === 'taxi_out' && pl.holdIdx != null && !pl.rwCleared && pl.pi === pl.holdIdx) vt = Math.min(vt, Math.max(0.12, d * 0.4));
-  pl.spd += clamp(vt - pl.spd, -dt * 0.9, dt * 0.35);
-  // 速さ÷最小旋回半径 ＝ 曲がれる角速度（小さい機体ほど小回り）
-  turnToward(pl, want, Math.max(0.25, pl.spd / (tight ? rMin * 0.3 : rMin)), dt);
-  const st = pl.spd * dt;
-  pl.x += Math.sin(pl.hdg) * st; pl.z += Math.cos(pl.hdg) * st;
-  if (last && d < Math.max(0.55, rMin * 0.9)) { pl.pi++; return true; }
-  return false;
-}
 function goAround(pl) {
   pl.state = 'climb_ga'; pl.gaT = 0; pl.fl.goAround = (pl.fl.goAround || 0) + 1;
   Sound.se('jet');
@@ -5472,31 +5481,11 @@ function pushback(fl) {
   pl.vehicles = [];
   // 経路：駐機場 → 誘導路 → 滑走路の手前で停止 → 滑走路へ
   const r = G.blds[pl.runway], stand = G.blds[pl.stand];
-  const ax = rwAxis(r, G.windDir || 0); pl.ax = ax;
-  const sc = stand ? bCenter(stand) : { x: pl.x, z: pl.z };
-  const startTile = idx(Math.floor(sc.x), Math.floor(sc.z));
-  const e = G.windDir || 0;
-  let path = planePath(startTile, runwayInfo(r).endTile(e), [stand ? stand.uid : 0]);
-  if (!path) path = planePath(startTile, runwayInfo(r).endTile(1 - e), [stand ? stand.uid : 0]);
-  path = path || [];
-  // 最初の滑走路マス＝ホールドショートの位置
-  let hi = path.findIndex(i => G.floor[i] === FLOOR.RUNWAY);
-  const pts = path.map(tilePt);
-  pl.path = smoothPath(pts, pl, hi > 0 ? hi - 1 : -1);
-  if (hi > 0) { const hp = pts[hi - 1]; pl.holdIdx = pl.path.indexOf(hp); if (pl.holdIdx < 0) pl.holdIdx = null; } else pl.holdIdx = null;
+  pl.ax = rwAxis(r, G.windDir || 0);
+  departRails(pl, r, stand);
+  pl.pbEnd = { x: pl.pbRail.X[pl.pbRail.n - 1], z: pl.pbRail.Z[pl.pbRail.n - 1] };
+  pl.pbPhase = 0;
   pl.rwCleared = false; pl.wait = 0;
-  // プッシュバック：誘導路の方へ下がって向きを変える
-  const sd = stand ? dims(B[stand.id], stand.rot) : [3, 3];
-  pl.pbDist = Math.max(0.8, Math.min(sd[0], sd[1]) / 2 - 0.3 + pl.P.len * 0.15);
-  pl.pbDone = 0; pl.pbEnd = 5 + pl.P.cls;
-  const j = pl.path.findIndex(p => G.floor[idx(Math.floor(p.x), Math.floor(p.z))] !== FLOOR.APRON);
-  pl.pbTurn = null;
-  if (j >= 0) {
-    const p0 = pl.path[j], p1 = pl.path[j + 1] || p0;
-    const D = p1 !== p0 ? Math.atan2(p1.x - p0.x, p1.z - p0.z) : Math.atan2(p0.x - pl.x, p0.z - pl.z);
-    const dd = angDiff(pl.hdg, D);
-    pl.pbTurn = pl.hdg + clamp(dd, -Math.PI / 2, Math.PI / 2);
-  }
   pl.tug = vehicleMesh('tug'); pl.tug.scale.setScalar(0.7); R.scene.add(pl.tug);
   startDeice(pl);
   pl.state = 'pushback'; pl.pbT = 0; pl.spd = 0;
@@ -5676,6 +5665,264 @@ function clearAmbient() {
 }
 
 // ============================================================
+//  地上走行のレール（誘導路の中心線を、角を丸めた曲線でたどる）
+// ============================================================
+const TAXI_ACC = 0.35, TAXI_DEC = 0.9, A_LAT = 0.42;
+
+// 折れ線 → 角を円弧で丸めた、0.1マスごとの点列
+function buildRail(poly, radius) {
+  const P = [];
+  for (const p of poly) { const l = P[P.length - 1]; if (!l || Math.hypot(p.x - l.x, p.z - l.z) > 0.05) P.push({ x: p.x, z: p.z }); }
+  if (P.length === 1) P.push({ x: P[0].x + 0.01, z: P[0].z });
+  const dense = [P[0]];
+  for (let i = 1; i < P.length - 1; i++) {
+    const A = P[i - 1], Bp = P[i], C = P[i + 1];
+    const ab = Math.hypot(Bp.x - A.x, Bp.z - A.z), bc = Math.hypot(C.x - Bp.x, C.z - Bp.z);
+    const ux = (Bp.x - A.x) / ab, uz = (Bp.z - A.z) / ab, vx = (C.x - Bp.x) / bc, vz = (C.z - Bp.z) / bc;
+    const cos = clamp(ux * vx + uz * vz, -1, 1), th = Math.acos(cos);
+    if (th < 0.04) { dense.push(Bp); continue; }
+    let t = radius * Math.tan(th / 2);
+    t = Math.min(t, ab * 0.5, bc * 0.5);
+    const p1 = { x: Bp.x - ux * t, z: Bp.z - uz * t }, p2 = { x: Bp.x + vx * t, z: Bp.z + vz * t };
+    const n = Math.max(3, Math.ceil(th * 10));
+    for (let k = 0; k <= n; k++) {
+      const s = k / n, a = (1 - s) * (1 - s), b = 2 * (1 - s) * s, c = s * s;
+      dense.push({ x: a * p1.x + b * Bp.x + c * p2.x, z: a * p1.z + b * Bp.z + c * p2.z });
+    }
+  }
+  dense.push(P[P.length - 1]);
+  // 等間隔に取りなおす
+  const X = [dense[0].x], Z = [dense[0].z], S = [0];
+  let acc = 0, carry = 0;
+  for (let i = 1; i < dense.length; i++) {
+    const a = dense[i - 1], b = dense[i], L = Math.hypot(b.x - a.x, b.z - a.z);
+    if (L < 1e-6) continue;
+    let d = 0.1 - carry;
+    while (d <= L) { X.push(a.x + (b.x - a.x) * d / L); Z.push(a.z + (b.z - a.z) * d / L); acc += 0.1; S.push(acc); d += 0.1; }
+    carry = L - (d - 0.1);
+  }
+  const last = dense[dense.length - 1];
+  if (Math.hypot(X[X.length - 1] - last.x, Z[Z.length - 1] - last.z) > 0.01) { X.push(last.x); Z.push(last.z); S.push(acc + Math.hypot(X[X.length - 2] - last.x, Z[Z.length - 2] - last.z)); }
+  const n = X.length, Hd = new Float32Array(n), V = new Float32Array(n);
+  for (let i = 0; i < n; i++) { const a = Math.max(0, i - 1), b = Math.min(n - 1, i + 1); Hd[i] = Math.atan2(X[b] - X[a], Z[b] - Z[a]); }
+  for (let i = 0; i < n; i++) {
+    const a = Math.max(0, i - 3), b = Math.min(n - 1, i + 3);
+    const k = Math.abs(angDiff(Hd[a], Hd[b])) / Math.max(0.05, S[b] - S[a]);
+    V[i] = clamp(Math.sqrt(A_LAT / Math.max(k, 1e-3)), 0.4, V_TAXI);
+  }
+  return { X, Z, S, Hd, V, n, len: S[n - 1] };
+}
+function railAt(rail, s, hint) {
+  let i = clamp(hint || 0, 0, rail.n - 2);
+  while (i < rail.n - 2 && rail.S[i + 1] < s) i++;
+  while (i > 0 && rail.S[i] > s) i--;
+  const s0 = rail.S[i], s1 = rail.S[i + 1], t = s1 > s0 ? clamp((s - s0) / (s1 - s0), 0, 1) : 0;
+  return { x: lerp(rail.X[i], rail.X[i + 1], t), z: lerp(rail.Z[i], rail.Z[i + 1], t), hdg: lerpAngle(rail.Hd[i], rail.Hd[i + 1], t), i };
+}
+function railNearestS(rail, p) {
+  let best = 0, bd = 1e9;
+  for (let i = 0; i < rail.n; i++) { const d = Math.hypot(rail.X[i] - p.x, rail.Z[i] - p.z); if (d < bd) { bd = d; best = rail.S[i]; } }
+  return best;
+}
+// レールにそって進む。stopS で止まる（ホールドショートなど）。reverse=プッシュバック
+function railFollow(pl, dt, opt) {
+  opt = opt || {};
+  const rail = pl.rail; if (!rail) return true;
+  const end = Math.min(rail.len, opt.stopS != null ? opt.stopS : rail.len);
+  const remain = end - pl.rs;
+  let vt = opt.vmax || V_TAXI;
+  // 先のカーブにそなえて減速
+  const look = (vt * vt) / (2 * TAXI_DEC) + 0.5;
+  for (let i = pl.ri || 0; i < rail.n && rail.S[i] - pl.rs < look; i++) {
+    const ds = Math.max(0, rail.S[i] - pl.rs);
+    vt = Math.min(vt, Math.sqrt(rail.V[i] * rail.V[i] + 2 * TAXI_DEC * ds));
+  }
+  vt = Math.min(vt, Math.sqrt(2 * TAXI_DEC * Math.max(0, remain)) + (remain > 0.03 ? 0.05 : 0));
+  // 前の飛行機
+  if (!opt.reverse) {
+    for (const o of RT.planes) {
+      if (o === pl || o.y > 0.5 || o.gone) continue;
+      const dx = o.x - pl.x, dz = o.z - pl.z, d = Math.hypot(dx, dz);
+      const minD = (pl.P.len + o.P.len) * 0.45 + 0.4;
+      if (d < minD + 1.5 && d > 0.01) {
+        const fwd = (dx * Math.sin(pl.hdg) + dz * Math.cos(pl.hdg)) / d;
+        if (fwd > 0.6 && (o.state !== 'parked' || d < minD * 0.6)) { pl.blockT = (pl.blockT || 0) + dt; if (pl.blockT < 8) vt = Math.min(vt, Math.max(0, (d - minD) * 0.6)); break; }
+      }
+    }
+  }
+  pl.spd += clamp(vt - pl.spd, -TAXI_DEC * dt, TAXI_ACC * dt);
+  if (pl.spd < 0.02 && vt < 0.02) pl.spd = 0; else pl.blockT = vt > 0.05 ? 0 : pl.blockT;
+  pl.rs = Math.min(end, pl.rs + pl.spd * dt);
+  const q = railAt(rail, pl.rs, pl.ri);
+  pl.ri = q.i; pl.x = q.x; pl.z = q.z;
+  const want = opt.reverse ? q.hdg + Math.PI : q.hdg;
+  pl.hdg = lerpAngle(pl.hdg, want, Math.min(1, dt * 14));
+  return end - pl.rs < 0.02;
+}
+
+// 駐機場の形（後ろ＝入口、前＝ターミナル側。止まる位置）
+function standGeom(stand, P) {
+  const def = B[stand.id], [w, h] = dims(def, stand.rot), [fx, fy] = frontDir(stand.rot);
+  const depth = fx ? w : h, c = bCenter(stand);
+  const back = { x: c.x - fx * depth / 2, z: c.z - fy * depth / 2 };
+  const fwd = Math.max(0, depth / 2 - P.len / 2 - 0.3);
+  const stop = { x: c.x + fx * fwd, z: c.z + fy * fwd };
+  const out = { x: back.x - fx * 0.5, z: back.z - fy * 0.5 };
+  // 入口の外側の誘導路マス
+  const lat = [-fy, fx];
+  let outTile = -1;
+  for (const k of [0.01, -0.99, 1.01, -1.99]) {
+    const tx = Math.floor(out.x + lat[0] * k), tz = Math.floor(out.z + lat[1] * k);
+    if (inMap(tx, tz) && isTaxiLike(tx, tz) && G.floor[idx(tx, tz)] !== FLOOR.APRON) { outTile = idx(tx, tz); break; }
+  }
+  return { f: [fx, fy], back, stop, out, outTile, c };
+}
+function taxiTurnR(P) { return 0.7 + P.len * 0.12; }
+
+// ---------- 滑走路まわり ----------
+function axA0(ax) { return ax.ri.horiz ? ax.P(0).x : ax.P(0).z; }
+function axPt(ax, s, lat) { const p = ax.P(s); return ax.ri.horiz ? { x: p.x, z: p.z + lat } : { x: p.x + lat, z: p.z }; }
+function axS(ax, p) { return ((ax.ri.horiz ? p.x : p.z) - axA0(ax)) * ax.dir; }
+// 滑走路の横にある誘導路マス（出入口）
+function rwExits(r, ax) {
+  const [w, h] = dims(B[r.id], r.rot), out = [];
+  for (let k = 0; k < ax.len; k++) {
+    const a = Math.floor(axA0(ax) + ax.dir * (k + 0.5));
+    const sides = ax.ri.horiz ? [[a, r.y - 1], [a, r.y + h]] : [[r.x - 1, a], [r.x + w, a]];
+    for (const [x, y] of sides) if (inMap(x, y) && G.floor[idx(x, y)] === FLOOR.TAXI) out.push({ tile: idx(x, y), s: k + 0.5 });
+  }
+  return out;
+}
+// 滑走路の上での180度ターン（u=+1：進行方向が＋）
+function uturnPts(ax, s, u) {
+  const L = [[-1.2, 0], [-0.5, -0.6]];
+  for (let a = -90; a <= 90; a += 30) L.push([0.6 * Math.cos(a * Math.PI / 180), 0.6 * Math.sin(a * Math.PI / 180)]);
+  L.push([-0.5, 0.6], [-1.2, 0]);
+  return L.map(([da, lat]) => axPt(ax, s + u * da, lat * u));
+}
+// 経路点を誘導路の真ん中にそろえて、階段状のギザギザをなくす
+function simplifyPts(pts) {
+  centerOnTaxi(pts);
+  if (pts.length < 3) return pts;
+  const keep = new Uint8Array(pts.length); keep[0] = keep[pts.length - 1] = 1;
+  const dp = (a, b) => {
+    let md = 0, mi = -1; const A = pts[a], Bq = pts[b], L = Math.hypot(Bq.x - A.x, Bq.z - A.z) || 1e-6;
+    for (let i = a + 1; i < b; i++) { const d = Math.abs((Bq.x - A.x) * (A.z - pts[i].z) - (A.x - pts[i].x) * (Bq.z - A.z)) / L; if (d > md) { md = d; mi = i; } }
+    if (md > 0.3) { keep[mi] = 1; dp(a, mi); dp(mi, b); }
+  };
+  dp(0, pts.length - 1);
+  return pts.filter((p, i) => keep[i]);
+}
+function centerTile(b) { const c = bCenter(b); return idx(Math.floor(c.x), Math.floor(c.z)); }
+// 誘導路の中心線上で、駐機場の正面の線と交わる点
+function laneQ(g, lanePt) {
+  const dq = Math.abs((lanePt.x - g.back.x) * g.f[0] + (lanePt.z - g.back.z) * g.f[1]);
+  return { x: g.back.x - g.f[0] * dq, z: g.back.z - g.f[1] * dq };
+}
+
+// 接地したら、どの出口で滑走路を出るか決めて、そこまでに減速する
+function planRollout(pl, r) {
+  const ax = pl.ax, s0 = axS(ax, pl), v = pl.spd;
+  const minRoll = (v * v - V_TAXI * V_TAXI) / (2 * 1.1);         // 強めのブレーキでも必要な距離
+  const ex = rwExits(r, ax).map(e => e.s).filter(s => s - 2 >= s0 + minRoll).sort((a, b) => a - b);
+  // ちょうどよい出口（ゆるいブレーキで届く最初の出口）
+  const want = s0 + (v * v - V_TAXI * V_TAXI) / (2 * 0.55);
+  let exitS = ex.find(s => s - 2 >= want) || ex[ex.length - 1];
+  if (exitS == null) exitS = ax.len - 0.8;
+  pl.rollHand = Math.max(s0 + 1, Math.min(exitS - 2, ax.len - 3));
+  pl.decel = Math.max(0.2, (v * v - V_TAXI * V_TAXI) / (2 * Math.max(1, pl.rollHand - s0)));
+}
+// 着陸後：滑走路 → 出口 → 誘導路 → 駐機場（機首から入って停止線で止まる）
+function taxiInRail(pl, r, stand) {
+  const P = pl.P, ax = pl.ax, g = stand ? standGeom(stand, P) : null;
+  const s0 = axS(ax, pl);
+  const target = g && g.outTile >= 0 ? g.outTile : stand ? centerTile(stand) : -1;
+  const allow = g && g.outTile >= 0 ? [] : stand ? [stand.uid] : [];
+  let best = null;
+  for (const ex of rwExits(r, ax)) {
+    const path = target >= 0 ? planePath(ex.tile, target, allow, true) : [ex.tile];
+    if (!path) continue;
+    const ahead = ex.s >= s0 + 1.0;
+    const cost = ahead ? (ex.s - s0) * 0.6 + path.length : (ax.len - s0) * 1.2 + (ax.len - ex.s) + path.length + 8;
+    if (!best || cost < best.cost) best = { ex, path, ahead, cost };
+  }
+  let poly = [{ x: pl.x, z: pl.z }];
+  if (best) {
+    if (!best.ahead) poly = poly.concat(uturnPts(ax, clamp(ax.len - 1.0, s0 + 0.8, ax.len - 0.7), 1));
+    poly.push(axPt(ax, best.ex.s, 0));
+    const pts = simplifyPts(best.path.map(tilePt));
+    if (g && g.outTile >= 0) { const Q = laneQ(g, pts[pts.length - 1]); pts.pop(); poly = poly.concat(pts, [Q, g.stop]); }
+    else { poly = poly.concat(pts); if (g) poly.push(g.stop); }
+  } else {
+    // 出口が見つからないとき（ふつうは起きない）
+    const cur = idx(clamp(Math.floor(pl.x), 0, W - 1), clamp(Math.floor(pl.z), 0, H - 1));
+    const p2 = stand ? planePath(cur, centerTile(stand), [stand.uid]) : null;
+    poly = poly.concat(simplifyPts((p2 || []).map(tilePt)));
+    if (g) poly.push(g.stop);
+  }
+  pl.rail = buildRail(poly, taxiTurnR(P)); pl.rs = 0; pl.ri = 0;
+  pl.inRail = poly;
+}
+// 出発：プッシュバック用（後ろ向き）と、滑走路までの前向きレール
+function departRails(pl, r, stand) {
+  const P = pl.P, ax = pl.ax, g = stand ? standGeom(stand, P) : null;
+  const hasOut = g && g.outTile >= 0;
+  const src = hasOut ? g.outTile : stand ? centerTile(stand) : idx(Math.floor(pl.x), Math.floor(pl.z));
+  const allow = hasOut ? [] : [stand ? stand.uid : 0];
+  let best = null;
+  for (const ex of rwExits(r, ax)) {
+    const path = planePath(src, ex.tile, allow, true); if (!path) continue;
+    const cost = path.length + ex.s * 1.5;   // しきい値に近い入口ほどよい
+    if (!best || cost < best.cost) best = { ex, path, cost };
+  }
+  if (!best) {
+    // 横の出入口がない（駐機場が滑走路に直接くっついている等）：滑走路マスも使って探す
+    const e = G.windDir || 0;
+    let p = planePath(src, runwayInfo(r).endTile(e), allow) || planePath(src, runwayInfo(r).endTile(1 - e), allow);
+    if (p) { const k = p.findIndex(i => G.floor[i] === FLOOR.RUNWAY); if (k > 0) p = p.slice(0, k); if (p.length) best = { ex: { tile: p[p.length - 1], s: clamp(axS(ax, tilePt(p[p.length - 1])), 0.5, ax.len - 1) }, path: p }; }
+  }
+  const pts = best ? simplifyPts(best.path.map(tilePt)) : [{ x: pl.x, z: pl.z }];
+  // --- プッシュバック ---
+  let E;
+  if (hasOut && pts.length) {
+    const Q = laneQ(g, pts[0]);
+    const nxt = pts.length > 1 ? pts[1] : null;
+    let d0 = nxt ? [Math.round(Math.sign(nxt.x - Q.x) * (Math.abs(nxt.x - Q.x) > Math.abs(nxt.z - Q.z) ? 1 : 0)), Math.round(Math.sign(nxt.z - Q.z) * (Math.abs(nxt.z - Q.z) >= Math.abs(nxt.x - Q.x) ? 1 : 0))] : [g.f[1], -g.f[0]];
+    if (d0[0] === -g.f[0] && d0[1] === -g.f[1] || (d0[0] === 0 && d0[1] === 0)) {
+      // 道がまっすぐ後ろへ続くときは、横向きに押し出す
+      const cand = [[g.f[1], -g.f[0]], [-g.f[1], g.f[0]]];
+      d0 = cand.find(([dx, dy]) => isTaxiLike(Math.floor(Q.x - dx * 1.2), Math.floor(Q.z - dy * 1.2))) || cand[0];
+    }
+    const L1 = P.len * 0.5 + 0.4;
+    E = { x: Q.x - d0[0] * L1, z: Q.z - d0[1] * L1 };
+    if (!isTaxiLike(Math.floor(E.x), Math.floor(E.z))) E = { x: Q.x - d0[0] * 0.5, z: Q.z - d0[1] * 0.5 };
+    pl.pbRail = buildRail([{ x: pl.x, z: pl.z }, Q, E], 0.5 + P.len * 0.15);
+  } else {
+    E = { x: pl.x - Math.sin(pl.hdg) * 1.2, z: pl.z - Math.cos(pl.hdg) * 1.2 };
+    pl.pbRail = buildRail([{ x: pl.x, z: pl.z }, E], 0.5);
+  }
+  // --- 前向き：誘導路 → 滑走路の手前（ホールドショート） → 滑走路に正対 ---
+  let poly = [E].concat(hasOut && pts.length ? [laneQ(g, pts[0])] : [], pts.slice(1));
+  const hold = best ? pts[pts.length - 1] : null;
+  let sLine;
+  if (best && best.ex.s > 2.5) {
+    // 滑走路の上をしきい値までもどって（バックトラック）、180度ターン
+    poly.push(axPt(ax, best.ex.s, 0));
+    poly = poly.concat(uturnPts(ax, 1.0, -1));
+    sLine = 2.2;
+  } else {
+    const s1 = best ? best.ex.s : 0.6;
+    poly.push(axPt(ax, s1, 0));
+    sLine = s1;
+  }
+  const sEnd = sLine + 1.4;
+  poly.push(axPt(ax, sEnd, 0));
+  pl.fwdRail = buildRail(poly, taxiTurnR(P));
+  pl.takeS = sEnd;
+  pl.holdS = hold ? Math.max(0, railNearestS(pl.fwdRail, hold) - Math.max(0, P.len * 0.5 - 0.45)) : null;
+}
+
+// ============================================================
 //  シミュレーション（時間・お金・評価・ランク・天気・イベント）
 // ============================================================
 function newStatDay() {
@@ -5714,6 +5961,17 @@ function earn(amount, cat, b) {
   RT.earnAcc = (RT.earnAcc || 0) + amount;
   if (b && amount > 0) Bus.emit('earn', b, amount);
 }
+// 建設・研究などの支払い（今日の支出にも記録）
+function pay(amount, cat) {
+  if (G.free || !amount) return;
+  G.money -= amount;
+  const ex = G.stat.today.expense; ex[cat] = (ex[cat] || 0) + amount;
+}
+function refund(amount, cat) {
+  if (G.free || !amount) return;
+  G.money += amount;
+  const ex = G.stat.today.expense; ex[cat] = (ex[cat] || 0) - amount;
+}
 function spend(amount, cat) {
   G.money -= amount;
   const ex = G.stat.today.expense;
@@ -5750,17 +6008,21 @@ function closeDay() {
   const sat = t.satW > 0 ? t.sat / t.satW : (G.satHist.length ? G.satHist[G.satHist.length - 1] : 50);
   const up = dailyUpkeep();
   spend(up, 'upkeep');
+  Bank.daily();
+  const prevRating = G.rating;
   // ホテル
   for (const b of Object.values(G.blds)) {
     const d = B[b.id];
     if (d.kind === 'hotel') { const v = (t.paxArr + t.paxDep) * 60 * d.income * (1 + comboBonus(b)) * (1 + (b.lv - 1) * 0.2) + 20000 * d.income; earn(v, 'hotel', b); }
   }
   const inc = Object.values(t.income).reduce((a, b) => a + b, 0), exp = Object.values(t.expense).reduce((a, b) => a + b, 0);
-  G.hist.push({ day: G.day, pax: t.paxArr + t.paxDep, inc, exp, sat, flights: t.flights, visitors: t.visitors, cancel: t.cancel + t.divert, income: Object.assign({}, t.income), ontime: t.ontime, late: t.late, unmet: Object.assign({}, t.unmet), missed: t.missed });
+  G.hist.push({ day: G.day, pax: t.paxArr + t.paxDep, inc, exp, sat, flights: t.flights, visitors: t.visitors, cancel: t.cancel + t.divert, income: Object.assign({}, t.income), ontime: t.ontime, late: t.late, unmet: Object.assign({}, t.unmet), missed: t.missed, expense: Object.assign({}, t.expense), paxArr: t.paxArr, paxDep: t.paxDep, divert: t.divert, money: G.money });
   if (G.hist.length > 72) G.hist.shift();
   if (t.satW > 0) G.satHist.push(sat);
   if (G.satHist.length > 4) G.satHist.shift();
   updateRating();
+  G.hist[G.hist.length - 1].rating0 = prevRating; G.hist[G.hist.length - 1].rating = G.rating;
+  G.hist[G.hist.length - 1].top = Object.values(G.blds).filter(b => b.salesToday > 0).sort((a, b) => b.salesToday - a.salesToday).slice(0, 3).map(b => [b.id, b.lv || 1, Math.round(b.salesToday)]);
   for (const b of Object.values(G.blds)) { b.salesYest = b.salesToday || 0; b.salesToday = 0; b.ckToday = 0; }
   RT.lastDay = G.hist[G.hist.length - 1];
   Extra.daily();
@@ -5929,7 +6191,7 @@ function canResearch(r) {
 function doResearch(id) {
   const r = RESEARCH_BY[id]; const c = canResearch(r);
   if (!c.ok) { toast(c.why, 'bad'); Sound.se('error'); return false; }
-  if (!G.free) { G.dev -= r.dev; G.money -= r.cost; }
+  if (!G.free) { G.dev -= r.dev; pay(r.cost, 'research'); }
   G.research[id] = G.day + 1;
   Sound.se('levelup');
   Bus.emit('research', r);
@@ -5943,7 +6205,7 @@ function upgradeBuilding(b) {
   if (b.lv >= maxLevel()) { toast(maxLevel() < 5 ? '開発「施設改装」でもっと上げられます' : '最大レベルです', 'bad'); return false; }
   const c = upgradeCost(b);
   if (G.money < c && !G.free) { toast('お金が足りません', 'bad'); Sound.se('error'); return false; }
-  if (!G.free) G.money -= c;
+  pay(c, 'build');
   b.lv++;
   refreshBuildingMesh(b);
   Sound.se('levelup');
@@ -6009,7 +6271,7 @@ function maxFreq(airlineId) { const rel = (G.airlines[airlineId] || {}).rel || 0
 function openRoute(airlineId, cityId, freq, type) {
   const c = routeCheck(airlineId, cityId, type);
   if (!c.ok) { toast(c.why, 'bad'); Sound.se('error'); return null; }
-  if (!G.free) G.money -= c.cost;
+  pay(c.cost, 'route');
   const r = { id: airlineId + '-' + cityId, airline: airlineId, city: cityId, type: c.type, freq: clamp(freq || 1, 1, maxFreq(airlineId)), active: true, opened: G.day, flights: 0, pax: 0, seats: 0, ontime: 0 };
   G.routes.push(r);
   G.stamps[cityId] = G.day + 1;
@@ -6084,6 +6346,7 @@ const TOOLBAR = [
   { id: 'research', icon: 'flask', name: '開発' },
   { id: 'board', icon: 'board', name: '発着' },
   { id: 'stats', icon: 'chart', name: '統計' },
+  { id: 'bank', icon: 'money', name: '銀行' },
   { id: 'zukan', icon: 'book', name: '図鑑' },
   { id: 'missions', icon: 'mission', name: '目標' },
   { id: 'menu', icon: 'gear', name: 'メニュー' },
@@ -6100,6 +6363,8 @@ function initUI() {
   $('#bPhoto').onclick = () => togglePhoto();
   $('#spd').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; Sound.init(); setSpeed(+b.dataset.s); });
   $('#moneyIcon').src = iconURL('money');
+  $('#tbMoney').style.cursor = 'pointer'; $('#tbMoney').title = '銀行（お金を借りる・返す）';
+  $('#tbMoney').onclick = () => { Sound.init(); Sound.se('click'); closeBuild(); setTool(null); openBank(); };
   $('#bNight').onclick = () => { Sound.init(); skipNight(true); };
   $('#mClose').onclick = () => closeModal();
   $('#modal').addEventListener('pointerdown', e => { if (e.target.id === 'modal') closeModal(); });
@@ -6113,7 +6378,7 @@ function toolbarAction(id) {
   if (id === 'demolish') { setTool(UI.tool && UI.tool.type === 'demolish' ? null : { type: 'demolish' }); return; }
   if (id === 'land') { setTool(UI.tool && UI.tool.type === 'land' ? null : { type: 'land' }); return; }
   setTool(null);
-  ({ routes: openRoutes, research: openResearch, board: openBoard, stats: openStats, zukan: openZukan, missions: openMissions, menu: openMenu })[id]();
+  ({ routes: openRoutes, research: openResearch, board: openBoard, stats: openStats, bank: openBank, zukan: openZukan, missions: openMissions, menu: openMenu })[id]();
 }
 function setSpeed(s) {
   Game.speed = s; Game.userSpeed = s;
@@ -6138,6 +6403,8 @@ function updateHUD(force) {
   $('#wxIcon').title = wx.name;
   const m = $('#money');
   m.textContent = G.free ? '∞' : fmtYen(G.money);
+  m.title = G.loan ? '借入 ' + fmtYen(G.loan) : '';
+  m.classList.toggle('loan', !!G.loan);
   m.classList.toggle('neg', G.money < 0);
   // バッジ
   const bw = $('#tb_research');
@@ -6276,7 +6543,9 @@ function setTool(t) {
   if (t && (t.type === 'build' || t.type === 'move')) makeGhost();
   if (t && t.type === 'land') updateLandLabels(true);
   renderBuildBar();
+  if (UI.rangeMesh) { R.scene.remove(UI.rangeMesh); UI.rangeMesh = null; }
   if (t) hideInfo();
+  else if (!UI.sel && UI.selBox) { R.scene.remove(UI.selBox); UI.selBox = null; }
 }
 function makeGhost() {
   const t = UI.tool;
@@ -6284,6 +6553,13 @@ function makeGhost() {
   const m = buildModel(t.id, { num: 0, lv: t.lv || 1, season: dateOf(G.day).season });
   UI.ghostMat = UI.ghostMat || new THREE.MeshBasicMaterial({ color: '#80ff80', transparent: true, opacity: 0.55, depthWrite: false });
   m.traverse(o => { if (o.isMesh) { o.material = UI.ghostMat; o.castShadow = false; o.renderOrder = 8; } });
+  // 正面の向きを示す矢印（駐機場＝機首の向き・お店＝入口）
+  if (def.kind !== 'decor' && def.kind !== 'runway' && !def.paint) {
+    const sh = new THREE.Shape(); sh.moveTo(-0.32, 0); sh.lineTo(0.32, 0); sh.lineTo(0, 0.42); sh.closePath();
+    const ag = new THREE.ShapeGeometry(sh); ag.rotateX(Math.PI / 2);
+    const am = new THREE.Mesh(ag, new THREE.MeshBasicMaterial({ color: '#ffd84a', side: THREE.DoubleSide, depthTest: false, transparent: true }));
+    am.position.set(0, 0.08, def.h / 2 + 0.12); am.renderOrder = 9; m.add(am);
+  }
   UI.ghost = m; m.visible = false;
   R.scene.add(m);
 }
@@ -6294,7 +6570,7 @@ function renderBuildBar() {
   let h = '';
   if (t.type === 'build' || t.type === 'move') {
     const d = B[t.id];
-    h = `${iconImg(d.icon)}<div class="msg"><b>${t.type === 'move' ? '移動：' : ''}${d.name}</b> <span class="sub">${t.type === 'move' ? '' : fmtYen(d.cost)}</span><div class="sub" id="bbMsg">置きたい場所をタップ</div></div>
+    h = `${iconImg(d.icon)}<div class="msg"><b>${t.type === 'move' ? '移動：' : ''}${d.name}</b> <span class="sub">${t.type === 'move' ? '' : fmtYen(d.cost)}</span><div class="sub" id="bbMsg">${t.type === 'move' ? '動かしたい場所をタップ（決めるまで元の建物はそのまま）' : '置きたい場所をタップ'}</div>${B[t.id].kind !== 'decor' && B[t.id].kind !== 'runway' ? '<div class="sub">黄色い▲が正面です' + (B[t.id].kind === 'stand' ? '（機首の向き＝搭乗口・ターミナル側）' : B[t.id].kind === 'gate' ? '（ターミナルの通路側。うしろに駐機場を）' : '（入口・通路の側）') + '</div>' : ''}</div>
       <button class="pbtn sm" id="bbRot">${iconImg('rotate', 's')}回転</button>${UI.touch ? '<button class="pbtn sm green" id="bbOk">建てる</button>' : ''}<button class="pbtn sm red" id="bbX">やめる</button>`;
   } else if (t.type === 'paint') {
     const d = B[t.id];
@@ -6313,10 +6589,6 @@ function renderBuildBar() {
   const ud = $('#bbUndo'); if (ud) ud.onclick = () => doUndo();
 }
 function cancelTool() {
-  if (UI.tool && UI.tool.type === 'move' && UI.tool.orig) {
-    const o = UI.tool.orig; placeBuilding(o.id, o.x, o.y, o.rot, { move: true, uid: o.uid, lv: o.lv, num: o.num, silent: true });
-    const nb = G.blds[o.uid]; if (nb) Object.assign(nb, { salesTotal: o.salesTotal, visits: o.visits, day: o.day, fixed: o.fixed });
-  }
   setTool(null); Sound.se('close');
 }
 function rotateTool() {
@@ -6345,7 +6617,29 @@ function updateGhost() {
   // 搭乗口の距離ガイド
   if (def.kind === 'stand' || def.kind === 'gate') showGateHint(x, y, t);
 }
-function showGateHint(x, y, t) { /* シンプル化：メッセージのみ */ }
+// 駐機場と搭乗口は7マス以内でつながる：範囲とつながる相手を表示
+function showGateHint(x, y, t) {
+  const def = B[t.id], [w, h] = dims(def, t.rot), R7 = 7;
+  if (UI.rangeMesh) { R.scene.remove(UI.rangeMesh); UI.rangeMesh = null; }
+  const g = new THREE.Group();
+  const Q = R7 + 0.5;
+  const pts = [[x - Q, y], [x, y - Q], [x + w, y - Q], [x + w + Q, y], [x + w + Q, y + h], [x + w, y + h + Q], [x, y + h + Q], [x - Q, y + h]].map(([a, b]) => new THREE.Vector3(a, 0.12, b));
+  const loop = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineDashedMaterial({ color: '#ffd84a', dashSize: 0.4, gapSize: 0.25, depthTest: false, transparent: true }));
+  loop.computeLineDistances(); loop.renderOrder = 9; g.add(loop);
+  const me = { id: t.id, x, y, rot: t.rot };
+  const wantKind = def.kind === 'stand' ? 'gate' : 'stand';
+  const cands = Object.values(G.blds).filter(b => B[b.id].kind === wantKind && b.uid !== t.uid && (wantKind === 'gate' ? (!b.stand || b.stand === t.uid) && !B[b.id].bus : !b.gate || b.gate === t.uid));
+  let best = null, bd = 1e9;
+  for (const b of cands) { const d = rectDist(me, b); if (d <= R7 && d < bd) { bd = d; best = b; } }
+  if (best) {
+    const c0 = { x: x + w / 2, z: y + h / 2 }, c1 = bCenter(best);
+    const ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(c0.x, 0.3, c0.z), new THREE.Vector3(c1.x, 0.3, c1.z)]), new THREE.LineBasicMaterial({ color: '#5fe08a', depthTest: false, transparent: true }));
+    ln.renderOrder = 9; g.add(ln);
+  }
+  R.scene.add(g); UI.rangeMesh = g;
+  const msg = $('#bbMsg');
+  if (msg && UI.ghostOk) msg.innerHTML += best ? ` ・ <b style="color:var(--good)">${B[best.id].name}${best.num ? ' ' + best.num + '番' : ''}とつながります（${bd}マス）</b>` : ` ・ <b style="color:var(--bad)">7マス以内に空いている${wantKind === 'gate' ? '搭乗口' : '駐機場'}がありません</b>`;
+}
 function tryPlace(tx, ty) {
   const t = UI.tool; if (!t) return;
   const [x, y] = ghostOrigin(tx, ty);
@@ -6353,10 +6647,13 @@ function tryPlace(tx, ty) {
   const chk = canPlace(t.id, x, y, t.rot, { move: t.type === 'move', ignoreUid: t.uid });
   if (!chk.ok) { toast(chk.reason, 'bad'); Sound.se('error'); return; }
   if (t.type === 'move') {
-    const o = t.orig;
-    placeBuilding(o.id, x, y, t.rot, { move: true, uid: o.uid, lv: o.lv, num: o.num });
-    const nb = G.blds[o.uid]; if (nb) Object.assign(nb, { salesTotal: o.salesTotal, visits: o.visits, day: o.day });
-    UI.tool.orig = null; setTool(null); Sound.se('place'); return;
+    const o = G.blds[t.uid]; if (!o) { setTool(null); return; }
+    const from = { x: o.x, y: o.y, rot: o.rot };
+    if (from.x === x && from.y === y && from.rot === t.rot) { setTool(null); return; }
+    const nb = relocateBuilding(t.uid, x, y, t.rot);
+    if (!nb) { toast('ここには動かせません', 'bad'); Sound.se('error'); return; }
+    pushUndo({ type: 'move', uid: t.uid, from });
+    setTool(null); Sound.se('place'); puff(nb); showInfo({ type: 'bld', obj: nb }); return;
   }
   const b = placeBuilding(t.id, x, y, t.rot);
   if (b) {
@@ -6654,11 +6951,12 @@ function renderInfo() {
     h += '<div class="btns">';
     const canUp = def.kind === 'svc' || def.kind === 'checkin' || def.kind === 'security' || def.kind === 'baggage' || def.kind === 'emig' || def.kind === 'immig' || def.kind === 'access' || def.kind === 'hotel';
     if (canUp) h += b.lv < maxLevel() ? `<button class="pbtn sm gold" id="iUp">${iconImg('up', 's')}Lv${b.lv + 1}へ ${fmtYenShort(upgradeCost(b))}</button>` : `<span class="sub">${b.lv >= 5 ? '最大レベル' : '開発「施設改装」でLvアップ解放'}</span>`;
-    if (!b.fixed && !b.busy) h += `<button class="pbtn sm" id="iMove">${iconImg('move', 's')}移動</button><button class="pbtn sm red" id="iDel">${iconImg('trash', 's')}撤去 +${fmtYenShort(def.cost * 0.5 * (1 + (b.lv - 1) * 0.5))}</button>`;
+    if (!b.fixed && !b.busy) h += `<button class="pbtn sm" id="iMove">${iconImg('move', 's')}移動</button>${def.w !== def.h || !['decor'].includes(def.kind) ? `<button class="pbtn sm" id="iRot">${iconImg('rotate', 's')}回転</button>` : ''}<button class="pbtn sm red" id="iDel">${iconImg('trash', 's')}撤去 +${fmtYenShort(def.cost * 0.5 * (1 + (b.lv - 1) * 0.5))}</button>`;
     h += '</div>';
     box.innerHTML = h;
     const up = $('#iUp'); if (up) up.onclick = () => { if (upgradeBuilding(b)) renderInfo(); };
     const mv = $('#iMove'); if (mv) mv.onclick = () => startMove(b);
+    const ro = $('#iRot'); if (ro) ro.onclick = () => rotateInPlace(b);
     const dl = $('#iDel'); if (dl) dl.onclick = () => { removeBuilding(b.uid); Sound.se('demolish'); hideInfo(); };
     showSelBox(b);
   } else if (s.type === 'person') {
@@ -6721,11 +7019,26 @@ function showSelBox(b) {
   UI.selBox = m; R.scene.add(m);
 }
 function startMove(b) {
-  const orig = Object.assign({}, b);
-  delete orig.mesh;
-  removeBuilding(b.uid, { move: true });
+  // 建物はそのまま。半透明の「影」を動かして、決めたら移動する
   hideInfo();
-  setTool({ type: 'move', id: b.id, rot: b.rot, lv: b.lv, uid: b.uid, orig });
+  setTool({ type: 'move', id: b.id, rot: b.rot, lv: b.lv, uid: b.uid });
+  UI.hoverTile = { x: b.x + Math.floor((dims(B[b.id], b.rot)[0] - 1) / 2), y: b.y + Math.floor((dims(B[b.id], b.rot)[1] - 1) / 2) };
+  updateGhost(); showSelBox(b);
+}
+// その場で90度回す（中心をなるべく変えない）
+function rotateInPlace(b) {
+  const def = B[b.id], nr = (b.rot + 1) % 4;
+  const [w0, h0] = dims(def, b.rot), [w1, h1] = dims(def, nr);
+  const cx = b.x + w0 / 2, cy = b.y + h0 / 2;
+  const bx = Math.round(cx - w1 / 2), by = Math.round(cy - h1 / 2);
+  const from = { x: b.x, y: b.y, rot: b.rot };
+  for (const [dx, dy] of [[0, 0], [-1, 0], [0, -1], [1, 0], [0, 1], [-1, -1], [1, 1], [1, -1], [-1, 1]]) {
+    if (canPlace(b.id, bx + dx, by + dy, nr, { move: true, ignoreUid: b.uid, ignoreRank: true }).ok) {
+      const nb = relocateBuilding(b.uid, bx + dx, by + dy, nr);
+      if (nb) { pushUndo({ type: 'move', uid: b.uid, from }); Sound.se('tab'); showInfo({ type: 'bld', obj: nb }); return true; }
+    }
+  }
+  toast('まわりがせまくて回せません', 'bad'); Sound.se('error'); return false;
 }
 
 // ---------- モーダル ----------
@@ -7002,6 +7315,7 @@ function openMenu() {
     <div class="sub" style="margin-top:6px">ジオラマぼかし</div><div class="seg" id="sT">${[[0, 'なし'], [0.5, '弱'], [0.8, 'ふつう'], [1.2, '強']].map(([v, n]) => `<button data-v="${v}" class="${R.opts.tilt === v ? 'on' : ''}">${n}</button>`).join('')}</div>
     <div class="sub" style="margin-top:6px">ふちどり線</div><div class="seg" id="sO"><button data-v="1" class="${R.opts.outline ? 'on' : ''}">あり</button><button data-v="0" class="${R.opts.outline ? '' : 'on'}">なし</button></div>
     <div class="sub" style="margin-top:6px">夜（飛行機のない時間）は自動でとばす</div><div class="seg" id="sN"><button data-v="1" class="${o.nightSkip ? 'on' : ''}">する</button><button data-v="0" class="${o.nightSkip ? '' : 'on'}">しない</button></div>
+    <div class="sub" style="margin-top:6px">一日の終わりに「一日のまとめ」を表示</div><div class="seg" id="sD"><button data-v="1" class="${o.dayReport !== false ? 'on' : ''}">する</button><button data-v="0" class="${o.dayReport === false ? 'on' : ''}">しない</button></div>
     <div class="sec">${iconImg('save', 's')}セーブ</div>
     <div class="sub">自動で毎日セーブされます（スロット${Game.slot + 1}）。</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="pbtn sm blue" id="mSave">${iconImg('save', 's')}いまセーブ</button><button class="pbtn sm" id="mExport">引きつぎコードを作る</button><button class="pbtn sm" id="mImport">引きつぎコードを入力</button>${Cloud.available() ? '<button class="pbtn sm" id="mCloud">クラウドに保存</button>' : ''}</div>
@@ -7011,7 +7325,7 @@ function openMenu() {
   $('#vBgm').oninput = e => { Sound.setVol('bgm', e.target.value / 100); saveOpts(); };
   $('#vSe').oninput = e => { Sound.setVol('se', e.target.value / 100); saveOpts(); };
   const seg = (id, f) => $(id).onclick = e => { const b = e.target.closest('button'); if (!b) return; f(b.dataset.v); saveOpts(); Sound.se('click'); openMenu(); };
-  seg('#sQ', v => setQuality(v)); seg('#sT', v => R.opts.tilt = +v); seg('#sO', v => R.opts.outline = +v); seg('#sN', v => Game.opts.nightSkip = v === '1');
+  seg('#sQ', v => setQuality(v)); seg('#sT', v => R.opts.tilt = +v); seg('#sO', v => R.opts.outline = +v); seg('#sN', v => Game.opts.nightSkip = v === '1'); seg('#sD', v => Game.opts.dayReport = v === '1');
   $('#mSave').onclick = () => { saveGame(); toast('セーブしました', 'good', 'save'); };
   $('#mExport').onclick = () => { const code = exportCode(); openModal('引きつぎコード', `<p class="sub">このコードをコピーして、別の端末で「引きつぎコードを入力」に貼りつけてください。</p><textarea style="width:100%;height:180px;font-size:11px;user-select:text;-webkit-user-select:text" readonly onclick="this.select()">${code}</textarea>`, { narrow: true }); };
   $('#mImport').onclick = () => {
@@ -7039,10 +7353,14 @@ function doUndo() {
   if (a.type === 'build') {
     const b = G.blds[a.uid];
     if (!b || b.busy) { toast('その建物はもう戻せません', 'bad'); return; }
-    removeBuilding(a.uid, { noRefund: true }); if (!G.free) G.money += a.cost;
+    removeBuilding(a.uid, { noRefund: true }); refund(a.cost, 'build');
+  } else if (a.type === 'move') {
+    const b = G.blds[a.uid];
+    if (!b || b.busy || !relocateBuilding(a.uid, a.from.x, a.from.y, a.from.rot)) { toast('その建物はもう戻せません', 'bad'); return; }
+    Sound.se('close'); toast('移動を元に戻しました', 'good', 'rotate'); renderBuildBar(); return;
   } else if (a.type === 'paint') {
     for (const [i, prev] of a.tiles) { if (G.occ[i]) continue; G.floor[i] = prev; markChunk(i % W, Math.floor(i / W)); }
-    worldChanged(null); World.dirtyWalls = true; if (!G.free) G.money += a.cost;
+    worldChanged(null); World.dirtyWalls = true; refund(a.cost, 'build');
   }
   Sound.se('close'); toast('ひとつ前の操作を元に戻しました（お金ももどりました）', 'good', 'rotate');
   renderBuildBar();
@@ -7652,7 +7970,7 @@ function loadSlot(slot) {
   return true;
 }
 function saveOpts() {
-  try { localStorage.setItem(OPT_KEY, JSON.stringify({ bgm: Sound.vol.bgm, se: Sound.vol.se, q: R.opts.quality, tilt: R.opts.tilt, outline: R.opts.outline, nightSkip: Game.opts.nightSkip })); } catch (e) { }
+  try { localStorage.setItem(OPT_KEY, JSON.stringify({ bgm: Sound.vol.bgm, se: Sound.vol.se, q: R.opts.quality, tilt: R.opts.tilt, outline: R.opts.outline, nightSkip: Game.opts.nightSkip, dayReport: Game.opts.dayReport })); } catch (e) { }
 }
 function loadOpts() {
   try {
@@ -7660,6 +7978,7 @@ function loadOpts() {
     if (o.bgm != null) Sound.vol.bgm = o.bgm; if (o.se != null) Sound.vol.se = o.se;
     if (o.q) R.opts.quality = o.q; if (o.tilt != null) R.opts.tilt = o.tilt; if (o.outline != null) R.opts.outline = o.outline;
     if (o.nightSkip != null) Game.opts.nightSkip = o.nightSkip;
+    if (o.dayReport != null) Game.opts.dayReport = o.dayReport;
   } catch (e) { }
 }
 // 引きつぎコード（文字列）
@@ -7876,7 +8195,7 @@ Bus.on('taxiIn', pl => {
   const fl = pl.fl, route = G.routes.find(r => r.id === fl.rid);
   if (!route || route.saluted || !hasKind('fire') || (route.flights || 0) > 0) return;
   route.saluted = true; G.flags.salute = true;
-  const p0 = pl.path[Math.min(2, pl.path.length - 1)]; if (!p0) return;
+  const rl = pl.rail; if (!rl || rl.n < 2) return; const k0 = Math.min(rl.n - 1, Math.round(rl.n * 0.3)); const p0 = { x: rl.X[k0], z: rl.Z[k0] };
   const trucks = [];
   for (const sd of [-1, 1]) {
     const m = vehicleMesh('fire'); m.scale.setScalar(0.55);
@@ -8037,6 +8356,134 @@ function clearExtras() {
   for (const a of BusArr.list) R.scene.remove(a.m);
   BusArr.list = [];
   if (FX.life) FX.life.fill(0);
+}
+
+// ============================================================
+//  一日のまとめ・銀行（借入）
+// ============================================================
+const INC_NAMES = { landing: '着陸料', pfc: '旅客の使用料', food: '飲食', shop: 'ショップ', svc: 'サービス・娯楽', park: '駐車場・レンタカー', hotel: '宿泊', cargo: '貨物', fuel: '燃料', other: 'そのほか' };
+const EXP_NAMES = { upkeep: '維持費・人件費', build: '建設', land: '土地', research: '開発', route: '路線の開設', interest: '借入の利息', other: 'そのほか' };
+
+// ---------- 銀行 ----------
+const LOAN_LIMIT = [0, 3e6, 5e6, 8e6, 15e6, 25e6, 40e6, 60e6, 90e6, 130e6, 200e6];
+const LOAN_RATE = 0.005;   // 1日あたり 0.5%
+const Bank = {
+  loan() { return G.loan || 0; },
+  limit() { return LOAN_LIMIT[clamp(G.rank || 1, 1, 10)] * (G.research && G.research.credit ? 1.5 : 1); },
+  room() { return Math.max(0, this.limit() - this.loan()); },
+  interest() { return Math.ceil(this.loan() * LOAN_RATE); },
+  borrow(a) {
+    a = Math.min(a, this.room()); if (a <= 0) { toast('これ以上は借りられません（ランクが上がると増えます）', 'bad'); Sound.se('error'); return false; }
+    G.loan = this.loan() + a; G.money += a;
+    G.stat.today.borrowed = (G.stat.today.borrowed || 0) + a;
+    G.loanLog = (G.loanLog || []).concat([[G.day, a]]).slice(-8);
+    Sound.se('coin'); toast(`${fmtYen(a)} 借りました`, 'gold', 'money');
+    return true;
+  },
+  repay(a) {
+    a = Math.min(a, this.loan(), Math.max(0, G.money));
+    if (a <= 0) { toast(this.loan() ? 'お金が足りません' : '借入はありません', 'bad'); Sound.se('error'); return false; }
+    G.loan = this.loan() - a; G.money -= a;
+    if (G.loan < 1) G.loan = 0;
+    G.stat.today.repaid = (G.stat.today.repaid || 0) + a;
+    G.loanLog = (G.loanLog || []).concat([[G.day, -a]]).slice(-8);
+    Sound.se('money'); toast(`${fmtYen(a)} 返しました`, 'good', 'money');
+    if (!G.loan) toast('借入をすべて返しました！', 'gold', 'star');
+    return true;
+  },
+  daily() {
+    const i = this.interest();
+    if (i > 0) spend(i, 'interest');
+    // 残高がマイナスのまま：信用が下がって利息が上がらないよう、自動で少し借りる
+    if (G.money < 0 && this.room() > 0 && !G.free) {
+      const a = Math.min(this.room(), Math.ceil(-G.money / 1e5) * 1e5);
+      G.loan = this.loan() + a; G.money += a;
+      G.loanLog = (G.loanLog || []).concat([[G.day, a]]).slice(-8);
+      RT.autoLoan = a;
+    }
+  }
+};
+function openBank() {
+  const L = Bank.loan(), lim = Bank.limit(), room = Bank.room();
+  const amts = [1e6, 3e6, 1e7, 3e7].filter(a => a <= Math.max(lim, 1e6));
+  const pct = lim ? Math.round(L / lim * 100) : 0;
+  let h = `<div class="bankTop"><div class="card"><h5>${iconImg('money', 's')}借入残高</h5><div class="big ${L ? 'neg' : ''}">${fmtYen(L)}</div><div class="bar"><i style="width:${pct}%;background:${pct > 80 ? 'var(--bad)' : 'var(--warn,#f2c230)'}"></i></div><div class="meta">上限 ${fmtYen(lim)}（ランク${G.rank}）・あと ${fmtYen(room)} 借りられます</div></div>
+    <div class="card"><h5>${iconImg('clock', 's')}利息</h5><div class="kv"><span class="k">利率</span><span class="v">1日 ${(LOAN_RATE * 100).toFixed(1)}%</span><span class="k">次の0時に払う利息</span><span class="v" style="color:var(--bad)">-${fmtYen(Bank.interest())}</span><span class="k">今の所持金</span><span class="v">${fmtYen(G.money)}</span></div><div class="meta">利息は毎日0時に「一日のまとめ」の支出に入ります。いつでも返せます。</div></div></div>
+    <div class="sec">${iconImg('money', 's')}借りる</div><div class="btnrow">${amts.map(a => `<button class="pbtn sm blue" data-b="${a}" ${room < 1 ? 'disabled' : ''}>${fmtYenShort(a)}</button>`).join('')}<button class="pbtn sm" data-b="max" ${room < 1 ? 'disabled' : ''}>上限まで（${fmtYenShort(room)}）</button></div>
+    <div class="sec">${iconImg('check', 's')}返す</div><div class="btnrow">${amts.map(a => `<button class="pbtn sm green" data-r="${a}" ${L < 1 ? 'disabled' : ''}>${fmtYenShort(a)}</button>`).join('')}<button class="pbtn sm" data-r="all" ${L < 1 ? 'disabled' : ''}>全部返す</button></div>
+    <p class="sub" style="margin-top:8px">💡 大きな滑走路や駐機場を早めに作りたいときに。借りたお金で便を増やせば、利息より多くかせげます。ランクが上がると借りられる額が増えます。</p>`;
+  if (G.loanLog && G.loanLog.length) h += `<div class="sec">${iconImg('board', 's')}最近の取引</div><div class="kv">${G.loanLog.slice().reverse().map(([d, a]) => { const dd = dateOf(d); return `<span class="k">${dd.year}年目 ${dd.month}月${dd.partName}</span><span class="v" style="color:${a > 0 ? 'var(--bad)' : 'var(--good)'}">${a > 0 ? '借入 ' : '返済 '}${fmtYen(Math.abs(a))}</span>`; }).join('')}</div>`;
+  openModal('銀行', h, { icon: 'money', narrow: true, id: 'bank', silent: UI.modalOpen === 'bank' });
+  $('#mBody').onclick = e => {
+    const b = e.target.closest('button'); if (!b || b.disabled) return;
+    let ok = false;
+    if (b.dataset.b) ok = Bank.borrow(b.dataset.b === 'max' ? Bank.room() : +b.dataset.b);
+    if (b.dataset.r) ok = Bank.repay(b.dataset.r === 'all' ? Bank.loan() : +b.dataset.r);
+    if (ok) { updateHUD(true); openBank(); }
+  };
+}
+
+// ---------- 一日のまとめ ----------
+const DayReport = {
+  pending: null,
+  tick() {
+    if (!this.pending || Game.demo || !Game.started) return;
+    if (UI.modalOpen || (typeof Dialog !== 'undefined' && Dialog.active) || UI.photo) return;
+    const d = this.pending; this.pending = null;
+    if (Game.opts.dayReport === false) { toast(`きのうの利益 ${fmtYen(d.inc - d.exp)}`, d.inc - d.exp >= 0 ? 'good' : 'bad', 'money'); return; }
+    openDayReport(d);
+  }
+};
+Bus.on('dayClosed', d => { if (!Game.demo) DayReport.pending = d; });
+
+function dayIssues(d) {
+  const out = [];
+  const NM = { food: ['food', 'おなかをすかせた人がいた → 飲食店をふやそう'], shop: ['shopping', 'おみやげを買えなかった人がいた → ショップを'], toilet: ['toilet', 'トイレが見つからない人がいた → トイレを近くに'], rest: ['zzz', '休む場所がなかった → ベンチやラウンジを'], fun: ['note', 'ひまな人がいた → 楽しい施設を'] };
+  for (const [k, v] of Object.entries(d.unmet || {}).sort((a, b) => b[1] - a[1])) if (v > 3 && NM[k]) out.push([NM[k][0], NM[k][1], Math.round(v)]);
+  if (d.missed > 2) out.push(['anger', '乗りおくれた人がいた → 列が長い・搭乗口が遠いかも', Math.round(d.missed)]);
+  if (d.cancel > 0) out.push(['sweat', '欠航・ダイバートがあった → 駐機場が足りないか、天気のせい', d.cancel]);
+  if (d.late > d.ontime && d.flights > 2) out.push(['clock', '遅れた便が多い → 駐機場・搭乗口・保安検査を増やそう', d.late]);
+  if (RT.warnings) for (const [uid, ws] of RT.warnings) { const b = G.blds[uid]; if (b && out.length < 6) out.push(['sweat', `${B[b.id].name}：${ws[0]}`, 0, uid]); }
+  if (G.money < 0) out.push(['money', 'お金がマイナス → 銀行で借りるか、建設をひかえよう', 0]);
+  return out.slice(0, 6);
+}
+function openDayReport(d) {
+  const dd = dateOf(d.day), prof = d.inc - d.exp;
+  const prev = G.hist.length > 1 ? G.hist[G.hist.length - 2] : null;
+  const dp = prev ? prof - (prev.inc - prev.exp) : null;
+  const incs = Object.entries(d.income || {}).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+  const exps = Object.entries(d.expense || {}).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+  const maxV = Math.max(1, ...incs.map(e => e[1]), ...exps.map(e => e[1]));
+  const row = (n, v, col) => `<div class="drow"><span class="dn">${n}</span><span class="dbar"><i style="width:${Math.max(2, v / maxV * 100)}%;background:${col}"></i></span><span class="dv">${fmtYen(v)}</span></div>`;
+  const otp = d.ontime + d.late ? Math.round(d.ontime / (d.ontime + d.late) * 100) + '%' : '-';
+  const r0 = d.rating0 != null ? d.rating0 : d.rating, r1 = d.rating != null ? d.rating : G.rating;
+  let h = `<div class="dHead"><div class="sub">${dd.year}年目 ${dd.seasonName} ${dd.month}月${dd.partName}（${d.day + 1}日目）</div>
+    <div class="dProfit ${prof >= 0 ? 'pos' : 'neg'}">${prof >= 0 ? '＋' : ''}${fmtYen(prof)}</div>
+    <div class="sub">今日のもうけ ${dp != null ? `<b style="color:${dp >= 0 ? 'var(--good)' : 'var(--bad)'}">${dp >= 0 ? '▲' : '▼'} きのうより ${fmtYen(Math.abs(dp))}</b>` : ''}</div></div>
+    <div class="grid2"><div class="card"><h5>${iconImg('money', 's')}収入 ${fmtYen(d.inc)}</h5>${incs.map(([k, v]) => row(INC_NAMES[k] || k, v, 'var(--good)')).join('') || '<div class="sub">なし</div>'}</div>
+    <div class="card"><h5>${iconImg('dozer', 's')}支出 ${fmtYen(d.exp)}</h5>${exps.map(([k, v]) => row(EXP_NAMES[k] || k, v, 'var(--bad)')).join('') || '<div class="sub">なし</div>'}</div></div>
+    <div class="dStats">
+      <div>${iconImg('plane2', 's')}<b>${d.flights}</b><span>便</span></div>
+      <div>${iconImg('people', 's')}<b>${fmtNum((d.paxArr || 0) + (d.paxDep || 0))}</b><span>乗客</span></div>
+      <div>${iconImg('clock', 's')}<b>${otp}</b><span>定時運航</span></div>
+      <div>${iconImg('camera', 's')}<b>${fmtNum(d.visitors || 0)}</b><span>見学</span></div>
+      <div>${iconImg('heart', 's')}<b>${Math.round(d.sat || 0)}</b><span>満足度</span></div>
+      <div>${iconImg('star', 's')}<b>${r1.toFixed(1)}</b><span>評価 ${r1 > r0 ? '<i style="color:var(--good)">▲</i>' : r1 < r0 ? '<i style="color:var(--bad)">▼</i>' : ''}</span></div>
+    </div>`;
+  if (d.top && d.top.length) h += `<div class="sec">${iconImg('star', 's')}今日の売上トップ</div><div class="kv">${d.top.map(([id, lv, v], i) => `<span class="k">${['🥇', '🥈', '🥉'][i]} ${B[id] ? B[id].name : id}${lv > 1 ? ' Lv' + lv : ''}</span><span class="v">${fmtYen(v)}</span>`).join('')}</div>`;
+  const iss = dayIssues(d);
+  h += `<div class="sec">${iconImg('info', 's')}${iss.length ? '気になること' : 'よかったこと'}</div><div class="list">${iss.length ? iss.map(([ic, tx, n, uid]) => `<div class="li ${uid ? 'jump' : ''}" ${uid ? `data-uid="${uid}"` : ''}>${iconImg(ic)}<div class="grow">${tx}</div>${n ? `<span class="sub">${n}</span>` : ''}${uid ? '<span class="sub">見に行く▶</span>' : ''}</div>`).join('') : `<div class="li">${iconImg('heart')}<div class="grow">大きな問題はありませんでした！この調子！</div></div>`}</div>`;
+  const loan = Bank.loan();
+  const fw = G.forecast && G.forecast[0] && WEATHER[G.forecast[0]];
+  h += `<div class="kv" style="margin-top:8px"><span class="k">所持金</span><span class="v">${fmtYen(G.money)}</span>${loan ? `<span class="k">借入残高（利息 1日 ${fmtYen(Bank.interest())}）</span><span class="v" style="color:var(--bad)">${fmtYen(loan)}</span>` : ''}${RT.autoLoan ? `<span class="k">お金が足りないので自動で借りた額</span><span class="v" style="color:var(--bad)">${fmtYen(RT.autoLoan)}</span>` : ''}${fw ? `<span class="k">あしたの天気</span><span class="v">${fw.name}</span>` : ''}</div>`;
+  RT.autoLoan = 0;
+  h += `<div class="dFoot"><label class="sub"><input type="checkbox" id="drShow" ${Game.opts.dayReport === false ? '' : 'checked'}> 毎日表示する</label><span class="grow"></span>${loan || G.money < 0 ? `<button class="pbtn sm" id="drBank">${iconImg('money', 's')}銀行</button>` : ''}<button class="pbtn blue" id="drNext">つぎの日へ ▶</button></div>`;
+  openModal('一日のまとめ', h, { icon: 'chart', id: 'day', pause: true });
+  Sound.se('chime2');
+  $('#drNext').onclick = () => closeModal();
+  const bk = $('#drBank'); if (bk) bk.onclick = () => openBank();
+  $('#drShow').onchange = e => { Game.opts.dayReport = e.target.checked; saveOpts(); };
+  $('#mBody').onclick = e => { const li = e.target.closest('.li.jump'); if (!li) return; const b = G.blds[+li.dataset.uid]; if (!b) return; closeModal(); const c = bCenter(b); Cam.tx = c.x; Cam.tz = c.z; showInfo({ type: 'bld', obj: b }); };
 }
 
 // ============================================================
@@ -8352,6 +8799,7 @@ function loop(now) {
   renderPeople(dtReal);
   updateFX(dtReal);
   if (!Game.demo || true) updateExtras(spd > 0 ? dtReal / REAL_SEC_PER_GMIN * Math.min(spd, 4) : 0, dtReal);
+  DayReport.tick();
   if (Cam.shake > 0) Cam.shake = Math.max(0, Cam.shake - dtReal);
   renderFrame();
   // UI
@@ -8377,7 +8825,7 @@ function loop(now) {
   }
 }
 window.addEventListener('load', boot);
-window.__sora = { serialize, planeModel, PLANES, get G() { return G; }, dbg: { getField, accessTiles, findFacility, findKind, get WALKABLE() { return WALKABLE; }, People, Story, CHAPTERS, Dialog, routeCheck, checkWarnings, relinkGates }, setTool, tryPlace, RT, simStep, World, Cam, R, startGame, placeBuilding, paintApply, openRoute, B, Game, UI };
+window.__sora = { serialize, planeModel, PLANES, get G() { return G; }, dbg: { taxiInRail, departRails, rwAxis, planRollout, standGeom, axPt, relocateBuilding, rotateInPlace, openDayReport, openBank, Bank, DayReport, getField, accessTiles, findFacility, findKind, get WALKABLE() { return WALKABLE; }, People, Story, CHAPTERS, Dialog, routeCheck, checkWarnings, relinkGates }, setTool, tryPlace, RT, simStep, World, Cam, R, startGame, placeBuilding, paintApply, openRoute, B, Game, UI };
 
 })();
 </script>

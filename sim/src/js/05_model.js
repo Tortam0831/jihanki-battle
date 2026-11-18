@@ -616,6 +616,10 @@ function standModel(def, num) {
   m.position.y = 0.015; m.receiveShadow = true; g.add(m);
   const mb = new ModelBuilder();
   mb.box(0, -0.2, 0, def.w, 0.205, def.h, '#9a9aa4', { skip: 't' });
+  // 正面（+z）に駐機誘導の表示板（VDGS）。機首はこちらを向いてとまる
+  mb.cyl(0.5, 0, def.h / 2 - 0.05, 0.03, 0.035, 1.1, '#6a6a76', 4);
+  mb.box(0.5, 1.1, def.h / 2 - 0.05, 0.42, 0.26, 0.08, '#2a2a34');
+  mb.box(0.5, 1.12, def.h / 2 - 0.1, 0.34, 0.18, 0.02, '#ffd84a', { glow: '#ffcc33' });
   mb.cyl(def.w / 2 - 0.25, 0, -def.h / 2 + 0.25, 0.04, 0.05, 1.8, '#9a9aa6', 4);
   mb.box(def.w / 2 - 0.25, 1.8, -def.h / 2 + 0.25, 0.3, 0.12, 0.3, '#5a5a66'); mb.box(def.w / 2 - 0.25, 1.76, -def.h / 2 + 0.25, 0.24, 0.04, 0.24, '#fff8e0', { glow: '#ffe8a0' });
   g.add(mb.build());

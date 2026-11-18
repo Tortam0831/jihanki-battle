@@ -177,7 +177,7 @@ Bus.on('taxiIn', pl => {
   const fl = pl.fl, route = G.routes.find(r => r.id === fl.rid);
   if (!route || route.saluted || !hasKind('fire') || (route.flights || 0) > 0) return;
   route.saluted = true; G.flags.salute = true;
-  const p0 = pl.path[Math.min(2, pl.path.length - 1)]; if (!p0) return;
+  const rl = pl.rail; if (!rl || rl.n < 2) return; const k0 = Math.min(rl.n - 1, Math.round(rl.n * 0.3)); const p0 = { x: rl.X[k0], z: rl.Z[k0] };
   const trucks = [];
   for (const sd of [-1, 1]) {
     const m = vehicleMesh('fire'); m.scale.setScalar(0.55);

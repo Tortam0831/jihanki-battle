@@ -909,15 +909,28 @@ function makeStandTexture(sz, num) {
     if (x % 32 === 0 || y % 32 === 0) col = '#a0a0a8';
     px(ctx, x, y, col);
   }
+  // 上＝うしろ（誘導路から入る側）、下＝正面（ターミナル側）
+  const cx = c.width / 2, Hh = c.height, stopY = Hh - Math.round(S * 0.6);
   ctx.fillStyle = '#f2c230';
-  const cx = c.width / 2;
-  ctx.fillRect(cx - 1, 6, 2, c.height - 6);           // 誘導線
-  ctx.fillRect(cx - 10, c.height * 0.3, 20, 2);        // 停止線
+  ctx.fillRect(cx - 1, 0, 2, stopY);                    // 誘導線（入口から停止線まで）
+  for (let y = 10; y < stopY - 10; y += 14) {             // 進む向きの矢印
+    for (let k = 0; k < 4; k++) { ctx.fillRect(cx - 4 + k, y + k, 1, 2); ctx.fillRect(cx + 3 - k, y + k, 1, 2); }
+  }
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(cx - 9, stopY, 18, 3);   // 停止線
+  ctx.fillStyle = '#f2c230'; ctx.fillRect(cx - 9, stopY + 3, 18, 1);
+  // 正面の帯（ターミナル側）
+  ctx.fillStyle = '#3d7fd6'; ctx.fillRect(2, Hh - 6, c.width - 4, 4);
+  ctx.fillStyle = '#ffffff';
+  for (let x = 6; x < c.width - 6; x += 10) { ctx.fillRect(x, Hh - 5, 3, 1); ctx.fillRect(x + 1, Hh - 4, 1, 1); }
+  // 翼の安全線（左右と正面）
   ctx.fillStyle = '#e5484d';
-  ctx.fillRect(2, 2, c.width - 4, 1); ctx.fillRect(2, 2, 1, c.height - 4); ctx.fillRect(c.width - 3, 2, 1, c.height - 4);
+  ctx.fillRect(2, 8, 1, Hh - 10); ctx.fillRect(c.width - 3, 8, 1, Hh - 10);
+  // 入口の番号
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(String(num), cx + 12, c.height - 10);
+  ctx.fillText(String(num), cx + 10, 8);
+  ctx.font = 'bold 6px monospace'; ctx.fillStyle = '#20304a';
+  if (sz >= 4) ctx.fillText('STOP', cx + 16, stopY + 2);
   return c;
 }
 

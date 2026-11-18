@@ -284,8 +284,7 @@ function updatePlane(pl, dt) {
           pl.x -= cross * hz; pl.z += cross * hx;
           pl.y = 0; pl.state = 'roll'; pl.rollT = 0; pl.hdg = pl.ax.hdg; pl.bank = 0;
           // 滑走路の残りで止まれるように減速度を決める
-          const remain = Math.max(4, pl.ax.len - (pl.td && Math.abs(along)) - 5);
-          pl.decel = (pl.spd * pl.spd - V_TAXI * V_TAXI) / (2 * Math.min(remain, Math.max(5, pl.ax.len * 0.55)));
+          planRollout(pl, r);
           Sound.se('land'); if (P.eng !== 'prop') setTimeout(() => Sound.se('jet'), 300);
           Bus.emit('touchdown', pl);
           fl.status = 'landed'; fl.landT = G.min;
@@ -331,47 +330,58 @@ function updatePlane(pl, dt) {
       const st = pl.spd * dt;
       pl.x += Math.sin(pl.hdg) * st; pl.z += Math.cos(pl.hdg) * st;
       pl.rollT += st;
-      if (pl.spd <= V_TAXI * 1.02 || pl.rollT > pl.ax.len - 4) {
+      if (axS(pl.ax, pl) >= pl.rollHand || pl.rollT > pl.ax.len - 2.5) {
         const stand = G.blds[pl.stand];
-        const cur = idx(clamp(Math.floor(pl.x), 0, W - 1), clamp(Math.floor(pl.z), 0, H - 1));
-        if (!stand) { pl.state = 'taxi_out'; break; }
-        const sc = bCenter(stand), goal = idx(Math.floor(sc.x), Math.floor(sc.z));
-        let path = planePath(cur, goal, [stand.uid]);
-        if (!path) path = planePath(runwayInfo(r).endTile(G.windDir ? 0 : 1), goal, [stand.uid]);
-        pl.path = smoothPath(path ? path.map(tilePt) : [], pl);
-        pl.path.push({ x: sc.x, z: sc.z });
-        pl.pi = 0; pl.state = 'taxi_in'; pl.leaveRw = true;
+        taxiInRail(pl, r, stand);
+        pl.state = 'taxi_in'; pl.leaveRw = true;
         Bus.emit('taxiIn', pl);
       }
       break;
     }
-    case 'taxi_in':
-    case 'taxi_out': {
+    case 'taxi_in': {
       // 滑走路を出たら使用中を解除
       if (pl.leaveRw && r && r.busy === pl && !onRunway(pl, r)) { r.busy = null; pl.leaveRw = false; r.wakeUntil = G.min + (P.cls >= 3 ? 2.5 : 1); }
+      const stand = G.blds[pl.stand];
+      // 駐機場に入ったら誘導員の合図でゆっくり
+      const inStand = stand && G.occ[idx(clamp(Math.floor(pl.x), 0, W - 1), clamp(Math.floor(pl.z), 0, H - 1))] === stand.uid;
+      if (railFollow(pl, dt, { vmax: inStand ? 0.45 : V_TAXI })) {
+        if (!stand) { removePlane(pl); fl.status = 'cancel'; fl.why = '駐機場がなくなった'; break; }
+        pl.state = 'parking'; pl.parkT = 0; pl.spd = 0;
+        const f = frontDir(stand.rot); pl.tHdg = Math.atan2(f[0], f[1]);
+      }
+      break;
+    }
+    case 'taxi_out': {
       // 離陸前は滑走路の手前で一時停止（ホールドショート）
-      if (pl.state === 'taxi_out' && pl.holdIdx != null && !pl.rwCleared && (pl.pi > pl.holdIdx || (pl.pi === pl.holdIdx && Math.hypot(pl.path[pl.pi].x - pl.x, pl.path[pl.pi].z - pl.z) < 0.6))) {
-        pl.spd = Math.max(0, pl.spd - dt * 0.8);
+      const holding = !pl.rwCleared && pl.holdS != null;
+      if (holding && pl.rs >= pl.holdS - 0.05 && pl.spd < 0.05) {
         pl.wait += dt;
         if (runwayFreeFor(r, pl) && !landingClose(r, pl)) { pl.rwCleared = true; r.busy = pl; }
         if (pl.wait > 220) removePlane(pl);
         break;
       }
-      if (followPath(pl, dt)) {
-        if (pl.state === 'taxi_in') {
-          pl.state = 'parking'; const stand = G.blds[pl.stand];
-          pl.tHdg = stand ? Math.atan2(frontDir(stand.rot)[0], frontDir(stand.rot)[1]) : pl.hdg;
-        } else { pl.state = 'align'; pl.wait = 0; if (!pl.rwCleared) { pl.rwCleared = true; r.busy = pl; } }
+      railFollow(pl, dt, { stopS: holding ? pl.holdS : null });
+      if (pl.rs >= pl.rail.len - 0.02) {
+        if (!pl.rwCleared) {
+          pl.wait += dt;
+          if (runwayFreeFor(r, pl) && !landingClose(r, pl)) { pl.rwCleared = true; r.busy = pl; }
+          else break;
+        }
+        // 滑走路の中心線にのって正対 → 離陸滑走
+        const tp = pl.ax.P(pl.takeS || 1.2, 0);
+        pl.hdg = pl.ax.hdg; pl.x = tp.x; pl.z = tp.z;
+        pl.state = 'takeoff'; pl.spd = Math.max(0.05, pl.spd); pl.rollT = pl.takeS || 1.2;
+        pl.acc = vRot(P) * vRot(P) / (2 * Math.max(4, (pl.ax.len - pl.rollT) * (P.eng === 'prop' ? 0.34 : 0.5)));
+        Sound.se(P.eng === 'prop' ? 'prop' : 'jet');
       }
       break;
     }
     case 'parking': {
-      // 停止線に向かってゆっくり旋回して止まる
-      const dA = turnToward(pl, pl.tHdg, 0.6, dt);
-      pl.spd = 0.15;
-      const stp = G.blds[pl.stand]; if (stp) { const c = bCenter(stp), k = Math.min(1, dt * 0.5); pl.x += (c.x - pl.x) * k; pl.z += (c.z - pl.z) * k; }
-      if (Math.abs(dA) < 0.01 && (!stp || Math.hypot(bCenter(stp).x - pl.x, bCenter(stp).z - pl.z) < 0.05)) {
-        pl.hdg = pl.tHdg; pl.state = 'parked'; pl.spd = 0; pl.engines = false;
+      // 停止線でとまって、エンジンを切る
+      pl.parkT += dt; pl.spd = 0;
+      pl.hdg = lerpAngle(pl.hdg, pl.tHdg, Math.min(1, dt * 3));
+      if (pl.parkT > 1.2) {
+        pl.hdg = pl.tHdg; pl.state = 'parked'; pl.engines = false;
         fl.status = 'parked'; fl.parkT = G.min;
         spawnTurnVehicles(pl);
       }
@@ -379,38 +389,32 @@ function updatePlane(pl, dt) {
     }
     case 'parked': break;
     case 'pushback': {
-      // トーイングカーで後ろに押し出し、誘導路の向きへ回す
+      // トーイングカーが後ろへ押し出しながら、機首を進む向きへ回す
       if (updateDeice(pl, dt)) break;
       pl.pbT += dt;
-      const back = pl.pbDist || 1.5;
-      if (pl.pbDone < back) {
-        const sp = 0.18 * dt; pl.pbDone += sp;
-        pl.x -= Math.sin(pl.hdg) * sp; pl.z -= Math.cos(pl.hdg) * sp;
-        if (pl.pbDone > back * 0.45 && pl.pbTurn) turnToward(pl, pl.pbTurn, 0.22, dt);
-      } else if (pl.pbT < pl.pbEnd) {
-        // エンジン始動・トーイングカーが離れる
+      const tugAt = () => { if (!pl.tug) return; const nx = pl.x + Math.sin(pl.hdg) * (P.len / 2 + 0.35), nz = pl.z + Math.cos(pl.hdg) * (P.len / 2 + 0.35); pl.tug.position.set(nx, 0, nz); pl.tug.rotation.y = pl.hdg + Math.PI; };
+      if (pl.pbPhase === 0) {
+        // 後ろを通る飛行機がいたら待つ
+        const busy = RT.planes.some(o => o !== pl && !o.gone && o.y < 0.5 && (o.state === 'taxi_in' || o.state === 'taxi_out') && Math.hypot(o.x - pl.pbEnd.x, o.z - pl.pbEnd.z) < 2.5 + o.P.len * 0.5);
+        if (!busy || pl.pbT > 25) { pl.pbPhase = 1; pl.rail = pl.pbRail; pl.rs = 0; pl.ri = 0; pl.spd = 0; }
+        tugAt();
+      } else if (pl.pbPhase === 1) {
+        if (railFollow(pl, dt, { reverse: true, vmax: 0.22 })) { pl.pbPhase = 2; pl.pbT2 = 0; pl.spd = 0; }
+        if (pl.rs > 0.5 && !pl.engines) { pl.engines = true; Sound.se(P.eng === 'prop' ? 'prop' : 'jet'); }
+        tugAt();
+      } else if (pl.pbPhase === 2) {
+        // トーイングカーが離れる
+        pl.pbT2 += dt;
         if (!pl.engines) { pl.engines = true; Sound.se(P.eng === 'prop' ? 'prop' : 'jet'); }
-      } else {
-        if (pl.tug) { R.scene.remove(pl.tug); pl.tug = null; }
-        pl.state = 'taxi_out'; pl.pi = 0; pl.spd = 0.1;
-        // 自分の駐機場の中の経路点はとばす
-        while (pl.pi < pl.path.length - 1 && G.floor[idx(Math.floor(pl.path[pl.pi].x), Math.floor(pl.path[pl.pi].z))] === FLOOR.APRON) pl.pi++;
-      }
-      if (pl.tug) { const nx = pl.x + Math.sin(pl.hdg) * (P.len / 2 + 0.4), nz = pl.z + Math.cos(pl.hdg) * (P.len / 2 + 0.4); pl.tug.position.set(nx, 0, nz); pl.tug.rotation.y = pl.hdg + Math.PI; }
-      break;
-    }
-    case 'align': {
-      // 滑走路の端で中心線にのって正対する
-      const tp = pl.ax.P(Math.min(1.2, P.len * 0.4), 0);
-      const dx = tp.x - pl.x, dz = tp.z - pl.z, d = Math.hypot(dx, dz);
-      const k = Math.min(1, dt * 0.6);
-      pl.x += dx * k; pl.z += dz * k;
-      const dA = turnToward(pl, pl.ax.hdg, 0.7, dt);
-      pl.spd = 0.2;
-      if (Math.abs(dA) < 0.01 && d < 0.12) {
-        pl.hdg = pl.ax.hdg; pl.x = tp.x; pl.z = tp.z; pl.state = 'takeoff'; pl.spd = 0.05; pl.rollT = 0;
-        pl.acc = vRot(P) * vRot(P) / (2 * Math.max(4, pl.ax.len * (P.eng === 'prop' ? 0.32 : 0.48)));
-        Sound.se(P.eng === 'prop' ? 'prop' : 'jet');
+        if (pl.tug) {
+          const k = Math.min(1, pl.pbT2 / 3), side = pl.hdg + Math.PI / 2;
+          const nx = pl.x + Math.sin(pl.hdg) * (P.len / 2 + 0.35 + k * 0.6) + Math.sin(side) * k * 1.6, nz = pl.z + Math.cos(pl.hdg) * (P.len / 2 + 0.35 + k * 0.6) + Math.cos(side) * k * 1.6;
+          pl.tug.position.set(nx, 0, nz); pl.tug.rotation.y = pl.hdg + Math.PI + k * 1.2;
+        }
+        if (pl.pbT2 > 3.5) {
+          if (pl.tug) { R.scene.remove(pl.tug); pl.tug = null; }
+          pl.state = 'taxi_out'; pl.rail = pl.fwdRail; pl.rs = 0; pl.ri = 0; pl.spd = 0; pl.wait = 0;
+        }
       }
       break;
     }
@@ -471,74 +475,24 @@ function onRunway(pl, r) {
 function centerOnTaxi(pts) {
   const T = pts.map(p => [Math.floor(p.x), Math.floor(p.z)]);
   const isT = (x, y) => inMap(x, y) && G.floor[idx(x, y)] === FLOOR.TAXI;
-  const side = (x, y, dx, dy) => { let c = 0; for (let k = 1; k <= 2; k++) { if (isT(x + dx * k, y + dy * k)) c++; else break; } return c; };
-  for (let i = 0; i < pts.length; i++) {
-    const [x, y] = T[i]; if (!isT(x, y)) continue;
-    const a = T[Math.max(0, i - 1)], b = T[Math.min(pts.length - 1, i + 1)];
-    const mx = Math.sign(b[0] - a[0]), my = Math.sign(b[1] - a[1]);
-    if (my !== 0) pts[i].x += (side(x, y, 1, 0) - side(x, y, -1, 0)) * 0.5;
-    if (mx !== 0) pts[i].z += (side(x, y, 0, 1) - side(x, y, 0, -1)) * 0.5;
+  // 横どなりのマスが「並んで走る誘導路」のときだけ幅に数える（横に出る連絡路は数えない）
+  const side = (x, y, dx, dy) => { let c = 0; for (let k = 1; k <= 2; k++) { const nx = x + dx * k, ny = y + dy * k; if (isT(nx, ny) && (isT(nx + dy, ny + dx) || isT(nx - dy, ny - dx))) c++; else break; } return c; };
+  const sx = t => (side(t[0], t[1], 1, 0) - side(t[0], t[1], -1, 0)) * 0.5;
+  const sz = t => (side(t[0], t[1], 0, 1) - side(t[0], t[1], 0, -1)) * 0.5;
+  const n = pts.length, off = pts.map(() => [0, 0]);
+  for (let i = 0; i < n; i++) {
+    const t = T[i]; if (!isT(t[0], t[1])) continue;
+    const a = T[Math.max(0, i - 1)], b = T[Math.min(n - 1, i + 1)];
+    const inV = a[1] !== t[1], outV = b[1] !== t[1], inH = a[0] !== t[0], outH = b[0] !== t[0];
+    // 角のマスは、たて向きの区間のマスで横ずれを、よこ向きの区間のマスで縦ずれを測る
+    if (inV || outV) { const ref = inV && (inH || outH) ? a : outV && (inH || outH) ? b : t; if (isT(ref[0], ref[1])) off[i][0] = sx(ref); }
+    if (inH || outH) { const ref = inH && (inV || outV) ? a : outH && (inV || outV) ? b : t; if (isT(ref[0], ref[1])) off[i][1] = sz(ref); }
   }
-}
-function smoothPath(pts, pl, keep) {
-  centerOnTaxi(pts);
-  if (pts.length < 3) return pts;
-  const out = [pts[0]];
-  for (let i = 1; i < pts.length - 1; i++) {
-    const a = out[out.length - 1], b = pts[i], c = pts[i + 1];
-    const cr = (b.x - a.x) * (c.z - b.z) - (b.z - a.z) * (c.x - b.x);
-    if (Math.abs(cr) > 0.01 || i === keep) out.push(b);
-  }
-  out.push(pts[pts.length - 1]);
-  return out;
+  for (let i = 0; i < n; i++) { pts[i].x += off[i][0]; pts[i].z += off[i][1]; }
 }
 function tilePt(i) { return { x: i % W + 0.5, z: Math.floor(i / W) + 0.5 }; }
 function angDiff(a, b) { let d = b - a; while (d > Math.PI) d -= TAU; while (d < -Math.PI) d += TAU; return d; }
 function lerpAngle(a, b, t) { return a + angDiff(a, b) * t; }
-// 目標点を少し先に置いて追いかける（カーブがなめらかになる）
-function followPath(pl, dt) {
-  let blocked = false;
-  for (const o of RT.planes) {
-    if (o === pl || o.y > 0.5 || o.gone) continue;
-    const dx = o.x - pl.x, dz = o.z - pl.z, d = Math.hypot(dx, dz);
-    const minD = (pl.P.len + o.P.len) * 0.45 + 0.4;
-    if (d < minD && d > 0.01) {
-      const fwd = (dx * Math.sin(pl.hdg) + dz * Math.cos(pl.hdg)) / d;
-      if (fwd > 0.6 && (o.state !== 'parked' || d < minD * 0.6)) { blocked = true; break; }
-    }
-  }
-  if (blocked) { pl.blockT = (pl.blockT || 0) + dt; pl.spd = Math.max(0, pl.spd - dt * 1.2); if (pl.blockT < 8) return false; }
-  else pl.blockT = 0;
-  // 目標点
-  // 近い点・うしろの点はとばす（最後の点以外）
-  const rMin = 0.45 + pl.P.len * 0.12;   // 最小旋回半径
-  while (pl.pi < pl.path.length - 1) {
-    const q = pl.path[pl.pi], qd = Math.hypot(q.x - pl.x, q.z - pl.z);
-    const fwd = (q.x - pl.x) * Math.sin(pl.hdg) + (q.z - pl.z) * Math.cos(pl.hdg);
-    if (qd < 0.4 || (qd < rMin * 1.6 && fwd < qd * 0.2)) pl.pi++; else break;
-  }
-  if (pl.pi >= pl.path.length) return true;
-  const t = pl.path[pl.pi];
-  const last = pl.pi === pl.path.length - 1;
-  const dx = t.x - pl.x, dz = t.z - pl.z, d = Math.hypot(dx, dz);
-  const want = Math.atan2(dx, dz);
-  const diff = Math.abs(angDiff(pl.hdg, want));
-  // 曲がるときと止まる前はゆっくり
-  let vt = diff > 0.9 ? 0.3 : diff > 0.4 ? V_TAXI_TURN : V_TAXI;
-  // 目標が旋回円の内側にあるときは、ほぼその場で向きを変える（前輪ステアリング）
-  const tight = diff > 0.8 && d < rMin * 1.6;
-  if (tight) vt = 0.1;
-  if (pl.pi + 1 < pl.path.length) { const n = pl.path[pl.pi + 1]; const nd = Math.abs(angDiff(want, Math.atan2(n.x - t.x, n.z - t.z))); if (nd > 0.6 && d < 1.6) vt = Math.min(vt, V_TAXI_TURN); }
-  if (last) vt = Math.min(vt, Math.max(0.15, d * 0.5));
-  if (pl.state === 'taxi_out' && pl.holdIdx != null && !pl.rwCleared && pl.pi === pl.holdIdx) vt = Math.min(vt, Math.max(0.12, d * 0.4));
-  pl.spd += clamp(vt - pl.spd, -dt * 0.9, dt * 0.35);
-  // 速さ÷最小旋回半径 ＝ 曲がれる角速度（小さい機体ほど小回り）
-  turnToward(pl, want, Math.max(0.25, pl.spd / (tight ? rMin * 0.3 : rMin)), dt);
-  const st = pl.spd * dt;
-  pl.x += Math.sin(pl.hdg) * st; pl.z += Math.cos(pl.hdg) * st;
-  if (last && d < Math.max(0.55, rMin * 0.9)) { pl.pi++; return true; }
-  return false;
-}
 function goAround(pl) {
   pl.state = 'climb_ga'; pl.gaT = 0; pl.fl.goAround = (pl.fl.goAround || 0) + 1;
   Sound.se('jet');
@@ -601,31 +555,11 @@ function pushback(fl) {
   pl.vehicles = [];
   // 経路：駐機場 → 誘導路 → 滑走路の手前で停止 → 滑走路へ
   const r = G.blds[pl.runway], stand = G.blds[pl.stand];
-  const ax = rwAxis(r, G.windDir || 0); pl.ax = ax;
-  const sc = stand ? bCenter(stand) : { x: pl.x, z: pl.z };
-  const startTile = idx(Math.floor(sc.x), Math.floor(sc.z));
-  const e = G.windDir || 0;
-  let path = planePath(startTile, runwayInfo(r).endTile(e), [stand ? stand.uid : 0]);
-  if (!path) path = planePath(startTile, runwayInfo(r).endTile(1 - e), [stand ? stand.uid : 0]);
-  path = path || [];
-  // 最初の滑走路マス＝ホールドショートの位置
-  let hi = path.findIndex(i => G.floor[i] === FLOOR.RUNWAY);
-  const pts = path.map(tilePt);
-  pl.path = smoothPath(pts, pl, hi > 0 ? hi - 1 : -1);
-  if (hi > 0) { const hp = pts[hi - 1]; pl.holdIdx = pl.path.indexOf(hp); if (pl.holdIdx < 0) pl.holdIdx = null; } else pl.holdIdx = null;
+  pl.ax = rwAxis(r, G.windDir || 0);
+  departRails(pl, r, stand);
+  pl.pbEnd = { x: pl.pbRail.X[pl.pbRail.n - 1], z: pl.pbRail.Z[pl.pbRail.n - 1] };
+  pl.pbPhase = 0;
   pl.rwCleared = false; pl.wait = 0;
-  // プッシュバック：誘導路の方へ下がって向きを変える
-  const sd = stand ? dims(B[stand.id], stand.rot) : [3, 3];
-  pl.pbDist = Math.max(0.8, Math.min(sd[0], sd[1]) / 2 - 0.3 + pl.P.len * 0.15);
-  pl.pbDone = 0; pl.pbEnd = 5 + pl.P.cls;
-  const j = pl.path.findIndex(p => G.floor[idx(Math.floor(p.x), Math.floor(p.z))] !== FLOOR.APRON);
-  pl.pbTurn = null;
-  if (j >= 0) {
-    const p0 = pl.path[j], p1 = pl.path[j + 1] || p0;
-    const D = p1 !== p0 ? Math.atan2(p1.x - p0.x, p1.z - p0.z) : Math.atan2(p0.x - pl.x, p0.z - pl.z);
-    const dd = angDiff(pl.hdg, D);
-    pl.pbTurn = pl.hdg + clamp(dd, -Math.PI / 2, Math.PI / 2);
-  }
   pl.tug = vehicleMesh('tug'); pl.tug.scale.setScalar(0.7); R.scene.add(pl.tug);
   startDeice(pl);
   pl.state = 'pushback'; pl.pbT = 0; pl.spd = 0;

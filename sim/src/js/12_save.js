@@ -94,7 +94,7 @@ function loadSlot(slot) {
   return true;
 }
 function saveOpts() {
-  try { localStorage.setItem(OPT_KEY, JSON.stringify({ bgm: Sound.vol.bgm, se: Sound.vol.se, q: R.opts.quality, tilt: R.opts.tilt, outline: R.opts.outline, nightSkip: Game.opts.nightSkip })); } catch (e) { }
+  try { localStorage.setItem(OPT_KEY, JSON.stringify({ bgm: Sound.vol.bgm, se: Sound.vol.se, q: R.opts.quality, tilt: R.opts.tilt, outline: R.opts.outline, nightSkip: Game.opts.nightSkip, dayReport: Game.opts.dayReport })); } catch (e) { }
 }
 function loadOpts() {
   try {
@@ -102,6 +102,7 @@ function loadOpts() {
     if (o.bgm != null) Sound.vol.bgm = o.bgm; if (o.se != null) Sound.vol.se = o.se;
     if (o.q) R.opts.quality = o.q; if (o.tilt != null) R.opts.tilt = o.tilt; if (o.outline != null) R.opts.outline = o.outline;
     if (o.nightSkip != null) Game.opts.nightSkip = o.nightSkip;
+    if (o.dayReport != null) Game.opts.dayReport = o.dayReport;
   } catch (e) { }
 }
 // 引きつぎコード（文字列）

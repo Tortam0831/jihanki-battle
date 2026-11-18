@@ -10,6 +10,7 @@ const TOOLBAR = [
   { id: 'research', icon: 'flask', name: '開発' },
   { id: 'board', icon: 'board', name: '発着' },
   { id: 'stats', icon: 'chart', name: '統計' },
+  { id: 'bank', icon: 'money', name: '銀行' },
   { id: 'zukan', icon: 'book', name: '図鑑' },
   { id: 'missions', icon: 'mission', name: '目標' },
   { id: 'menu', icon: 'gear', name: 'メニュー' },
@@ -26,6 +27,8 @@ function initUI() {
   $('#bPhoto').onclick = () => togglePhoto();
   $('#spd').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; Sound.init(); setSpeed(+b.dataset.s); });
   $('#moneyIcon').src = iconURL('money');
+  $('#tbMoney').style.cursor = 'pointer'; $('#tbMoney').title = '銀行（お金を借りる・返す）';
+  $('#tbMoney').onclick = () => { Sound.init(); Sound.se('click'); closeBuild(); setTool(null); openBank(); };
   $('#bNight').onclick = () => { Sound.init(); skipNight(true); };
   $('#mClose').onclick = () => closeModal();
   $('#modal').addEventListener('pointerdown', e => { if (e.target.id === 'modal') closeModal(); });
@@ -39,7 +42,7 @@ function toolbarAction(id) {
   if (id === 'demolish') { setTool(UI.tool && UI.tool.type === 'demolish' ? null : { type: 'demolish' }); return; }
   if (id === 'land') { setTool(UI.tool && UI.tool.type === 'land' ? null : { type: 'land' }); return; }
   setTool(null);
-  ({ routes: openRoutes, research: openResearch, board: openBoard, stats: openStats, zukan: openZukan, missions: openMissions, menu: openMenu })[id]();
+  ({ routes: openRoutes, research: openResearch, board: openBoard, stats: openStats, bank: openBank, zukan: openZukan, missions: openMissions, menu: openMenu })[id]();
 }
 function setSpeed(s) {
   Game.speed = s; Game.userSpeed = s;
@@ -64,6 +67,8 @@ function updateHUD(force) {
   $('#wxIcon').title = wx.name;
   const m = $('#money');
   m.textContent = G.free ? '∞' : fmtYen(G.money);
+  m.title = G.loan ? '借入 ' + fmtYen(G.loan) : '';
+  m.classList.toggle('loan', !!G.loan);
   m.classList.toggle('neg', G.money < 0);
   // バッジ
   const bw = $('#tb_research');
@@ -202,7 +207,9 @@ function setTool(t) {
   if (t && (t.type === 'build' || t.type === 'move')) makeGhost();
   if (t && t.type === 'land') updateLandLabels(true);
   renderBuildBar();
+  if (UI.rangeMesh) { R.scene.remove(UI.rangeMesh); UI.rangeMesh = null; }
   if (t) hideInfo();
+  else if (!UI.sel && UI.selBox) { R.scene.remove(UI.selBox); UI.selBox = null; }
 }
 function makeGhost() {
   const t = UI.tool;
@@ -210,6 +217,13 @@ function makeGhost() {
   const m = buildModel(t.id, { num: 0, lv: t.lv || 1, season: dateOf(G.day).season });
   UI.ghostMat = UI.ghostMat || new THREE.MeshBasicMaterial({ color: '#80ff80', transparent: true, opacity: 0.55, depthWrite: false });
   m.traverse(o => { if (o.isMesh) { o.material = UI.ghostMat; o.castShadow = false; o.renderOrder = 8; } });
+  // 正面の向きを示す矢印（駐機場＝機首の向き・お店＝入口）
+  if (def.kind !== 'decor' && def.kind !== 'runway' && !def.paint) {
+    const sh = new THREE.Shape(); sh.moveTo(-0.32, 0); sh.lineTo(0.32, 0); sh.lineTo(0, 0.42); sh.closePath();
+    const ag = new THREE.ShapeGeometry(sh); ag.rotateX(Math.PI / 2);
+    const am = new THREE.Mesh(ag, new THREE.MeshBasicMaterial({ color: '#ffd84a', side: THREE.DoubleSide, depthTest: false, transparent: true }));
+    am.position.set(0, 0.08, def.h / 2 + 0.12); am.renderOrder = 9; m.add(am);
+  }
   UI.ghost = m; m.visible = false;
   R.scene.add(m);
 }
@@ -220,7 +234,7 @@ function renderBuildBar() {
   let h = '';
   if (t.type === 'build' || t.type === 'move') {
     const d = B[t.id];
-    h = `${iconImg(d.icon)}<div class="msg"><b>${t.type === 'move' ? '移動：' : ''}${d.name}</b> <span class="sub">${t.type === 'move' ? '' : fmtYen(d.cost)}</span><div class="sub" id="bbMsg">置きたい場所をタップ</div></div>
+    h = `${iconImg(d.icon)}<div class="msg"><b>${t.type === 'move' ? '移動：' : ''}${d.name}</b> <span class="sub">${t.type === 'move' ? '' : fmtYen(d.cost)}</span><div class="sub" id="bbMsg">${t.type === 'move' ? '動かしたい場所をタップ（決めるまで元の建物はそのまま）' : '置きたい場所をタップ'}</div>${B[t.id].kind !== 'decor' && B[t.id].kind !== 'runway' ? '<div class="sub">黄色い▲が正面です' + (B[t.id].kind === 'stand' ? '（機首の向き＝搭乗口・ターミナル側）' : B[t.id].kind === 'gate' ? '（ターミナルの通路側。うしろに駐機場を）' : '（入口・通路の側）') + '</div>' : ''}</div>
       <button class="pbtn sm" id="bbRot">${iconImg('rotate', 's')}回転</button>${UI.touch ? '<button class="pbtn sm green" id="bbOk">建てる</button>' : ''}<button class="pbtn sm red" id="bbX">やめる</button>`;
   } else if (t.type === 'paint') {
     const d = B[t.id];
@@ -239,10 +253,6 @@ function renderBuildBar() {
   const ud = $('#bbUndo'); if (ud) ud.onclick = () => doUndo();
 }
 function cancelTool() {
-  if (UI.tool && UI.tool.type === 'move' && UI.tool.orig) {
-    const o = UI.tool.orig; placeBuilding(o.id, o.x, o.y, o.rot, { move: true, uid: o.uid, lv: o.lv, num: o.num, silent: true });
-    const nb = G.blds[o.uid]; if (nb) Object.assign(nb, { salesTotal: o.salesTotal, visits: o.visits, day: o.day, fixed: o.fixed });
-  }
   setTool(null); Sound.se('close');
 }
 function rotateTool() {
@@ -271,7 +281,29 @@ function updateGhost() {
   // 搭乗口の距離ガイド
   if (def.kind === 'stand' || def.kind === 'gate') showGateHint(x, y, t);
 }
-function showGateHint(x, y, t) { /* シンプル化：メッセージのみ */ }
+// 駐機場と搭乗口は7マス以内でつながる：範囲とつながる相手を表示
+function showGateHint(x, y, t) {
+  const def = B[t.id], [w, h] = dims(def, t.rot), R7 = 7;
+  if (UI.rangeMesh) { R.scene.remove(UI.rangeMesh); UI.rangeMesh = null; }
+  const g = new THREE.Group();
+  const Q = R7 + 0.5;
+  const pts = [[x - Q, y], [x, y - Q], [x + w, y - Q], [x + w + Q, y], [x + w + Q, y + h], [x + w, y + h + Q], [x, y + h + Q], [x - Q, y + h]].map(([a, b]) => new THREE.Vector3(a, 0.12, b));
+  const loop = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineDashedMaterial({ color: '#ffd84a', dashSize: 0.4, gapSize: 0.25, depthTest: false, transparent: true }));
+  loop.computeLineDistances(); loop.renderOrder = 9; g.add(loop);
+  const me = { id: t.id, x, y, rot: t.rot };
+  const wantKind = def.kind === 'stand' ? 'gate' : 'stand';
+  const cands = Object.values(G.blds).filter(b => B[b.id].kind === wantKind && b.uid !== t.uid && (wantKind === 'gate' ? (!b.stand || b.stand === t.uid) && !B[b.id].bus : !b.gate || b.gate === t.uid));
+  let best = null, bd = 1e9;
+  for (const b of cands) { const d = rectDist(me, b); if (d <= R7 && d < bd) { bd = d; best = b; } }
+  if (best) {
+    const c0 = { x: x + w / 2, z: y + h / 2 }, c1 = bCenter(best);
+    const ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(c0.x, 0.3, c0.z), new THREE.Vector3(c1.x, 0.3, c1.z)]), new THREE.LineBasicMaterial({ color: '#5fe08a', depthTest: false, transparent: true }));
+    ln.renderOrder = 9; g.add(ln);
+  }
+  R.scene.add(g); UI.rangeMesh = g;
+  const msg = $('#bbMsg');
+  if (msg && UI.ghostOk) msg.innerHTML += best ? ` ・ <b style="color:var(--good)">${B[best.id].name}${best.num ? ' ' + best.num + '番' : ''}とつながります（${bd}マス）</b>` : ` ・ <b style="color:var(--bad)">7マス以内に空いている${wantKind === 'gate' ? '搭乗口' : '駐機場'}がありません</b>`;
+}
 function tryPlace(tx, ty) {
   const t = UI.tool; if (!t) return;
   const [x, y] = ghostOrigin(tx, ty);
@@ -279,10 +311,13 @@ function tryPlace(tx, ty) {
   const chk = canPlace(t.id, x, y, t.rot, { move: t.type === 'move', ignoreUid: t.uid });
   if (!chk.ok) { toast(chk.reason, 'bad'); Sound.se('error'); return; }
   if (t.type === 'move') {
-    const o = t.orig;
-    placeBuilding(o.id, x, y, t.rot, { move: true, uid: o.uid, lv: o.lv, num: o.num });
-    const nb = G.blds[o.uid]; if (nb) Object.assign(nb, { salesTotal: o.salesTotal, visits: o.visits, day: o.day });
-    UI.tool.orig = null; setTool(null); Sound.se('place'); return;
+    const o = G.blds[t.uid]; if (!o) { setTool(null); return; }
+    const from = { x: o.x, y: o.y, rot: o.rot };
+    if (from.x === x && from.y === y && from.rot === t.rot) { setTool(null); return; }
+    const nb = relocateBuilding(t.uid, x, y, t.rot);
+    if (!nb) { toast('ここには動かせません', 'bad'); Sound.se('error'); return; }
+    pushUndo({ type: 'move', uid: t.uid, from });
+    setTool(null); Sound.se('place'); puff(nb); showInfo({ type: 'bld', obj: nb }); return;
   }
   const b = placeBuilding(t.id, x, y, t.rot);
   if (b) {
@@ -580,11 +615,12 @@ function renderInfo() {
     h += '<div class="btns">';
     const canUp = def.kind === 'svc' || def.kind === 'checkin' || def.kind === 'security' || def.kind === 'baggage' || def.kind === 'emig' || def.kind === 'immig' || def.kind === 'access' || def.kind === 'hotel';
     if (canUp) h += b.lv < maxLevel() ? `<button class="pbtn sm gold" id="iUp">${iconImg('up', 's')}Lv${b.lv + 1}へ ${fmtYenShort(upgradeCost(b))}</button>` : `<span class="sub">${b.lv >= 5 ? '最大レベル' : '開発「施設改装」でLvアップ解放'}</span>`;
-    if (!b.fixed && !b.busy) h += `<button class="pbtn sm" id="iMove">${iconImg('move', 's')}移動</button><button class="pbtn sm red" id="iDel">${iconImg('trash', 's')}撤去 +${fmtYenShort(def.cost * 0.5 * (1 + (b.lv - 1) * 0.5))}</button>`;
+    if (!b.fixed && !b.busy) h += `<button class="pbtn sm" id="iMove">${iconImg('move', 's')}移動</button>${def.w !== def.h || !['decor'].includes(def.kind) ? `<button class="pbtn sm" id="iRot">${iconImg('rotate', 's')}回転</button>` : ''}<button class="pbtn sm red" id="iDel">${iconImg('trash', 's')}撤去 +${fmtYenShort(def.cost * 0.5 * (1 + (b.lv - 1) * 0.5))}</button>`;
     h += '</div>';
     box.innerHTML = h;
     const up = $('#iUp'); if (up) up.onclick = () => { if (upgradeBuilding(b)) renderInfo(); };
     const mv = $('#iMove'); if (mv) mv.onclick = () => startMove(b);
+    const ro = $('#iRot'); if (ro) ro.onclick = () => rotateInPlace(b);
     const dl = $('#iDel'); if (dl) dl.onclick = () => { removeBuilding(b.uid); Sound.se('demolish'); hideInfo(); };
     showSelBox(b);
   } else if (s.type === 'person') {
@@ -647,11 +683,26 @@ function showSelBox(b) {
   UI.selBox = m; R.scene.add(m);
 }
 function startMove(b) {
-  const orig = Object.assign({}, b);
-  delete orig.mesh;
-  removeBuilding(b.uid, { move: true });
+  // 建物はそのまま。半透明の「影」を動かして、決めたら移動する
   hideInfo();
-  setTool({ type: 'move', id: b.id, rot: b.rot, lv: b.lv, uid: b.uid, orig });
+  setTool({ type: 'move', id: b.id, rot: b.rot, lv: b.lv, uid: b.uid });
+  UI.hoverTile = { x: b.x + Math.floor((dims(B[b.id], b.rot)[0] - 1) / 2), y: b.y + Math.floor((dims(B[b.id], b.rot)[1] - 1) / 2) };
+  updateGhost(); showSelBox(b);
+}
+// その場で90度回す（中心をなるべく変えない）
+function rotateInPlace(b) {
+  const def = B[b.id], nr = (b.rot + 1) % 4;
+  const [w0, h0] = dims(def, b.rot), [w1, h1] = dims(def, nr);
+  const cx = b.x + w0 / 2, cy = b.y + h0 / 2;
+  const bx = Math.round(cx - w1 / 2), by = Math.round(cy - h1 / 2);
+  const from = { x: b.x, y: b.y, rot: b.rot };
+  for (const [dx, dy] of [[0, 0], [-1, 0], [0, -1], [1, 0], [0, 1], [-1, -1], [1, 1], [1, -1], [-1, 1]]) {
+    if (canPlace(b.id, bx + dx, by + dy, nr, { move: true, ignoreUid: b.uid, ignoreRank: true }).ok) {
+      const nb = relocateBuilding(b.uid, bx + dx, by + dy, nr);
+      if (nb) { pushUndo({ type: 'move', uid: b.uid, from }); Sound.se('tab'); showInfo({ type: 'bld', obj: nb }); return true; }
+    }
+  }
+  toast('まわりがせまくて回せません', 'bad'); Sound.se('error'); return false;
 }
 
 // ---------- モーダル ----------
@@ -928,6 +979,7 @@ function openMenu() {
     <div class="sub" style="margin-top:6px">ジオラマぼかし</div><div class="seg" id="sT">${[[0, 'なし'], [0.5, '弱'], [0.8, 'ふつう'], [1.2, '強']].map(([v, n]) => `<button data-v="${v}" class="${R.opts.tilt === v ? 'on' : ''}">${n}</button>`).join('')}</div>
     <div class="sub" style="margin-top:6px">ふちどり線</div><div class="seg" id="sO"><button data-v="1" class="${R.opts.outline ? 'on' : ''}">あり</button><button data-v="0" class="${R.opts.outline ? '' : 'on'}">なし</button></div>
     <div class="sub" style="margin-top:6px">夜（飛行機のない時間）は自動でとばす</div><div class="seg" id="sN"><button data-v="1" class="${o.nightSkip ? 'on' : ''}">する</button><button data-v="0" class="${o.nightSkip ? '' : 'on'}">しない</button></div>
+    <div class="sub" style="margin-top:6px">一日の終わりに「一日のまとめ」を表示</div><div class="seg" id="sD"><button data-v="1" class="${o.dayReport !== false ? 'on' : ''}">する</button><button data-v="0" class="${o.dayReport === false ? 'on' : ''}">しない</button></div>
     <div class="sec">${iconImg('save', 's')}セーブ</div>
     <div class="sub">自動で毎日セーブされます（スロット${Game.slot + 1}）。</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="pbtn sm blue" id="mSave">${iconImg('save', 's')}いまセーブ</button><button class="pbtn sm" id="mExport">引きつぎコードを作る</button><button class="pbtn sm" id="mImport">引きつぎコードを入力</button>${Cloud.available() ? '<button class="pbtn sm" id="mCloud">クラウドに保存</button>' : ''}</div>
@@ -937,7 +989,7 @@ function openMenu() {
   $('#vBgm').oninput = e => { Sound.setVol('bgm', e.target.value / 100); saveOpts(); };
   $('#vSe').oninput = e => { Sound.setVol('se', e.target.value / 100); saveOpts(); };
   const seg = (id, f) => $(id).onclick = e => { const b = e.target.closest('button'); if (!b) return; f(b.dataset.v); saveOpts(); Sound.se('click'); openMenu(); };
-  seg('#sQ', v => setQuality(v)); seg('#sT', v => R.opts.tilt = +v); seg('#sO', v => R.opts.outline = +v); seg('#sN', v => Game.opts.nightSkip = v === '1');
+  seg('#sQ', v => setQuality(v)); seg('#sT', v => R.opts.tilt = +v); seg('#sO', v => R.opts.outline = +v); seg('#sN', v => Game.opts.nightSkip = v === '1'); seg('#sD', v => Game.opts.dayReport = v === '1');
   $('#mSave').onclick = () => { saveGame(); toast('セーブしました', 'good', 'save'); };
   $('#mExport').onclick = () => { const code = exportCode(); openModal('引きつぎコード', `<p class="sub">このコードをコピーして、別の端末で「引きつぎコードを入力」に貼りつけてください。</p><textarea style="width:100%;height:180px;font-size:11px;user-select:text;-webkit-user-select:text" readonly onclick="this.select()">${code}</textarea>`, { narrow: true }); };
   $('#mImport').onclick = () => {
@@ -965,10 +1017,14 @@ function doUndo() {
   if (a.type === 'build') {
     const b = G.blds[a.uid];
     if (!b || b.busy) { toast('その建物はもう戻せません', 'bad'); return; }
-    removeBuilding(a.uid, { noRefund: true }); if (!G.free) G.money += a.cost;
+    removeBuilding(a.uid, { noRefund: true }); refund(a.cost, 'build');
+  } else if (a.type === 'move') {
+    const b = G.blds[a.uid];
+    if (!b || b.busy || !relocateBuilding(a.uid, a.from.x, a.from.y, a.from.rot)) { toast('その建物はもう戻せません', 'bad'); return; }
+    Sound.se('close'); toast('移動を元に戻しました', 'good', 'rotate'); renderBuildBar(); return;
   } else if (a.type === 'paint') {
     for (const [i, prev] of a.tiles) { if (G.occ[i]) continue; G.floor[i] = prev; markChunk(i % W, Math.floor(i / W)); }
-    worldChanged(null); World.dirtyWalls = true; if (!G.free) G.money += a.cost;
+    worldChanged(null); World.dirtyWalls = true; refund(a.cost, 'build');
   }
   Sound.se('close'); toast('ひとつ前の操作を元に戻しました（お金ももどりました）', 'good', 'rotate');
   renderBuildBar();
