@@ -162,7 +162,7 @@ const CHAPTERS = [
     title: 'ハブ空港をめざして', desc: '大型機が行き来する、地域の玄関口へ。', reward: 50000000,
     obj: [
       { t: '長い滑走路を建てる（ランク6）', c: () => has('runway_l') },
-      { t: '大型機をむかえる（ボーイング787 など）', c: () => Object.keys(G.seenPlanes).some(k => PLANES[k.split(':')[0]].cls === 3) },
+      { t: '大型機をむかえる（ボーリング787 など）', c: () => Object.keys(G.seenPlanes).some(k => PLANES[k.split(':')[0]].cls === 3) },
       { t: '路線を15にする', c: () => G.routes.length >= 15, p: () => G.routes.length + '/15' },
       { t: '評価 ★4.0', c: () => G.rating >= 4 },
       { t: 'ランク6「地域の玄関口」になる', c: () => G.rank >= 6 },
