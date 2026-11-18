@@ -252,6 +252,7 @@ const Story = {
     const ch = this.chapter();
     if (!ch) { box.classList.add('hidden'); return; }
     box.classList.remove('hidden');
+    if (!this.minInit) { this.minInit = true; if (window.innerWidth < 600) box.classList.add('min'); }
     const html = `<h4>${iconImg('mission', 's')}第${G.story.ch + 1}章 ${ch.title}</h4><div class="obs">` + ch.obj.map(o => { const ok = this.objDone(o); return `<div class="ob ${ok ? 'done' : ''}"><span class="cb"></span><span>${o.t}${o.p && !ok ? ` <span class="sub">${o.p()}</span>` : ''}</span></div>`; }).join('') + '</div>';
     if (box.innerHTML !== html) box.innerHTML = html;
   },

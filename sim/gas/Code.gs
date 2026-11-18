@@ -11,7 +11,7 @@ function doGet() {
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
-var CHUNK = 8000;          // 1つのプロパティに入れる文字数
+var CHUNK = 2500;          // 1つのプロパティに入れる文字数（日本語でも9KBをこえないように）
 var KEEP_DAYS = 30;        // 何日間保存しておくか
 var MAX_SAVES = 12;        // 保存しておく数（古いものから消す）
 

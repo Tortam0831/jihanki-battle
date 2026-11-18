@@ -92,7 +92,7 @@ img.pxi.xl{width:48px;height:48px}
 .bcard .nm{font-size:12px;height:30px;display:flex;align-items:center;justify-content:center}
 .bcard .pr{color:var(--blue2)}
 .bcard.lock{opacity:.55}
-.bcard.lock .lk{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;background:rgba(40,30,50,.45);color:#fff;font-size:12px;border-radius:3px;text-shadow:0 1px 0 #000}
+.bcard.lock .lk{position:absolute;left:4px;right:4px;top:4px;height:76px;display:flex;align-items:center;justify-content:center;flex-direction:column;background:rgba(40,30,50,.45);color:#fff;font-size:12px;border-radius:3px;text-shadow:0 1px 0 #000}
 .bcard.on{background:#fff2b0;outline:3px solid var(--gold)}
 .bcard.cant .pr{color:var(--bad)}
 .bcard .new{position:absolute;top:-6px;left:-6px;background:var(--bad);color:#fff;border:2px solid var(--ink);border-radius:4px;font-size:10px;padding:0 4px}
@@ -200,6 +200,9 @@ input[type=text]{font-family:inherit;font-size:16px;padding:8px;border:3px solid
   #info{top:auto;bottom:calc(86px + var(--safe-b));right:8px;max-height:45vh}
 }
 @media (max-width:520px){
+  #tbName{display:none}
+  #mission{width:62vw}
+  .bcard.lock .lk{height:66px}
   .tb{padding:3px 6px;gap:4px}
   #tbName .stars{display:none}
   .spd button{width:28px}
@@ -6809,6 +6812,7 @@ const Story = {
     const ch = this.chapter();
     if (!ch) { box.classList.add('hidden'); return; }
     box.classList.remove('hidden');
+    if (!this.minInit) { this.minInit = true; if (window.innerWidth < 600) box.classList.add('min'); }
     const html = `<h4>${iconImg('mission', 's')}第${G.story.ch + 1}章 ${ch.title}</h4><div class="obs">` + ch.obj.map(o => { const ok = this.objDone(o); return `<div class="ob ${ok ? 'done' : ''}"><span class="cb"></span><span>${o.t}${o.p && !ok ? ` <span class="sub">${o.p()}</span>` : ''}</span></div>`; }).join('') + '</div>';
     if (box.innerHTML !== html) box.innerHTML = html;
   },
@@ -7319,7 +7323,7 @@ function loop(now) {
   }
 }
 window.addEventListener('load', boot);
-window.__sora = { planeModel, PLANES, get G() { return G; }, dbg: { getField, accessTiles, findFacility, findKind, get WALKABLE() { return WALKABLE; }, People, Story, CHAPTERS, Dialog, routeCheck, checkWarnings, relinkGates }, setTool, tryPlace, RT, simStep, World, Cam, R, startGame, placeBuilding, paintApply, openRoute, B, Game, UI };
+window.__sora = { serialize, planeModel, PLANES, get G() { return G; }, dbg: { getField, accessTiles, findFacility, findKind, get WALKABLE() { return WALKABLE; }, People, Story, CHAPTERS, Dialog, routeCheck, checkWarnings, relinkGates }, setTool, tryPlace, RT, simStep, World, Cam, R, startGame, placeBuilding, paintApply, openRoute, B, Game, UI };
 
 })();
 </script>

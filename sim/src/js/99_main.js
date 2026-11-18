@@ -289,4 +289,4 @@ function loop(now) {
   }
 }
 window.addEventListener('load', boot);
-window.__sora = { planeModel, PLANES, get G() { return G; }, dbg: { getField, accessTiles, findFacility, findKind, get WALKABLE() { return WALKABLE; }, People, Story, CHAPTERS, Dialog, routeCheck, checkWarnings, relinkGates }, setTool, tryPlace, RT, simStep, World, Cam, R, startGame, placeBuilding, paintApply, openRoute, B, Game, UI };
+window.__sora = { serialize, planeModel, PLANES, get G() { return G; }, dbg: { getField, accessTiles, findFacility, findKind, get WALKABLE() { return WALKABLE; }, People, Story, CHAPTERS, Dialog, routeCheck, checkWarnings, relinkGates }, setTool, tryPlace, RT, simStep, World, Cam, R, startGame, placeBuilding, paintApply, openRoute, B, Game, UI };
