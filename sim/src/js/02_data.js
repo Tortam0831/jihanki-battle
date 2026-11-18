@@ -24,7 +24,7 @@ defB('taxiway', { cat: 'air', name: '誘導路', paint: FLOOR.TAXI, cost: 4000, 
 defB('runway_s', { cat: 'air', name: '短い滑走路', kind: 'runway', zone: 'air', w: 12, h: 2, cls: 1, cost: 1200000, upkeep: 6000, icon: 'runway', desc: '長さ約1,700m。プロペラ機・ビジネスジェットが使える。' });
 defB('runway_m', { cat: 'air', name: 'ふつうの滑走路', kind: 'runway', zone: 'air', w: 18, h: 2, cls: 2, cost: 4500000, upkeep: 16000, rank: 3, icon: 'runway', desc: '長さ約2,500m。737・A320などのジェット機が使える。' });
 defB('runway_l', { cat: 'air', name: '長い滑走路', kind: 'runway', zone: 'air', w: 24, h: 3, cls: 3, cost: 12000000, upkeep: 38000, rank: 6, icon: 'runway', desc: '長さ約3,400m。787・777・A380などの大型機も使える。' });
-defB('stand_s', { cat: 'air', name: '小型駐機場', kind: 'stand', zone: 'air', w: 3, h: 3, cls: 1, cost: 250000, upkeep: 1500, icon: 'stand', desc: 'プロペラ機・ビジネスジェットがとまる場所。近く（7マス以内）にターミナルの搭乗口が必要。' });
+defB('stand_s', { cat: 'air', name: '小型駐機場', kind: 'stand', zone: 'air', w: 3, h: 3, cls: 1, cost: 250000, upkeep: 1500, icon: 'stand', desc: 'プロペラ機・ビジネスジェットがとまる場所。近く（7マス以内）にターミナルの搭乗口が必要。▲（正面）を搭乗口に向け、うしろを誘導路につなげよう。' });
 defB('stand_m', { cat: 'air', name: '中型駐機場', kind: 'stand', zone: 'air', w: 4, h: 4, cls: 2, cost: 700000, upkeep: 4000, rank: 3, icon: 'stand', desc: '737やA320などの小型ジェット機までとまれる。' });
 defB('stand_l', { cat: 'air', name: '大型駐機場', kind: 'stand', zone: 'air', w: 6, h: 6, cls: 3, cost: 1800000, upkeep: 9000, rank: 6, icon: 'stand', desc: '787・777・A380などの大型機もとまれる。' });
 defB('tower', { cat: 'air', name: '管制塔', kind: 'tower', zone: 'air', w: 2, h: 2, cost: 600000, upkeep: 5000, unique: true, icon: 'tower', desc: '空港に必ず1つ必要。これがないと飛行機が飛べません。' });

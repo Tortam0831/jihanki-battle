@@ -1361,7 +1361,7 @@ defB('taxiway', { cat: 'air', name: '誘導路', paint: FLOOR.TAXI, cost: 4000, 
 defB('runway_s', { cat: 'air', name: '短い滑走路', kind: 'runway', zone: 'air', w: 12, h: 2, cls: 1, cost: 1200000, upkeep: 6000, icon: 'runway', desc: '長さ約1,700m。プロペラ機・ビジネスジェットが使える。' });
 defB('runway_m', { cat: 'air', name: 'ふつうの滑走路', kind: 'runway', zone: 'air', w: 18, h: 2, cls: 2, cost: 4500000, upkeep: 16000, rank: 3, icon: 'runway', desc: '長さ約2,500m。737・A320などのジェット機が使える。' });
 defB('runway_l', { cat: 'air', name: '長い滑走路', kind: 'runway', zone: 'air', w: 24, h: 3, cls: 3, cost: 12000000, upkeep: 38000, rank: 6, icon: 'runway', desc: '長さ約3,400m。787・777・A380などの大型機も使える。' });
-defB('stand_s', { cat: 'air', name: '小型駐機場', kind: 'stand', zone: 'air', w: 3, h: 3, cls: 1, cost: 250000, upkeep: 1500, icon: 'stand', desc: 'プロペラ機・ビジネスジェットがとまる場所。近く（7マス以内）にターミナルの搭乗口が必要。' });
+defB('stand_s', { cat: 'air', name: '小型駐機場', kind: 'stand', zone: 'air', w: 3, h: 3, cls: 1, cost: 250000, upkeep: 1500, icon: 'stand', desc: 'プロペラ機・ビジネスジェットがとまる場所。近く（7マス以内）にターミナルの搭乗口が必要。▲（正面）を搭乗口に向け、うしろを誘導路につなげよう。' });
 defB('stand_m', { cat: 'air', name: '中型駐機場', kind: 'stand', zone: 'air', w: 4, h: 4, cls: 2, cost: 700000, upkeep: 4000, rank: 3, icon: 'stand', desc: '737やA320などの小型ジェット機までとまれる。' });
 defB('stand_l', { cat: 'air', name: '大型駐機場', kind: 'stand', zone: 'air', w: 6, h: 6, cls: 3, cost: 1800000, upkeep: 9000, rank: 6, icon: 'stand', desc: '787・777・A380などの大型機もとまれる。' });
 defB('tower', { cat: 'air', name: '管制塔', kind: 'tower', zone: 'air', w: 2, h: 2, cost: 600000, upkeep: 5000, unique: true, icon: 'tower', desc: '空港に必ず1つ必要。これがないと飛行機が飛べません。' });
@@ -1997,6 +1997,217 @@ const VOICES = [
   { t: '波が待ってるぜ！', c: p => p.type === 'surfer' },
   { t: 'いい旅だった〜', c: p => p.kind === 'arr' && p.mood > 60 },
 ];
+
+// ============================================================
+//  追加データ その2（150個）
+//  建物40・機材6・航空会社6・都市25・お客さん8・開発12・組み合わせ15・実績20・イベント8・つぶやき10
+// ============================================================
+
+// ---------- 建物：飲食 10 ----------
+const MORE2_FOODS = [
+  ['yakitori', '焼き鳥屋', 2, 2, 240000, 1300, 6, 14, 3, 'beer', ['food', 'fun']],
+  ['tempura', '天ぷら屋', 2, 2, 320000, 1800, 6, 16, 4, 'fork', ['food']],
+  ['kaisendon', '海鮮丼の店', 2, 2, 380000, 2200, 6, 14, 4, 'sushi', ['food']],
+  ['hotdog', 'ホットドッグ屋台', 1, 1, 90000, 500, 2, 3, 1, 'burger', ['food']],
+  ['taiyaki', 'たい焼き屋', 1, 1, 100000, 300, 2, 3, 1, 'cake', ['food']],
+  ['tapioca', 'タピオカドリンク', 1, 1, 120000, 550, 2, 3, 2, 'cafe', ['food', 'fun']],
+  ['gyoza', '餃子専門店', 2, 2, 250000, 900, 6, 10, 3, 'dumpling', ['food']],
+  ['pancake', 'パンケーキカフェ', 2, 2, 300000, 1200, 6, 15, 3, 'cake', ['food', 'rest']],
+  ['kebab', 'ケバブスタンド', 1, 1, 110000, 700, 2, 4, 2, 'food', ['food']],
+  ['soupcurry', 'スープカレー', 2, 2, 280000, 1300, 6, 14, 3, 'curry', ['food']],
+];
+for (const [id, name, w, h, cost, price, cap, svc, rank, icon, needs] of MORE2_FOODS)
+  defB(id, { cat: 'food', name, kind: 'svc', need: needs[0], need2: needs[1], zone: 'term', w, h, cost, price, cap, svc, rank, icon, upkeep: Math.round(cost * 0.006 / 100) * 100, inside: true, desc: `売上：1人 約${fmtNum(price)}円` + (w * h === 1 ? '。1マスで置ける小さな屋台。' : '') });
+
+// ---------- 建物：ショップ 10 ----------
+const MORE2_SHOPS = [
+  ['kimono', '和小物・着物の店', 2, 2, 420000, 3200, 4, 'shirt'],
+  ['gamestore', 'ゲームショップ', 2, 2, 380000, 2600, 3, 'game'],
+  ['anime', 'アニメグッズ店', 2, 2, 350000, 2200, 3, 'mascot'],
+  ['outdoor', 'アウトドア用品店', 3, 2, 450000, 2800, 4, 'leaf'],
+  ['perfumeshop', '香水の店', 2, 1, 400000, 4200, 5, 'perfume'],
+  ['simcounter', 'Wi-Fi・SIMカウンター', 2, 1, 160000, 1500, 3, 'wifi'],
+  ['chocolate', 'チョコレート専門店', 2, 1, 260000, 1900, 3, 'cake'],
+  ['fishmarket', '海産物の店', 2, 2, 300000, 2400, 3, 'fish'],
+  ['craft', '伝統工芸の店', 2, 2, 360000, 3000, 4, 'star'],
+  ['sneaker', 'スニーカーショップ', 2, 2, 420000, 3400, 5, 'ball'],
+];
+for (const [id, name, w, h, cost, price, rank, icon] of MORE2_SHOPS)
+  defB(id, { cat: 'shop', name, kind: 'svc', need: 'shop', zone: 'term', w, h, cost, price, cap: Math.max(2, w * h), svc: 6, rank, icon, upkeep: Math.round(cost * 0.006 / 100) * 100, inside: true, desc: `売上：1人 約${fmtNum(price)}円` + (id === 'simcounter' ? '。海外のお客さんに人気。' : '') });
+B.simcounter.likes = ['foreign', 'abroad', 'backpack']; B.fishmarket.likes = ['tourist', 'foodie']; B.anime.likes = ['student', 'cosplay', 'gamer', 'foreign']; B.gamestore.likes = ['kid', 'student', 'gamer'];
+B.outdoor.likes = ['hiker', 'golfer', 'skier']; B.kimono.likes = ['foreign', 'tourist', 'couple']; B.craft.likes = ['foreign', 'elder', 'ohenro'];
+
+// ---------- 建物：サービス 8 ----------
+defB('charging', { cat: 'svc', name: '充電スタンド', kind: 'aura', zone: 'term', w: 1, h: 1, cost: 50000, upkeep: 200, aura: 3, likes: ['biz', 'student', 'gamer'], icon: 'wifi', desc: 'スマホを充電できる。まわりの人の満足度が少し上がる。' });
+defB('barber', { cat: 'svc', name: '理容室', kind: 'svc', need: 'rest', zone: 'term', w: 2, h: 2, cap: 3, svc: 18, price: 1800, cost: 300000, upkeep: 1200, rank: 3, inside: true, likes: ['biz', 'elder', 'diplomat'], icon: 'sofa', desc: '出張前にさっぱり。' });
+defB('nailsalon', { cat: 'svc', name: 'ネイルサロン', kind: 'svc', need: 'fun', zone: 'term', w: 2, h: 1, cap: 2, svc: 15, price: 2800, cost: 280000, upkeep: 1100, rank: 4, inside: true, likes: ['couple', 'idol', 'cosplay'], icon: 'cosme', desc: '旅の前におしゃれを。' });
+defB('clinic', { cat: 'svc', name: '空港クリニック', kind: 'svc', need: 'rest', zone: 'term', w: 2, h: 2, cap: 3, svc: 15, price: 1500, cost: 500000, upkeep: 2500, rank: 4, inside: true, likes: ['elder', 'babyc', 'medic'], icon: 'firstaid', desc: '旅先での急な病気も安心。お年寄りの満足度アップ。' });
+defB('karaoke', { cat: 'svc', name: 'カラオケボックス', kind: 'svc', need: 'fun', zone: 'term', w: 3, h: 2, cap: 8, svc: 25, price: 1200, cost: 500000, upkeep: 2000, rank: 4, inside: true, likes: ['student', 'idol', 'cosplay'], icon: 'note', desc: '待ち時間に1曲。' });
+defB('flightsim', { cat: 'svc', name: 'フライトシミュレーター', kind: 'svc', need: 'fun', zone: 'term', w: 2, h: 2, cap: 2, svc: 14, price: 3000, cost: 1200000, upkeep: 4000, rank: 6, inside: true, likes: ['maniac', 'kid', 'gamer'], icon: 'plane2', desc: '本物そっくりの操縦席でパイロット気分。' });
+defB('spa', { cat: 'svc', name: '天然温泉スパ', kind: 'svc', need: 'rest', need2: 'fun', zone: 'term', w: 3, h: 3, cap: 12, svc: 40, price: 2500, cost: 2500000, upkeep: 7000, rank: 6, beauty: 3, inside: true, likes: ['elder', 'foreign', 'golfer', 'skier'], icon: 'onsen', desc: '空港の中で温泉。長旅のつかれが吹き飛ぶ。' });
+defB('nursery', { cat: 'svc', name: '一時保育ルーム', kind: 'svc', need: 'fun', zone: 'term', w: 2, h: 2, cap: 6, svc: 20, price: 800, cost: 350000, upkeep: 1600, rank: 3, likes: ['babyc', 'family', 'kid'], icon: 'balloon', desc: 'あずけている間に、おとなはゆっくり買い物。' });
+
+// ---------- 建物：空側 4 ----------
+defB('apronlight', { cat: 'air', name: 'エプロン照明塔', kind: 'decor', zone: 'air', w: 1, h: 1, cost: 60000, upkeep: 300, beauty: 0.5, lamp: true, rank: 2, icon: 'lamp', desc: '駐機場を明るく照らす背の高いライト。夜の空港がぐっと本物らしく。' });
+defB('blastfence', { cat: 'air', name: 'ブラストフェンス', kind: 'decor', zone: 'air', w: 3, h: 1, cost: 80000, upkeep: 200, rank: 3, icon: 'flag', desc: 'ジェットエンジンの風を上にそらす壁。滑走路の端に置くと本物らしい。' });
+defB('mro', { cat: 'air', name: '大型整備工場', kind: 'hangar', zone: 'air', w: 5, h: 4, cost: 3500000, upkeep: 9000, rank: 6, icon: 'hangar', desc: '格納庫と同じ効果。大型機も入れる大きな整備場。' });
+defB('wxstation', { cat: 'air', name: '気象観測所', kind: 'radar', zone: 'air', w: 2, h: 1, cost: 900000, upkeep: 2500, rank: 5, icon: 'thermo', desc: '気象レーダーと同じく、天気予報が2日先までわかる。小さくて置きやすい。' });
+
+// ---------- 建物：陸側 4 ----------
+defB('bizhotel', { cat: 'land', name: 'ビジネスホテル', kind: 'hotel', zone: 'land', w: 3, h: 2, cost: 1600000, upkeep: 4500, rank: 3, income: 0.55, icon: 'bed', desc: '小さめのホテル。毎日、乗客数に応じた宿泊収入。' });
+defB('resorthotel', { cat: 'land', name: 'リゾートホテル', kind: 'hotel', zone: 'land', w: 5, h: 4, cost: 7000000, upkeep: 14000, rank: 7, income: 1.8, beauty: 4, icon: 'palm', desc: 'プール付きの高級ホテル。宿泊収入がとても多い。' });
+defB('cyclestand', { cat: 'land', name: 'レンタサイクル', kind: 'access', zone: 'land', w: 2, h: 1, cost: 80000, upkeep: 300, access: 15, icon: 'ball', likes: ['student', 'backpack', 'abroad'], desc: '小さな入口。自転車で来る人がいる。' });
+defB('ropeway', { cat: 'land', name: 'ロープウェイ乗り場', kind: 'access', zone: 'land', w: 4, h: 3, cost: 6000000, upkeep: 9000, access: 160, rank: 7, unique: true, beauty: 5, icon: 'ferris', desc: '山の上の町とつながるロープウェイ。景色もよい入口。' });
+
+// ---------- 建物：かざり 4 ----------
+defB('tulip', { cat: 'deco', name: 'チューリップ畑', kind: 'decor', zone: 'land', w: 2, h: 1, cost: 30000, beauty: 3, seasonBoost: 0, icon: 'flower', desc: '春は美しさ2倍。' });
+defB('cosmos', { cat: 'deco', name: 'コスモス畑', kind: 'decor', zone: 'land', w: 2, h: 2, cost: 40000, beauty: 4, seasonBoost: 2, icon: 'flower', desc: '秋は美しさ2倍。' });
+defB('torii', { cat: 'deco', name: '鳥居', kind: 'decor', zone: 'any', w: 1, h: 1, cost: 150000, beauty: 5, rank: 3, icon: 'flag', desc: '空の旅の安全を願って。海外のお客さんの撮影スポット。' });
+defB('windmill', { cat: 'deco', name: '風車', kind: 'decor', zone: 'land', w: 2, h: 2, cost: 400000, beauty: 7, rank: 4, icon: 'windsock', desc: 'くるくる回る大きな風車。' });
+for (const id of Object.keys(B)) if (!BUILD_ORDER.includes(id)) BUILD_ORDER.push(id);
+
+// ---------- 機材 6（実在機・メーカー名は変えてある） ----------
+Object.assign(PLANES, {
+  saab340: { name: 'サーブ 340B', maker: 'サーブ', cls: 1, seats: 36, lenM: 19.7, spanM: 21.4, dia: 2.3, eng: 'prop', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'none', vapp: 100, turn: 22, fee: 45000, rank: 1, desc: '低い翼のかわいい小型プロペラ機。島の路線で活躍。' },
+  a319:    { name: 'エアブロー A319neo', maker: 'エアブロー', cls: 2, seats: 140, lenM: 33.8, spanM: 35.8, dia: 3.95, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'sharklet', vapp: 132, turn: 38, fee: 170000, rank: 3, desc: 'A320を短くした型。ずんぐりした胴体が目印。' },
+  c919:    { name: 'コマック C919', maker: 'コマック', cls: 2, seats: 158, lenM: 38.9, spanM: 35.8, dia: 3.96, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'blended', vapp: 136, turn: 40, fee: 185000, rank: 5, desc: '中国生まれの新しい小型ジェット機。' },
+  a321xlr: { name: 'エアブロー A321XLR', maker: 'エアブロー', cls: 2, seats: 200, lenM: 44.5, spanM: 35.8, dia: 3.95, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'sharklet', vapp: 142, turn: 45, fee: 290000, rank: 6, desc: '細い胴体なのに長い距離を飛べる。遠くのアジアの都市へ。' },
+  b744:    { name: 'ボーリング 747-400', maker: 'ボーリング', cls: 3, seats: 416, lenM: 70.7, spanM: 64.4, dia: 6.5, eng: 'jet', engines: 4, wing: 'low', tail: 'conv', gear: 'retract', tip: 'blended', vapp: 150, turn: 85, fee: 680000, rank: 7, wide: true, hump: true, desc: '「ジャンボ」の愛称で親しまれた4発機。2階席のこぶが目印。' },
+  b779:    { name: 'ボーリング 777-9', maker: 'ボーリング', cls: 3, seats: 420, lenM: 76.7, spanM: 71.8, dia: 6.2, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'raked', vapp: 150, turn: 75, fee: 720000, rank: 9, wide: true, bigEng: true, desc: '翼の先が折りたためる、最新の大型双発機。' },
+});
+for (const P of Object.values(PLANES)) { P.len = P.lenM / TILE_M; P.span = P.spanM / TILE_M; }
+
+// ---------- 都市 25 ----------
+Object.assign(CITIES, {
+  memanbetsu: { name: '女満別', region: 'dom', demand: 2, rank: 2 },
+  hanamaki:   { name: '花巻', region: 'dom', demand: 2, rank: 2 },
+  shonai:     { name: '庄内', region: 'dom', demand: 2, rank: 2 },
+  noto:       { name: '能登', region: 'dom', demand: 1, rank: 2 },
+  tottori:    { name: '鳥取', region: 'dom', demand: 2, rank: 2 },
+  yonago:     { name: '米子', region: 'dom', demand: 2, rank: 3 },
+  saga:       { name: '佐賀', region: 'dom', demand: 2, rank: 3 },
+  oita:       { name: '大分', region: 'dom', demand: 3, rank: 3, resort: true },
+  tsushima:   { name: '対馬', region: 'dom', demand: 1, rank: 1, island: true },
+  tanegashima:{ name: '種子島', region: 'dom', demand: 1, rank: 2, island: true },
+  chengdu:    { name: '成都', region: 'asia', demand: 4, rank: 6 },
+  xian:       { name: '西安', region: 'asia', demand: 3, rank: 6 },
+  phuket:     { name: 'プーケット', region: 'asia', demand: 3, rank: 6, resort: true },
+  bali:       { name: 'バリ島', region: 'asia', demand: 4, rank: 6, resort: true },
+  hochiminh:  { name: 'ホーチミン', region: 'asia', demand: 4, rank: 5 },
+  colombo:    { name: 'コロンボ', region: 'asia', demand: 2, rank: 7 },
+  ulaanbaatar:{ name: 'ウランバートル', region: 'asia', demand: 2, rank: 6 },
+  macau:      { name: 'マカオ', region: 'asia', demand: 3, rank: 5 },
+  doha:       { name: 'ドーハ', region: 'long', demand: 3, rank: 7 },
+  istanbul:   { name: 'イスタンブール', region: 'long', demand: 4, rank: 8 },
+  saopaulo:   { name: 'サンパウロ', region: 'long', demand: 3, rank: 9 },
+  mexico:     { name: 'メキシコシティ', region: 'long', demand: 3, rank: 8 },
+  amsterdam:  { name: 'アムステルダム', region: 'long', demand: 4, rank: 8 },
+  zurich:     { name: 'チューリッヒ', region: 'long', demand: 3, rank: 8 },
+  chicago:    { name: 'シカゴ', region: 'long', demand: 4, rank: 8 },
+});
+AIRLINES.soyokaze.fleet.unshift('saab340'); AIRLINES.soyokaze.cities.push('tsushima', 'tanegashima');
+AIRLINES.haruka.fleet.push('a319'); AIRLINES.haruka.cities.push('hanamaki', 'yonago', 'oita', 'saga');
+AIRLINES.north.cities.push('memanbetsu', 'shonai');
+AIRLINES.penguin.fleet.push('a319'); AIRLINES.penguin.cities.push('macau', 'hochiminh');
+AIRLINES.sakura.fleet.push('a321xlr', 'b744'); AIRLINES.sakura.cities.push('chengdu', 'hochiminh', 'colombo');
+AIRLINES.eagle.fleet.push('b744', 'b779'); AIRLINES.eagle.cities.push('chicago', 'mexico');
+AIRLINES.aurora.cities.push('amsterdam', 'zurich');
+
+// ---------- 航空会社 6（すべて架空） ----------
+Object.assign(AIRLINES, {
+  shimakaze: { name: 'しまかぜエア', code: 'SM', body: '#ffffff', tail: '#3fc9b8', accent: '#ffd84a', fleet: ['saab340', 'atr42', 'humming'], rank: 1, cities: ['shimo', 'okushiri', 'tsushima', 'tanegashima', 'goto', 'yakushima', 'noto'], desc: '小さな島と島をむすぶ、プロペラ機の航空会社。' },
+  hanabi:    { name: 'はなびエア', code: 'HB', body: '#1e2050', tail: '#ff6a3c', accent: '#ffd84a', fleet: ['a319', 'a320', 'pelican'], rank: 3, lcc: true, cities: ['tokyo', 'osaka', 'fukuoka', 'sapporo', 'naha', 'tottori', 'oita', 'macau'], desc: '夜空に咲く花火のような塗装のLCC。' },
+  panda:     { name: 'パンダエアライン', code: 'PD', body: '#ffffff', tail: '#2a2a36', accent: '#4cb85c', fleet: ['c919', 'a321xlr', 'a330'], rank: 5, cities: ['beijing', 'shanghai', 'chengdu', 'xian', 'ulaanbaatar', 'hongkong'], desc: '尾翼のパンダが人気の航空会社。' },
+  oasis:     { name: 'オアシス航空', code: 'OA', body: '#f8f4ec', tail: '#8a1f4f', accent: '#d8a020', fleet: ['a35k', 'b779', 'b744'], rank: 7, cities: ['doha', 'dubai', 'istanbul', 'london', 'paris'], desc: '砂漠の国の豪華な航空会社。' },
+  ginga:     { name: 'ぎんがエアウェイズ', code: 'GW', body: '#f0f4ff', tail: '#3a2a7a', accent: '#c9a0ff', fleet: ['b744', 'b779', 'a35k'], rank: 8, cities: ['newyork', 'chicago', 'saopaulo', 'mexico', 'amsterdam', 'zurich', 'sanfran'], desc: '世界中へ飛ぶ大手。ジャンボの最後の使い手。' },
+  tropica:   { name: 'トロピカーナ航空', code: 'TR', body: '#ffffff', tail: '#f59ac0', accent: '#3fc9b8', fleet: ['a321xlr', 'a330', 'albatross'], rank: 6, resort: true, cities: ['bali', 'phuket', 'cebu', 'danang', 'guam', 'honolulu', 'cairns'], desc: '南の島のリゾートへ。' },
+});
+
+// ---------- お客さん 8 ----------
+Object.assign(PAX, {
+  golfer:  { name: 'ゴルファー', speed: 1.0, money: 1.6, needs: { food: .6, shop: .4, toilet: .4, rest: .6, fun: .1 }, desc: 'ゴルフバッグをかついで、リゾートへ。' },
+  skier:   { name: 'スキーヤー', speed: 1.05, money: 1.2, needs: { food: .7, shop: .4, toilet: .5, rest: .5, fun: .3 }, desc: '冬になると北の空港へ。温泉スパが好き。' },
+  cosplay: { name: 'コスプレイヤー', speed: 1.0, money: 1.1, needs: { food: .5, shop: .7, toilet: .5, rest: .2, fun: .8 }, desc: 'イベントに向かう途中。アニメグッズ店に寄りたい。' },
+  foodie:  { name: 'グルメ旅行者', speed: 0.95, money: 1.5, needs: { food: 1.0, shop: .6, toilet: .4, rest: .3, fun: .2 }, desc: '空港のごはんも旅の楽しみ。飲食店が多いと大喜び。' },
+  gamer:   { name: 'ゲーマー', speed: 1.0, money: 0.9, needs: { food: .6, shop: .5, toilet: .4, rest: .3, fun: .8 }, desc: '充電スタンドとゲームショップがあればごきげん。' },
+  medic:   { name: '医療チーム', speed: 1.2, money: 1.0, needs: { food: .6, shop: .1, toilet: .4, rest: .6, fun: .05 }, desc: '急ぎの出張。待たせないで！' },
+  ohenro:  { name: 'お遍路さん', speed: 0.85, money: 0.9, needs: { food: .6, shop: .5, toilet: .6, rest: .7, fun: .1 }, desc: '四国八十八か所めぐりの人。白い服とすげ笠。' },
+  musician:{ name: 'ミュージシャン', speed: 1.0, money: 1.3, needs: { food: .6, shop: .4, toilet: .4, rest: .5, fun: .6 }, desc: 'ツアー中のバンド。カラオケに寄りたい。' },
+});
+MIX.resort.golfer = 6; MIX.lux.golfer = 8; MIX.dom.skier = 2; MIX.dom.foodie = 4; MIX.asia.foodie = 6; MIX.lcc.cosplay = 4; MIX.lcc.gamer = 5;
+MIX.dom.medic = 1; MIX.island.medic = 3; MIX.island.ohenro = 3; MIX.dom.ohenro = 1; MIX.dom.musician = 1; MIX.long.musician = 2; MIX.asia.cosplay = 2;
+Object.assign(PAX_LOOKS, {
+  golfer:  { hair: ['cap', 'short'], top: ['#ffffff', '#4cb85c', '#8fdcf4'], bottom: ['#e8c890', '#ffffff', '#3a4a7a'], acc: ['bigpack'], glasses: 'sun' },
+  skier:   { hair: ['cap'], top: ['#e5484d', '#4a8fe0', '#ffd84a', '#9a62d0'], bottom: ['#2a2a36', '#3a4a7a'], acc: ['board'] },
+  cosplay: { hair: ['long', 'pony'], hairc: ['#40e0ff', '#ff80c0', '#ffd84a', '#c9a0ff', '#ffffff'], top: ['#2a2a36', '#ff80c0', '#ffffff', '#e5484d'], bottom: ['#2a2a36', '#ffffff'], skirt: 0.8, acc: ['bag', 'suitcase'] },
+  foodie:  { hair: ['short', 'long', 'bun'], top: ['#f39a3c', '#ffd84a', '#e5484d'], bottom: ['#3a4a7a', '#a0683c'], acc: ['bag', 'camera'] },
+  gamer:   { hair: ['short', 'cap'], top: ['#2a2a36', '#4a4a58', '#3a5080'], bottom: ['#2a2a36', '#4a4a58'], acc: ['backpack'], glasses: 'normal' },
+  medic:   { hair: ['short', 'bun'], top: ['#ffffff'], bottom: ['#3a8a8a', '#ffffff'], acc: ['briefcase', 'suitcase'] },
+  ohenro:  { hair: ['bald', 'short'], hairc: ['#e8e0d0', '#b0b0b8'], top: ['#ffffff'], bottom: ['#ffffff'], acc: ['cane'], hat: 1 },
+  musician:{ hair: ['long', 'short'], hairc: ['#2a1e1a', '#c04030', '#e8d080'], top: ['#1a1a22', '#e5484d'], bottom: ['#1a1a22', '#3a4a7a'], acc: ['bigpack', 'suitcase'], glasses: 'sun' },
+});
+
+// ---------- 開発 12 ----------
+RESEARCH.push(
+  { id: 'mobileck', name: 'スマホチェックイン', icon: 'checkin', dev: 20, cost: 800000, rank: 2, desc: 'チェックインの時間 -20%' },
+  { id: 'queuemgmt', name: '行列マネジメント', icon: 'security', dev: 30, cost: 1400000, rank: 3, desc: '保安検査の時間 -15%' },
+  { id: 'quickbag', name: '手荷物スピード返却', icon: 'baggage', dev: 30, cost: 1500000, rank: 3, desc: '手荷物受取の時間 -20%' },
+  { id: 'localfest', name: 'ご当地グルメフェア', icon: 'food', dev: 35, cost: 1800000, rank: 4, desc: '飲食店の売上 +8%' },
+  { id: 'premium', name: '人気ブランドの誘致', icon: 'handbag', dev: 45, cost: 3000000, rank: 5, desc: 'ショップの売上 +8%' },
+  { id: 'loyalty', name: '空港アプリ', icon: 'wifi', dev: 40, cost: 2500000, rank: 4, desc: 'お店・サービスの売上 +5%、満足度 +2' },
+  { id: 'greenroof', name: '屋上緑化', icon: 'leaf', dev: 35, cost: 2500000, rank: 4, desc: '維持費 -5%、評価 +0.05' },
+  { id: 'noisecut', name: '騒音対策', icon: 'sound', dev: 40, cost: 3000000, rank: 5, desc: 'ご近所の評判がよくなる。評価 +0.1' },
+  { id: 'slotplus', name: '発着枠の拡大', icon: 'runway', dev: 60, cost: 5000000, rank: 6, desc: '到着の間隔をさらにつめられる（-8%）' },
+  { id: 'salesrep', name: '航空会社への営業', icon: 'globe', dev: 35, cost: 2000000, rank: 3, desc: '毎日、すべての航空会社の好感度が少し上がる' },
+  { id: 'tourbus', name: '空港見学ツアー', icon: 'bus', dev: 30, cost: 1500000, rank: 3, desc: '見学のお客さん +20%' },
+  { id: 'credit', name: '銀行との信頼関係', icon: 'money', dev: 25, cost: 1000000, rank: 2, desc: '銀行から借りられる上限が1.5倍に' },
+);
+for (const r of RESEARCH) RESEARCH_BY[r.id] = r;
+
+// ---------- 組み合わせ 15 ----------
+COMBOS.push(
+  { id: 'yakitoriyoko', name: '焼き鳥横丁', need: ['yakitori', 'izakaya'], bonus: 0.3, desc: '焼き鳥屋と居酒屋。売上+30%' },
+  { id: 'tensoba', name: '天ぷらそば', need: ['tempura', 'soba'], bonus: 0.25, desc: '天ぷら屋と立ち食いそば。売上+25%' },
+  { id: 'seafood', name: '港の海鮮市場', need: ['kaisendon', 'fishmarket'], bonus: 0.35, desc: '海鮮丼と海産物の店。グルメ旅行者が大よろこび' },
+  { id: 'streetfood', name: '屋台村', need: [['hotdog', 'kebab', 'takoyaki', 'taiyaki', 'juice'], 3], bonus: 0.3, desc: '小さな屋台が3つ。売上+30%' },
+  { id: 'cafestreet', name: 'カフェ通り', need: [['tapioca', 'pancake', 'cafe', 'matcha'], 3], bonus: 0.3, desc: 'カフェが3つ。売上+30%' },
+  { id: 'gyozast', name: '餃子スタジアム', need: ['gyoza', 'chinese'], bonus: 0.25, desc: '餃子と中華料理。売上+25%' },
+  { id: 'otaku', name: 'オタクの聖地', need: ['anime', 'gamestore'], bonus: 0.35, desc: 'アニメとゲーム。海外のお客さんにも大人気' },
+  { id: 'wanokokoro', name: '和のこころ', need: ['kimono', 'craft'], bonus: 0.3, desc: '着物と伝統工芸。売上+30%' },
+  { id: 'sweetgift', name: '甘いおみやげ', need: ['chocolate', 'wagashi'], bonus: 0.25, desc: 'チョコと和菓子。売上+25%' },
+  { id: 'outdoorlife', name: 'アウトドア派', need: ['outdoor', 'sports'], bonus: 0.25, desc: 'アウトドアとスポーツ用品。売上+25%' },
+  { id: 'beautyday', name: 'ビューティーデー', need: ['nailsalon', 'cosme'], bonus: 0.3, desc: 'ネイルとコスメ。売上+30%' },
+  { id: 'relaxspa', name: '癒やしの湯', need: ['spa', 'massage'], bonus: 0.3, desc: '温泉スパとマッサージ。売上+30%' },
+  { id: 'kidsparadise', name: '子どもの楽園', need: ['nursery', 'kidsroom'], bonus: 0.25, desc: '保育ルームとキッズルーム。家族づれ大満足' },
+  { id: 'karaokegame', name: '歌とゲームの館', need: ['karaoke', 'game'], bonus: 0.25, desc: 'カラオケとゲームコーナー。学生に大人気' },
+  { id: 'flowerroad', name: '花畑ロード', need: [['tulip', 'cosmos', 'sunflower', 'flowerbed'], 3], bonus: 0.2, desc: '花畑が3種類。美しさアップ' },
+);
+
+// ---------- 実績 20 ----------
+const newTypes = ['saab340', 'a319', 'c919', 'a321xlr', 'b744', 'b779'];
+const seenType = t => Object.keys(G.seenPlanes).some(k => k.split(':')[0] === t);
+ACHIEVEMENTS.push(
+  { id: 'loan1', name: 'はじめての借入', desc: '銀行からお金を借りた', icon: 'money', c: () => (G.loanLog || []).some(l => l[1] > 0) },
+  { id: 'loanfree', name: '借金ゼロ', desc: '借りたお金をすべて返した', icon: 'check', c: () => !!G.flags.repaidAll },
+  { id: 'profit1m', name: '黒字経営', desc: '1日の利益100万円', icon: 'money', c: () => RT.lastDay && RT.lastDay.inc - RT.lastDay.exp >= 1e6 },
+  { id: 'profit10m', name: '大もうけ', desc: '1日の利益1,000万円', icon: 'money', c: () => RT.lastDay && RT.lastDay.inc - RT.lastDay.exp >= 1e7 },
+  { id: 'daypax1k', name: 'にぎわう一日', desc: '1日の乗客1,000人', icon: 'people', c: () => RT.lastDay && RT.lastDay.pax >= 1000 },
+  { id: 'daypax5k', name: '人の波', desc: '1日の乗客5,000人', icon: 'people', c: () => RT.lastDay && RT.lastDay.pax >= 5000 },
+  { id: 'flights20', name: 'ひっきりなし', desc: '1日20便', icon: 'plane2', c: () => RT.lastDay && RT.lastDay.flights >= 20 },
+  { id: 'flights50', name: '管制官もびっくり', desc: '1日50便', icon: 'tower', c: () => RT.lastDay && RT.lastDay.flights >= 50 },
+  { id: 'moved10', name: '模様がえ名人', desc: '建物を10回動かした・回した', icon: 'move', c: () => (G.flags.moves || 0) >= 10 },
+  { id: 'airline15', name: '航空会社の集まる空港', desc: '15社と路線を結んだ', icon: 'globe', c: () => new Set(G.routes.map(r => r.airline)).size >= 15 },
+  { id: 'city60', name: '世界地図', desc: '60都市のスタンプを集めた', icon: 'flag', c: () => Object.keys(G.stamps).length >= 60 },
+  { id: 'seen744', name: '空の女王', desc: '747-400（ジャンボ）がやってきた', icon: 'plane', c: () => seenType('b744') },
+  { id: 'seen779', name: '最新鋭機', desc: '777-9がやってきた', icon: 'plane', c: () => seenType('b779') },
+  { id: 'newtype', name: 'ニューフェイス', desc: '新しく増えた6機種をすべて見た', icon: 'star', c: () => newTypes.every(seenType) },
+  { id: 'pushback100', name: 'トーイングカーの相棒', desc: 'プッシュバック100回', icon: 'cargo', c: () => (G.flags.pushbacks || 0) >= 100 },
+  { id: 'report30', name: 'こつこつ経営', desc: '30日間、空港を運営した', icon: 'chart', c: () => G.day >= 30 },
+  { id: 'decor100', name: '花と緑の空港', desc: 'かざりを100個置いた', icon: 'flower', c: () => Object.values(G.blds).filter(b => B[b.id].cat === 'deco').length >= 100 },
+  { id: 'food20', name: 'グルメ空港', desc: '飲食店を20軒にした', icon: 'food', c: () => Object.values(G.blds).filter(b => B[b.id].cat === 'food').length >= 20 },
+  { id: 'shop20', name: 'お買い物天国', desc: 'ショップを20軒にした', icon: 'shopping', c: () => Object.values(G.blds).filter(b => B[b.id].cat === 'shop').length >= 20 },
+  { id: 'runway2', name: '2本の滑走路', desc: '滑走路を2本にした', icon: 'runway', c: () => countKind('runway') >= 2 },
+);
 
 // ============================================================
 //  サウンド（WebAudio で全部その場で作る）
@@ -6560,7 +6771,7 @@ function renderBuildBar() {
   let h = '';
   if (t.type === 'build' || t.type === 'move') {
     const d = B[t.id];
-    h = `${iconImg(d.icon)}<div class="msg"><b>${t.type === 'move' ? '移動：' : ''}${d.name}</b> <span class="sub">${t.type === 'move' ? '' : fmtYen(d.cost)}</span><div class="sub" id="bbMsg">${t.type === 'move' ? '動かしたい場所をタップ（決めるまで元の建物はそのまま）' : '置きたい場所をタップ'}</div>${B[t.id].kind !== 'decor' && B[t.id].kind !== 'runway' ? '<div class="sub">黄色い▲が正面です' + (B[t.id].kind === 'stand' ? '（機首の向き＝搭乗口・ターミナル側）' : B[t.id].kind === 'gate' ? '（ターミナルの通路側。うしろに駐機場を）' : '（入口・通路の側）') + '</div>' : ''}</div>
+    h = `${iconImg(d.icon)}<div class="msg"><b>${t.type === 'move' ? '移動：' : ''}${d.name}</b> <span class="sub">${t.type === 'move' ? '' : fmtYen(d.cost)}</span><div class="sub" id="bbMsg">${t.type === 'move' ? '動かしたい場所をタップ（決めるまで元の建物はそのまま）' : '置きたい場所をタップ'}</div>${B[t.id].kind !== 'decor' && B[t.id].kind !== 'runway' ? '<div class="sub">▲＝正面' + (B[t.id].kind === 'stand' ? '（機首・ターミナル側）' : B[t.id].kind === 'gate' ? '（通路側。うしろに駐機場）' : '（入口）') + '</div>' : ''}</div>
       <button class="pbtn sm" id="bbRot">${iconImg('rotate', 's')}回転</button>${UI.touch ? '<button class="pbtn sm green" id="bbOk">建てる</button>' : ''}<button class="pbtn sm red" id="bbX">やめる</button>`;
   } else if (t.type === 'paint') {
     const d = B[t.id];
@@ -6926,6 +7137,7 @@ function renderInfo() {
       rows.push(['番号', b.num + '番'], ['大きさ', ['', '小型機', '中型機まで', '大型機まで'][def.cls]], ['搭乗口', g ? (B[g.id].bus ? 'バスラウンジ' : '搭乗口' + g.num) : 'なし']);
       const fl = RT.todayFlights.find(f => f.id === b.busy);
       rows.push(['いまの飛行機', fl ? `${fl.code} ${CITIES[fl.city].name}` : '空き']);
+      rows.push(['向き', '黄色い▲が正面（機首の向き）']);
     }
     if (def.kind === 'gate') {
       const st = G.blds[b.stand];
@@ -7006,6 +7218,21 @@ function showSelBox(b) {
   const g = new THREE.BoxGeometry(w + 0.1, 0.05, h + 0.1);
   const m = new THREE.LineSegments(new THREE.EdgesGeometry(g), new THREE.LineBasicMaterial({ color: '#ffd84a' }));
   m.position.set(b.x + w / 2, floorH(b.x, b.y) + 0.06, b.y + h / 2);
+  // 正面の矢印と、つながっている搭乗口・駐機場への線
+  if (def.kind !== 'decor' && def.kind !== 'runway' && !def.paint) {
+    const [fx, fy] = frontDir(b.rot);
+    const sh = new THREE.Shape(); sh.moveTo(-0.3, 0); sh.lineTo(0.3, 0); sh.lineTo(0, 0.4); sh.closePath();
+    const ag = new THREE.ShapeGeometry(sh); ag.rotateX(Math.PI / 2);
+    const am = new THREE.Mesh(ag, new THREE.MeshBasicMaterial({ color: '#ffd84a', side: THREE.DoubleSide, depthTest: false, transparent: true }));
+    am.renderOrder = 9; am.rotation.y = Math.atan2(fx, fy) - 0; am.position.set(fx * (w / 2 + 0.15), 0.05, fy * (h / 2 + 0.15));
+    am.rotation.order = 'YXZ'; m.add(am);
+  }
+  const other = def.kind === 'stand' ? G.blds[b.gate] : def.kind === 'gate' ? G.blds[b.stand] : null;
+  if (other) {
+    const c0 = bCenter(b), c1 = bCenter(other), y = 0.35;
+    const ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(c0.x - m.position.x, y, c0.z - m.position.z), new THREE.Vector3(c1.x - m.position.x, y, c1.z - m.position.z)]), new THREE.LineBasicMaterial({ color: '#5fe08a', depthTest: false, transparent: true }));
+    ln.renderOrder = 9; m.add(ln);
+  }
   UI.selBox = m; R.scene.add(m);
 }
 function startMove(b) {
@@ -7769,7 +7996,7 @@ function tutorialStep(ch, i) {
     case 0: return { kind: 'build', id: 'runway_s', x: X(27), y: Y(32), rot: 0, say: '滑走路は飛行機が降りたり飛び立ったりする道。青く光っている場所に置いてみよう！（Rキーや「回転」で向きを変えられます）' };
     case 1: return { kind: 'build', id: 'tower', x: X(40), y: Y(27), rot: 0, say: '管制塔は飛行機に指示を出す場所。これがないと飛行機は来られないよ。' };
     case 2:
-      if (!anyKind('stand')) return { kind: 'build', id: 'stand_s', x: X(30), y: Y(28), rot: 2, say: '駐機場は飛行機がとまって、お客さんが乗り降りする場所。' };
+      if (!anyKind('stand')) return { kind: 'build', id: 'stand_s', x: X(30), y: Y(28), rot: 2, say: '駐機場は飛行機がとまって、お客さんが乗り降りする場所。黄色い▲が正面（機首の向き）。▲をターミナル側に、うしろを誘導路側に向けて置こう。' };
       return { kind: 'paint', id: 'taxiway', x: X(27), y: Y(31), x1: X(38), y1: Y(31), say: '誘導路で滑走路と駐機場をつなごう。青い場所を、はしからはしまでドラッグしてぬってね。' };
     case 3:
       if (termTiles() < 20) return { kind: 'paint', id: 'tfloor', x: X(28), y: Y(18), x1: X(37), y1: Y(26), say: 'ターミナルの床をぬろう。左上から右下へ、四角くドラッグ！' };
@@ -8349,6 +8576,153 @@ function clearExtras() {
 }
 
 // ============================================================
+//  追加その2：建物モデル・イベント8・つぶやき10・開発の効果
+// ============================================================
+
+// ---------- お店のモデル ----------
+const MORE2_SHOPC = {
+  yakitori: ['#5a3a24', '#e5484d', ['#a0683c', '#ffd84a']], tempura: ['#e8d8b8', '#2f4f9a', ['#d8a050', '#ffffff']],
+  kaisendon: ['#e8f0f8', '#2f4f9a', ['#e5484d', '#ffffff']], hotdog: ['#fff4e0', '#e5484d', ['#ffd84a', '#e5484d']],
+  taiyaki: ['#f4e0b0', '#a0683c', ['#d8a050', '#ffffff']], tapioca: ['#fff0f4', '#9a62d0', ['#3a2a22', '#ffffff']],
+  gyoza: ['#fff8f0', '#c02838', ['#e8d8b8', '#ffd84a']], pancake: ['#fff8e8', '#f59ac0', ['#ffffff', '#f59ac0']],
+  kebab: ['#f4e8d0', '#3e8a3c', ['#a0683c', '#e5484d']], soupcurry: ['#f4e0b0', '#f39a3c', ['#f39a3c', '#4cb85c']],
+  kimono: ['#f4ecdc', '#9a2f4a', ['#e5484d', '#f59ac0', '#4a8fe0']], gamestore: ['#20203a', '#40e0ff', ['#e5484d', '#4a8fe0', '#ffd84a']],
+  anime: ['#fff8ff', '#ff80c0', ['#ff80c0', '#40e0ff', '#ffd84a']], outdoor: ['#e8e0cc', '#3e6a4a', ['#4cb85c', '#f39a3c', '#a0683c']],
+  perfumeshop: ['#f8f0ff', '#9a62d0', ['#c9a0ff', '#ffffff', '#f59ac0']], simcounter: ['#ffffff', '#3a7bd5', ['#2a2a36', '#4a8fe0']],
+  chocolate: ['#5a3a24', '#d8a020', ['#7a4c2c', '#f59ac0']], fishmarket: ['#e8f4f8', '#2f6a9a', ['#e5484d', '#8fdcf4', '#ffffff']],
+  craft: ['#e8d8b8', '#7a4c2c', ['#e5484d', '#2f4f9a', '#d8a020']], sneaker: ['#ffffff', '#2a2a36', ['#e5484d', '#ffffff', '#4a8fe0']],
+};
+for (const [id, [wall, awn, cols]] of Object.entries(MORE2_SHOPC)) {
+  const def = B[id];
+  shopModel(id, {
+    wall, awn, stripe: !['gamestore', 'chocolate', 'yakitori', 'simcounter'].includes(id), sign: awn, icon: def.icon,
+    signGlow: id === 'gamestore' || id === 'anime' ? awn : undefined, floor: id === 'gamestore' ? '#2a2a40' : '#efe6d6',
+    props: (mb, w, d) => {
+      if (def.cat === 'food') {
+        if (d >= 2) tables(mb, w, d, w >= 3 ? 4 : 2, '#ffffff', cols[0], -0.15);
+        else { mb.box(0, 0, 0.05, w - 0.3, 0.6, 0.35, cols[0]); mb.box(0, 0.6, 0.05, w - 0.35, 0.05, 0.38, '#d8d8d8'); }
+        if (id === 'yakitori' || id === 'kebab' || id === 'taiyaki') mb.box(0, 0.62, -d / 2 + 0.3, Math.min(0.6, w - 0.4), 0.05, 0.2, '#ff8040', { glow: '#ff6020' });
+        if (id === 'tapioca') mb.box(0, 0.6, -0.05, w * 0.5, 0.25, 0.2, '#f8f0ff', { glow: '#ffffff' });
+      } else if (id === 'perfumeshop' || id === 'simcounter') {
+        mb.box(0, 0, -0.1, w - 0.4, 0.6, 0.4, cols[1]); mb.box(0, 0.6, -0.1, w - 0.45, 0.18, 0.38, '#f0f8ff', { glow: '#ffffff' });
+        for (let i = 0; i < 3; i++) mb.box(-0.4 + i * 0.4, 0.62, -0.1, 0.08, 0.12, 0.08, cols[i % cols.length]);
+      } else shelves(mb, w, d, cols);
+    }
+  });
+}
+// ---------- サービスのモデル ----------
+MODELS.charging = (mb) => { mb.box(0, 0, 0, 0.5, 1.0, 0.3, '#3a7bd5'); mb.box(0, 0.65, 0.16, 0.36, 0.25, 0.02, '#203040', { glow: '#40e0ff' }); for (let i = 0; i < 3; i++) mb.box(-0.12 + i * 0.12, 0.3, 0.16, 0.06, 0.08, 0.02, '#ffd84a'); mb.icon('wifi', 0, 1.2, 0, 0.3, 0); };
+MODELS.barber = (mb, w, d) => { booth(mb, w, d, { wall: '#ffffff', floor: '#e8e8f0', awn: '#2f4f9a', sign: '#2f4f9a', icon: 'sofa', noCounter: true, stripe: true }); for (let i = 0; i < 2; i++) { mb.box(-0.4 + i * 0.8, 0, -0.2, 0.4, 0.45, 0.45, '#e5484d'); mb.box(-0.4 + i * 0.8, 0.3, -d / 2 + 0.18, 0.5, 0.6, 0.03, '#d8f0ff', { glow: '#ffffff' }); } mb.cyl(w / 2 - 0.2, 0, d / 2 - 0.2, 0.08, 0.08, 1.0, '#e5484d', 8); mb.cyl(w / 2 - 0.2, 0.35, d / 2 - 0.2, 0.085, 0.085, 0.3, '#2f4f9a', 8); };
+MODELS.nailsalon = (mb, w, d) => { booth(mb, w, d, { wall: '#fff0f4', floor: '#f8e8f0', awn: '#ff7090', sign: '#ff7090', icon: 'cosme', noCounter: true }); mb.box(0, 0, 0, w - 0.5, 0.45, 0.35, '#ffffff'); mb.box(-0.3, 0.45, 0, 0.1, 0.06, 0.1, '#e5484d'); mb.box(0.2, 0.45, 0, 0.1, 0.06, 0.1, '#c9a0ff'); };
+MODELS.clinic = (mb, w, d) => { booth(mb, w, d, { wall: '#f4fbff', floor: '#e8f4f0', awn: '#3fae5a', sign: '#ffffff', signIn: '#3fae5a', icon: 'firstaid', noCounter: true }); mb.box(-0.4, 0, -0.2, 0.6, 0.4, 0.9, '#ffffff'); mb.box(-0.4, 0.4, -0.55, 0.6, 0.1, 0.2, '#8fdcf4'); mb.box(0.5, 0, 0.2, 0.4, 0.6, 0.3, '#d8e8f0'); };
+MODELS.karaoke = (mb, w, d) => { booth(mb, w, d, { wall: '#2a2040', floor: '#3a3060', awn: '#ff80c0', sign: '#2a2040', signIn: '#ff80c0', signGlow: '#ff80c0', icon: 'note', noCounter: true }); for (let i = 0; i < 2; i++) { mb.box(-0.7 + i * 1.4, 0, -0.1, 1.0, 0.35, 0.5, '#9a62d0'); mb.box(-0.7 + i * 1.4, 0.4, -d / 2 + 0.18, 0.6, 0.35, 0.03, '#203040', { glow: '#ff80c0' }); } };
+MODELS.flightsim = (mb, w, d) => { booth(mb, w, d, { wall: '#20283a', floor: '#2a3040', awn: '#40e0ff', sign: '#20283a', signIn: '#80f0ff', signGlow: '#40e0ff', icon: 'plane2', noCounter: true }); mb.box(0, 0.1, -0.15, 1.1, 0.7, 0.9, '#f4f2ee'); mb.box(0, 0.5, 0.31, 0.9, 0.25, 0.02, '#203040', { glow: '#80c8ff' }); mb.box(0, 0, -0.15, 0.4, 0.12, 0.4, '#4a4a58'); };
+MODELS.spa = (mb, w, d) => { booth(mb, w, d, { wall: '#7a4c2c', wall2: '#a0683c', floor: '#c8b090', awn: '#2e5a8a', sign: '#2e5a8a', icon: 'onsen', noCounter: true }); mb.box(0, 0.02, 0, w - 0.9, 0.22, d - 1.0, '#9a9aa6'); mb.box(0, 0.22, 0, w - 1.0, 0.04, d - 1.1, '#5cc8e0', { glow: '#80e0ff' }); for (const x of [-w / 2 + 0.4, w / 2 - 0.4]) mb.box(x, 0, d / 2 - 0.4, 0.3, 0.5, 0.3, '#d8c8a0'); };
+MODELS.nursery = (mb, w, d) => { mb.box(0, 0, 0, w - 0.04, 0.05, d - 0.04, '#ffe8c0'); for (const x of [-w / 2 + 0.06, w / 2 - 0.06]) mb.box(x, 0, 0, 0.08, 0.45, d - 0.04, '#4cb85c'); mb.box(0, 0, -d / 2 + 0.06, w - 0.04, 0.45, 0.08, '#ffd84a'); mb.box(-0.4, 0.05, -0.3, 0.5, 0.25, 0.4, '#8fdcf4'); mb.box(0.4, 0.05, -0.2, 0.35, 0.35, 0.35, '#ff7090'); mb.cyl(0, 0.05, 0.3, 0.15, 0.15, 0.15, '#e5484d', 8); mb.icon('balloon', 0, 0.75, -d / 2 + 0.11, 0.32, 0); };
+// ---------- 空側・陸側・かざり ----------
+MODELS.apronlight = (mb) => { mb.cyl(0, 0, 0, 0.06, 0.09, 3.2, '#9a9aa6', 5); mb.box(0, 3.2, 0, 0.7, 0.08, 0.3, '#5a5a66'); for (let i = 0; i < 3; i++) mb.box(-0.22 + i * 0.22, 3.12, 0.05, 0.18, 0.08, 0.18, '#fff8e0', { glow: '#ffe8a0' }); };
+MODELS.blastfence = (mb, w) => { for (let i = 0; i < 6; i++) mb.box(-w / 2 + 0.25 + i * (w - 0.5) / 5, 0, 0, 0.06, 1.0, 0.06, '#7a7a86'); for (let k = 0; k < 4; k++) mb.box(0, 0.2 + k * 0.22, -0.06 - k * 0.04, w - 0.1, 0.14, 0.04, k % 2 ? '#c8c8d0' : '#e8e8f0'); mb.box(0, 0.95, -0.25, w - 0.1, 0.06, 0.05, '#e5484d'); };
+MODELS.mro = (mb, w, d) => {
+  mb.box(0, 0, 0, w - 0.1, 0.04, d - 0.1, '#7a7a86');
+  for (let k = 0; k < 5; k++) { const ww = (w - 0.2) * Math.cos(k / 5 * Math.PI / 2.2); mb.box(0, 1.6 + k * 0.3, -0.3, ww, 0.3, d - 0.7, k % 2 ? '#c8ccd8' : '#d8dce4'); }
+  mb.box(0, 0, -0.3, w - 0.2, 1.6, d - 0.7, '#e0e4ec'); mb.box(0, 0.05, d / 2 - 0.66, w - 0.8, 1.45, 0.04, '#5a6a7a');
+  for (let i = 0; i < 6; i++) mb.box(-w / 2 + 0.6 + i * (w - 1.2) / 5, 0.05, d / 2 - 0.64, 0.04, 1.45, 0.02, '#8a9aaa');
+  mb.box(0, 1.75, d / 2 - 0.62, 2.2, 0.35, 0.05, '#2f4f9a'); mb.icon('hangar', 0, 1.78, d / 2 - 0.58, 0.3, 0);
+};
+MODELS.wxstation = (mb, w) => { mb.box(-0.4, 0, 0, 0.7, 0.6, 0.6, '#f4f2ee'); mb.box(-0.4, 0.6, 0, 0.75, 0.05, 0.65, '#3a7bd5'); mb.box(0.5, 0, 0, 0.06, 1.6, 0.06, '#9a9aa6'); for (let i = 0; i < 3; i++) mb.cyl(0.5 + Math.cos(i * 2.1) * 0.18, 1.6, Math.sin(i * 2.1) * 0.18, 0.05, 0.05, 0.06, '#f4f2ee', 6); mb.box(0.5, 1.1, 0.05, 0.3, 0.2, 0.05, '#ffffff'); mb.icon('thermo', -0.4, 1.0, 0, 0.3, 0); };
+MODELS.bizhotel = (mb, w, d) => { mb.box(0, 0, -0.1, w - 0.3, 2.6, d - 0.5, '#d8d0c4'); mb.box(0, 2.6, -0.1, w - 0.2, 0.1, d - 0.4, '#5a5a66'); for (let f = 0; f < 4; f++) for (let i = 0; i < 4; i++) mb.box(-w / 2 + 0.55 + i * (w - 1.1) / 3, 0.5 + f * 0.5, d / 2 - 0.34, 0.25, 0.25, 0.02, '#8fc8e8', { glow: '#ffe8a0' }); mb.box(0, 0, d / 2 - 0.2, 1.0, 0.5, 0.3, '#3a4a5a'); mb.icon('bed', 0, 2.3, d / 2 - 0.33, 0.3, 0); };
+MODELS.resorthotel = (mb, w, d) => {
+  mb.box(0, 0, 0, w - 0.06, 0.04, d - 0.06, '#e8dcc0');
+  mb.box(-0.6, 0, -0.6, w - 1.6, 2.2, 1.6, '#f8f4ec'); mb.box(-0.6, 2.2, -0.6, w - 1.5, 0.12, 1.7, '#d87a4a');
+  for (let f = 0; f < 3; f++) for (let i = 0; i < 5; i++) mb.box(-0.6 - (w - 2.2) / 2 + i * (w - 2.2) / 4, 0.4 + f * 0.6, 0.22, 0.3, 0.3, 0.02, '#8fc8e8', { glow: '#ffe8a0' });
+  mb.box(0.3, 0.02, 1.0, 2.4, 0.12, 1.2, '#f4f2ee'); mb.box(0.3, 0.1, 1.0, 2.2, 0.04, 1.0, '#3fc9e0', { glow: '#80e0ff' });
+  for (const [x, z] of [[w / 2 - 0.4, -1.2], [w / 2 - 0.4, 0.2], [-w / 2 + 0.4, 1.4]]) treeShape(mb, x, z, 'palm', 1, 0.9);
+  mb.icon('palm', -0.6, 1.9, 0.24, 0.34, 0);
+};
+MODELS.cyclestand = (mb, w) => { mb.box(0, 0, 0, w - 0.1, 0.04, 0.7, '#c8c8d0'); mb.box(0, 0.8, -0.2, w - 0.2, 0.05, 0.5, '#4cb85c'); for (const x of [-w / 2 + 0.2, w / 2 - 0.2]) mb.box(x, 0, -0.2, 0.05, 0.8, 0.05, '#9a9aa6'); for (let i = 0; i < 4; i++) { const x = -0.6 + i * 0.4; mb.box(x, 0.02, -0.15, 0.03, 0.2, 0.2, '#2a2a36'); mb.box(x, 0.2, 0, 0.03, 0.12, 0.35, ['#e5484d', '#4a8fe0', '#ffd84a', '#ffffff'][i]); } };
+MODELS.ropeway = (mb, w, d) => {
+  mb.box(0, 0, 0.2, w - 0.3, 1.2, d - 0.8, '#e8e4dc'); mb.box(0, 1.2, 0.2, w - 0.2, 0.1, d - 0.7, '#c03040');
+  mb.box(0, 0, -d / 2 + 0.3, 0.3, 2.6, 0.3, '#9a9aa6'); mb.box(0, 2.6, -d / 2 + 0.3, 1.6, 0.12, 0.2, '#5a5a66');
+  mb.box(-0.6, 1.9, -d / 2 + 0.35, 0.55, 0.45, 0.5, '#c03040'); mb.box(-0.6, 2.0, -d / 2 + 0.1, 0.45, 0.2, 0.02, '#8fc8e8', { glow: '#ffe8a0' }); mb.box(-0.6, 2.35, -d / 2 + 0.35, 0.04, 0.3, 0.04, '#5a5a66');
+  mb.icon('ferris', 0, 1.0, d / 2 - 0.39, 0.34, 0);
+};
+MODELS.tulip = (mb, w) => { mb.box(0, 0, 0, w - 0.1, 0.06, 0.8, '#5a3a24'); for (let i = 0; i < 12; i++) { const x = -w / 2 + 0.2 + (i % 6) * (w - 0.4) / 5, z = -0.2 + Math.floor(i / 6) * 0.4; mb.box(x, 0.06, z, 0.03, 0.22, 0.03, '#3e8a3c'); mb.box(x, 0.26, z, 0.1, 0.1, 0.1, ['#e5484d', '#ffd84a', '#f59ac0', '#ffffff'][i % 4]); } };
+MODELS.cosmos = (mb, w, d) => { mb.box(0, 0, 0, w - 0.1, 0.05, d - 0.1, '#4a7a3a'); for (let i = 0; i < 20; i++) { const x = -w / 2 + 0.25 + (i % 5) * (w - 0.5) / 4, z = -d / 2 + 0.25 + Math.floor(i / 5) * (d - 0.5) / 3; mb.box(x, 0.05, z, 0.02, 0.3, 0.02, '#4cb85c'); mb.box(x, 0.33, z, 0.12, 0.04, 0.12, ['#ff80c0', '#ffffff', '#c9306a', '#ffb0d0'][i % 4]); } };
+MODELS.torii = (mb) => { for (const x of [-0.35, 0.35]) mb.cyl(x, 0, 0, 0.06, 0.07, 1.3, '#d83a2a', 6); mb.box(0, 1.3, 0, 1.05, 0.1, 0.14, '#2a2a2a'); mb.box(0, 1.2, 0, 0.95, 0.08, 0.12, '#d83a2a'); mb.box(0, 1.0, 0, 0.82, 0.06, 0.08, '#d83a2a'); mb.box(0, 1.05, 0.05, 0.14, 0.14, 0.02, '#2a2a2a'); };
+MODELS.windmill = (mb) => { mb.cyl(0, 0, 0, 0.45, 0.6, 1.8, '#f4ecdc', 8); mb.cyl(0, 1.8, 0, 0.5, 0.05, 0.5, '#a0683c', 8); mb.box(0, 1.6, 0.58, 0.12, 0.12, 0.12, '#5a3a24'); for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2 + 0.4; mb.box(Math.sin(a) * 0.55, 1.6 + Math.cos(a) * 0.55, 0.65, 0.12 + Math.abs(Math.sin(a)) * 0.9, 0.12 + Math.abs(Math.cos(a)) * 0.9, 0.02, '#f8f4ec'); } mb.box(0, 0, 0.6, 0.3, 0.5, 0.04, '#7a4c2c'); };
+
+// ---------- イベント 8 ----------
+EVENTS.push(
+  { id: 'tsukimi', name: 'お月見', when: d => d.month === 9 && d.part === 2, desc: '夜の空港でお月見。見学客が増える', visitors: 1.3 },
+  { id: 'koyo', name: '紅葉シーズン', when: d => d.month === 11 && d.part === 0, desc: 'もみじが色づく。観光のお客さんが増える', visitors: 1.4, demand: 1.05 },
+  { id: 'graduation', name: '卒業旅行シーズン', when: d => d.month === 3 && d.part === 1, desc: '学生さんの旅行が増える', demand: 1.1, apply: () => { G.flags.schoolTrip = true; } },
+  { id: 'summervac', name: '夏休み', when: d => d.month === 7 && d.part === 2, desc: '家族旅行のお客さんがいっぱい', demand: 1.15, visitors: 1.3 },
+);
+RANDOM_EVENTS.push(
+  { id: 'golfopen', name: 'ゴルフの大会', p: 0.03, minRank: 3, desc: 'ゴルファーのお客さんがやってくる', apply: () => { G.flags.golf = true; } },
+  { id: 'cosplayfes', name: 'コスプレイベント', p: 0.03, minRank: 3, desc: 'コスプレイヤーと見学客が集まる！', visitors: 1.6, apply: () => { G.flags.cosplay = true; } },
+  { id: 'foodfair', name: '空弁フェア', p: 0.04, minRank: 2, desc: '今日は飲食店の売上 +20%', apply: () => { G.flags.foodfair = true; } },
+  { id: 'vipjet', name: 'プライベートジェットの来訪', p: 0.03, minRank: 4, desc: '着陸料とお礼のお金が入った', apply: () => { const v = 400000 * G.rank; earn(v, 'landing'); toast(`プライベートジェットから ${fmtYen(v)}！`, 'gold', 'plane2'); } },
+);
+
+// ---------- つぶやき 10 ----------
+VOICES.push(
+  { t: 'ゴルフ日和だ！', c: p => p.type === 'golfer' },
+  { t: 'ゲレンデが待ってる〜', c: p => p.type === 'skier' },
+  { t: 'この衣装、自信作なんです！', c: p => p.type === 'cosplay' },
+  { t: '空港グルメ、全部食べたい…！', c: p => p.type === 'foodie' || (p.needs && p.needs[0] === 'food' && Object.values(G.blds).filter(b => B[b.id].cat === 'food').length >= 8) },
+  { t: '充電できるところないかな', c: p => p.type === 'gamer' || p.type === 'biz' },
+  { t: '急いでいます、通してください！', c: p => p.type === 'medic' },
+  { t: '同行二人（どうぎょうににん）…', c: p => p.type === 'ohenro' },
+  { t: '今夜のライブ、楽しみ！', c: p => p.type === 'musician' || p.type === 'idol' },
+  { t: 'プッシュバックって、かっこいいね', c: p => RT.planes.some(pl => pl.state === 'pushback' && Math.hypot(pl.x - p.x, pl.z - p.z) < 12) },
+  { t: 'ジャンボだ！ 2階建てだよ！', c: p => RT.planes.some(pl => (pl.fl.type === 'b744' || pl.fl.type === 'whale') && pl.y < 1 && Math.hypot(pl.x - p.x, pl.z - p.z) < 14) },
+);
+
+// ---------- 開発・イベントの効果 ----------
+{
+  const _svc = facSvc;
+  facSvc = function (b, p) {
+    const def = B[b.id]; let t = _svc(b, p);
+    if (def.kind === 'checkin' && G.research.mobileck) t *= 0.8;
+    if (def.kind === 'security' && G.research.queuemgmt) t *= 0.85;
+    if (def.kind === 'baggage' && G.research.quickbag) t *= 0.8;
+    return t;
+  };
+  const E = Extra;
+  const _price = E.priceMul, _gap = E.gapMul, _up = E.upkeepMul, _rate = E.ratingAdd, _vis = E.visitorMul, _daily = E.daily, _mood = E.moodStart, _xp = E.extraPax;
+  E.priceMul = (b, p) => {
+    const def = B[b.id]; let k = _price(b, p);
+    if (G.research.localfest && def.cat === 'food') k *= 1.08;
+    if (G.research.premium && def.cat === 'shop') k *= 1.08;
+    if (G.research.loyalty) k *= 1.05;
+    if (G.flags.foodfair && def.cat === 'food') k *= 1.2;
+    if (p && p.type === 'foodie' && def.cat === 'food') k *= 1.3;
+    return k;
+  };
+  E.gapMul = () => _gap() * (G.research.slotplus ? 0.92 : 1);
+  E.upkeepMul = () => _up() * (G.research.greenroof ? 0.95 : 1);
+  E.ratingAdd = () => _rate() + (G.research.greenroof ? 0.05 : 0) + (G.research.noisecut ? 0.1 : 0);
+  E.visitorMul = () => _vis() * (G.research.tourbus ? 1.2 : 1);
+  E.moodStart = p => _mood(p) + (G.research.loyalty ? 2 : 0);
+  E.daily = () => {
+    _daily();
+    if (G.research.salesrep) for (const a of Object.values(G.airlines)) a.rel = Math.min(100, a.rel + 0.4);
+    G.flags.golf = G.flags.cosplay = G.flags.foodfair = false;
+  };
+  E.extraPax = fl => {
+    if (G.flags.golf && Math.random() < 0.15) return 'golfer';
+    if (G.flags.cosplay && Math.random() < 0.12) return 'cosplay';
+    const d = dateOf(G.day);
+    if (d.season === 3 && CITIES[fl.city] && ['sapporo', 'asahikawa', 'obihiro', 'memanbetsu', 'kushiro'].includes(fl.city) && Math.random() < 0.2) return 'skier';
+    return _xp(fl);
+  };
+}
+// 回数の記録
+Bus.on('moved', () => { G.flags.moves = (G.flags.moves || 0) + 1; });
+Bus.on('departed', () => { G.flags.pushbacks = (G.flags.pushbacks || 0) + 1; });
+
+// ============================================================
 //  一日のまとめ・銀行（借入）
 // ============================================================
 const INC_NAMES = { landing: '着陸料', pfc: '旅客の使用料', food: '飲食', shop: 'ショップ', svc: 'サービス・娯楽', park: '駐車場・レンタカー', hotel: '宿泊', cargo: '貨物', fuel: '燃料', other: 'そのほか' };
@@ -8374,7 +8748,7 @@ const Bank = {
     a = Math.min(a, this.loan(), Math.max(0, G.money));
     if (a <= 0) { toast(this.loan() ? 'お金が足りません' : '借入はありません', 'bad'); Sound.se('error'); return false; }
     G.loan = this.loan() - a; G.money -= a;
-    if (G.loan < 1) G.loan = 0;
+    if (G.loan < 1) { G.loan = 0; G.flags.repaidAll = true; }
     G.stat.today.repaid = (G.stat.today.repaid || 0) + a;
     G.loanLog = (G.loanLog || []).concat([[G.day, -a]]).slice(-8);
     Sound.se('money'); toast(`${fmtYen(a)} 返しました`, 'good', 'money');

@@ -234,7 +234,7 @@ function renderBuildBar() {
   let h = '';
   if (t.type === 'build' || t.type === 'move') {
     const d = B[t.id];
-    h = `${iconImg(d.icon)}<div class="msg"><b>${t.type === 'move' ? '移動：' : ''}${d.name}</b> <span class="sub">${t.type === 'move' ? '' : fmtYen(d.cost)}</span><div class="sub" id="bbMsg">${t.type === 'move' ? '動かしたい場所をタップ（決めるまで元の建物はそのまま）' : '置きたい場所をタップ'}</div>${B[t.id].kind !== 'decor' && B[t.id].kind !== 'runway' ? '<div class="sub">黄色い▲が正面です' + (B[t.id].kind === 'stand' ? '（機首の向き＝搭乗口・ターミナル側）' : B[t.id].kind === 'gate' ? '（ターミナルの通路側。うしろに駐機場を）' : '（入口・通路の側）') + '</div>' : ''}</div>
+    h = `${iconImg(d.icon)}<div class="msg"><b>${t.type === 'move' ? '移動：' : ''}${d.name}</b> <span class="sub">${t.type === 'move' ? '' : fmtYen(d.cost)}</span><div class="sub" id="bbMsg">${t.type === 'move' ? '動かしたい場所をタップ（決めるまで元の建物はそのまま）' : '置きたい場所をタップ'}</div>${B[t.id].kind !== 'decor' && B[t.id].kind !== 'runway' ? '<div class="sub">▲＝正面' + (B[t.id].kind === 'stand' ? '（機首・ターミナル側）' : B[t.id].kind === 'gate' ? '（通路側。うしろに駐機場）' : '（入口）') + '</div>' : ''}</div>
       <button class="pbtn sm" id="bbRot">${iconImg('rotate', 's')}回転</button>${UI.touch ? '<button class="pbtn sm green" id="bbOk">建てる</button>' : ''}<button class="pbtn sm red" id="bbX">やめる</button>`;
   } else if (t.type === 'paint') {
     const d = B[t.id];
@@ -600,6 +600,7 @@ function renderInfo() {
       rows.push(['番号', b.num + '番'], ['大きさ', ['', '小型機', '中型機まで', '大型機まで'][def.cls]], ['搭乗口', g ? (B[g.id].bus ? 'バスラウンジ' : '搭乗口' + g.num) : 'なし']);
       const fl = RT.todayFlights.find(f => f.id === b.busy);
       rows.push(['いまの飛行機', fl ? `${fl.code} ${CITIES[fl.city].name}` : '空き']);
+      rows.push(['向き', '黄色い▲が正面（機首の向き）']);
     }
     if (def.kind === 'gate') {
       const st = G.blds[b.stand];
@@ -680,6 +681,21 @@ function showSelBox(b) {
   const g = new THREE.BoxGeometry(w + 0.1, 0.05, h + 0.1);
   const m = new THREE.LineSegments(new THREE.EdgesGeometry(g), new THREE.LineBasicMaterial({ color: '#ffd84a' }));
   m.position.set(b.x + w / 2, floorH(b.x, b.y) + 0.06, b.y + h / 2);
+  // 正面の矢印と、つながっている搭乗口・駐機場への線
+  if (def.kind !== 'decor' && def.kind !== 'runway' && !def.paint) {
+    const [fx, fy] = frontDir(b.rot);
+    const sh = new THREE.Shape(); sh.moveTo(-0.3, 0); sh.lineTo(0.3, 0); sh.lineTo(0, 0.4); sh.closePath();
+    const ag = new THREE.ShapeGeometry(sh); ag.rotateX(Math.PI / 2);
+    const am = new THREE.Mesh(ag, new THREE.MeshBasicMaterial({ color: '#ffd84a', side: THREE.DoubleSide, depthTest: false, transparent: true }));
+    am.renderOrder = 9; am.rotation.y = Math.atan2(fx, fy) - 0; am.position.set(fx * (w / 2 + 0.15), 0.05, fy * (h / 2 + 0.15));
+    am.rotation.order = 'YXZ'; m.add(am);
+  }
+  const other = def.kind === 'stand' ? G.blds[b.gate] : def.kind === 'gate' ? G.blds[b.stand] : null;
+  if (other) {
+    const c0 = bCenter(b), c1 = bCenter(other), y = 0.35;
+    const ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(c0.x - m.position.x, y, c0.z - m.position.z), new THREE.Vector3(c1.x - m.position.x, y, c1.z - m.position.z)]), new THREE.LineBasicMaterial({ color: '#5fe08a', depthTest: false, transparent: true }));
+    ln.renderOrder = 9; m.add(ln);
+  }
   UI.selBox = m; R.scene.add(m);
 }
 function startMove(b) {

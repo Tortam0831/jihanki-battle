@@ -371,7 +371,7 @@ function tutorialStep(ch, i) {
     case 0: return { kind: 'build', id: 'runway_s', x: X(27), y: Y(32), rot: 0, say: '滑走路は飛行機が降りたり飛び立ったりする道。青く光っている場所に置いてみよう！（Rキーや「回転」で向きを変えられます）' };
     case 1: return { kind: 'build', id: 'tower', x: X(40), y: Y(27), rot: 0, say: '管制塔は飛行機に指示を出す場所。これがないと飛行機は来られないよ。' };
     case 2:
-      if (!anyKind('stand')) return { kind: 'build', id: 'stand_s', x: X(30), y: Y(28), rot: 2, say: '駐機場は飛行機がとまって、お客さんが乗り降りする場所。' };
+      if (!anyKind('stand')) return { kind: 'build', id: 'stand_s', x: X(30), y: Y(28), rot: 2, say: '駐機場は飛行機がとまって、お客さんが乗り降りする場所。黄色い▲が正面（機首の向き）。▲をターミナル側に、うしろを誘導路側に向けて置こう。' };
       return { kind: 'paint', id: 'taxiway', x: X(27), y: Y(31), x1: X(38), y1: Y(31), say: '誘導路で滑走路と駐機場をつなごう。青い場所を、はしからはしまでドラッグしてぬってね。' };
     case 3:
       if (termTiles() < 20) return { kind: 'paint', id: 'tfloor', x: X(28), y: Y(18), x1: X(37), y1: Y(26), say: 'ターミナルの床をぬろう。左上から右下へ、四角くドラッグ！' };

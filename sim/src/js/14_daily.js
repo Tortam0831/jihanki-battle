@@ -24,7 +24,7 @@ const Bank = {
     a = Math.min(a, this.loan(), Math.max(0, G.money));
     if (a <= 0) { toast(this.loan() ? 'お金が足りません' : '借入はありません', 'bad'); Sound.se('error'); return false; }
     G.loan = this.loan() - a; G.money -= a;
-    if (G.loan < 1) G.loan = 0;
+    if (G.loan < 1) { G.loan = 0; G.flags.repaidAll = true; }
     G.stat.today.repaid = (G.stat.today.repaid || 0) + a;
     G.loanLog = (G.loanLog || []).concat([[G.day, -a]]).slice(-8);
     Sound.se('money'); toast(`${fmtYen(a)} 返しました`, 'good', 'money');
