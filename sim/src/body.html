@@ -1,0 +1,34 @@
+<canvas id="game"></canvas>
+<div id="hud" class="hidden">
+  <div id="labels"></div>
+  <div id="popups"></div>
+  <div id="topbar">
+    <div id="tbName" class="tb px"><div><div class="nm" id="apName"></div><div class="rk"><span class="rankb" id="rankB">Lv1</span> <span id="rankN"></span></div></div><div class="stars" id="stars"></div></div>
+    <div id="tbDate" class="tb px"><img class="pxi" id="wxIcon" alt=""><div><div class="d" id="dateTxt"></div><div class="t" id="clock">07:00</div></div><div class="spd" id="spd"><button data-s="0">II</button><button data-s="1" class="on">▶</button><button data-s="2">▶▶</button><button data-s="4">▶▶▶</button></div></div>
+    <div id="tbMoney" class="tb px"><img class="pxi" id="moneyIcon" alt=""><div class="m" id="money">¥0</div></div>
+  </div>
+  <div id="mission" class="px hidden"></div>
+  <div id="side">
+    <button class="pbtn" id="bRotL" title="左に回す (Q)"></button>
+    <button class="pbtn" id="bRotR" title="右に回す (E)"></button>
+    <button class="pbtn" id="bZoomIn" title="ズーム">＋</button>
+    <button class="pbtn" id="bZoomOut" title="ズーム">－</button>
+    <button class="pbtn" id="bPhoto" title="写真モード"></button>
+  </div>
+  <div id="toasts"></div>
+  <div id="buildBar" class="px hidden"></div>
+  <div id="info" class="px hidden"></div>
+  <div id="buildPanel" class="px hidden"><div id="bTabs"></div><div id="bCards"></div></div>
+  <div id="toolbar" class="px"></div>
+  <div id="tip" class="px hidden"></div>
+</div>
+<div id="modal" class="hidden"><div class="win px"><div class="whead"><span class="t" id="mTitle"></span><button class="pbtn sm" id="mClose">✕</button></div><div id="mTabs" class="wtabs hidden"></div><div class="wbody" id="mBody"></div></div></div>
+<div id="dialog" class="px hidden"><img class="por" id="dPor" alt=""><div style="flex:1;min-width:0"><div class="who" id="dWho"></div><div class="txt" id="dTxt"></div><div class="choices" id="dCh"></div></div><div class="nx" id="dNx">▼</div></div>
+<div id="title" class="hidden"><div class="box">
+  <div class="logo">そらのみなと</div>
+  <div class="logo2">～ドット空港経営記～</div>
+  <div class="btns" id="titleBtns"></div>
+  <div class="ver" id="titleVer"></div>
+</div></div>
+<div id="flash"></div>
+<div id="loading"><div>そらのみなと</div><div class="lb"><i id="loadBar"></i></div><div id="loadTxt" style="font-size:12px">じゅんび中…</div></div>
