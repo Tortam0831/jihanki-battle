@@ -18,6 +18,7 @@ function serialize() {
   const g = Object.assign({}, G);
   g.ter = undefined; g.occ = undefined;
   g.floor = rle(G.floor); g.trees = rle(G.trees); g.sectors = Array.from(G.sectors);
+  g.oneway = G.oneway && G.oneway.some(v => v) ? rle(G.oneway) : undefined;
   g.blds = Object.values(G.blds).map(b => BLD_KEYS.map(k => b[k] == null ? null : b[k]));
   g.cam = { tx: Cam.tx, tz: Cam.tz, zoom: Cam.zoom, rot: Cam.rot };
   g.saved = Date.now(); g.mapW = W; g.mapH = H;
@@ -50,6 +51,7 @@ function deserialize(json) {
     G.trees = unrle(keep.trees, Uint8Array, W * H);
     G.sectors = Uint8Array.from(keep.sectors);
   }
+  G.oneway = typeof g.oneway === 'string' && !oldMap ? unrle(g.oneway, Uint8Array, W * H) : new Uint8Array(W * H);
   G.occ = new Int32Array(W * H);
   G.blds = {};
   for (const arr of keep.blds) {

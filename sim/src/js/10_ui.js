@@ -236,6 +236,9 @@ function renderBuildBar() {
     const d = B[t.id];
     h = `${iconImg(d.icon)}<div class="msg"><b>${t.type === 'move' ? '移動：' : ''}${d.name}</b> <span class="sub">${t.type === 'move' ? '' : fmtYen(d.cost)}</span><div class="sub" id="bbMsg">${t.type === 'move' ? '動かしたい場所をタップ（決めるまで元の建物はそのまま）' : '置きたい場所をタップ'}</div>${B[t.id].kind !== 'decor' && B[t.id].kind !== 'runway' ? '<div class="sub">▲＝正面' + (B[t.id].kind === 'stand' ? '（機首・ターミナル側）' : B[t.id].kind === 'gate' ? '（通路側。うしろに駐機場）' : '（入口）') + '</div>' : ''}</div>
       <button class="pbtn sm" id="bbRot">${iconImg('rotate', 's')}回転</button>${UI.touch ? '<button class="pbtn sm green" id="bbOk">建てる</button>' : ''}<button class="pbtn sm red" id="bbX">やめる</button>`;
+  } else if (t.type === 'paint' && B[t.id].oneway) {
+    const d = B[t.id];
+    h = `${iconImg(d.icon)}<div class="msg"><b>${d.name}</b> <span class="sub">${fmtYen(d.cost)}/マス</span><div class="sub" id="bbMsg">誘導路の上を、飛行機を進ませたい向きにドラッグ（1マスだけタップで矢印を消す）</div></div>${UI.undo.length ? '<button class="pbtn sm" id="bbUndo">↶ 戻す</button>' : ''}<button class="pbtn sm red" id="bbX">やめる</button>`;
   } else if (t.type === 'paint') {
     const d = B[t.id];
     const bw = UI.brush[t.id] || 1;
@@ -440,7 +443,7 @@ function initInput() {
     const t = UI.tool;
     if (Inp.rect) {
       const r = Inp.rect; Inp.rect = null; clearRect();
-      if (t.type === 'paint') { const q = brushRect(r); const n = paintApply(t.id, q.x0, q.y0, q.x1, q.y1); if (n > 0) { Sound.se('place'); pushUndo({ type: 'paint', tiles: UI.lastPaint, cost: UI.lastPaintCost }); } }
+      if (t.type === 'paint') { const q = brushRect(r); const n = paintApply(t.id, q.x0, q.y0, q.x1, q.y1); if (n > 0) { Sound.se('place'); pushUndo(B[t.id].oneway ? { type: 'oneway', tiles: UI.lastOneway } : { type: 'paint', tiles: UI.lastPaint, cost: UI.lastPaintCost }); } }
       else if (t.type === 'demolish') {
         if (!Inp.moved || (r.x0 === r.x1 && r.y0 === r.y1)) { tapDemolish(r.x0, r.y0); }
         else { const n = clearFloor(r.x0, r.y0, r.x1, r.y1); if (n) Sound.se('demolish'); }
@@ -575,8 +578,23 @@ function updateLandLabels(force) {
 }
 
 // ---------- 情報パネル ----------
-function showInfo(sel) { UI.sel = sel; $('#info').classList.remove('hidden'); renderInfo(); }
-function hideInfo() { UI.sel = null; $('#info').classList.add('hidden'); if (UI.selBox) { R.scene.remove(UI.selBox); UI.selBox = null; } }
+function showInfo(sel) { if (!sel || sel.type !== 'plane') showRouteLine(null); UI.sel = sel; $('#info').classList.remove('hidden'); renderInfo(); }
+// 選んだ飛行機の、これから走る道（緑＝許可ずみ／赤＝まだ）
+function showRouteLine(pl) {
+  if (UI.routeLine) { R.scene.remove(UI.routeLine); UI.routeLine.traverse(o => o.geometry && o.geometry.dispose()); UI.routeLine = null; }
+  if (!pl || pl.gone || !pl.rail || pl.y > 0.5 || !pl.gr) return;
+  const rails = pl.gr.rails.length ? pl.gr.rails : [{ rail: pl.rail, off: 0 }];
+  const sg = gcSG(pl), first = pl.gr.tiles.find(e => e.st === 0), lim = first && !pl.gr.ghost ? first.s0 : 1e9;
+  const ok = [], ng = [];
+  for (const { rail, off } of rails) for (let i = 0; i < rail.n; i += 2) {
+    const s = off + rail.S[i]; if (s < sg) continue;
+    (s < lim ? ok : ng).push(new THREE.Vector3(rail.X[i], 0.12, rail.Z[i]));
+  }
+  const g = new THREE.Group();
+  for (const [pts, col] of [[ok, '#5fe08a'], [ng, '#ff5a5a']]) if (pts.length > 1) { const ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: col, depthTest: false, transparent: true })); ln.renderOrder = 9; g.add(ln); }
+  UI.routeLine = g; R.scene.add(g);
+}
+function hideInfo() { if (UI.routeLine) showRouteLine(null); UI.sel = null; $('#info').classList.add('hidden'); if (UI.selBox) { R.scene.remove(UI.selBox); UI.selBox = null; } }
 function renderInfo() {
   const s = UI.sel; if (!s) return;
   const box = $('#info');
@@ -649,6 +667,9 @@ function renderInfo() {
     if (!fl.cargo) rows.push(['到着した人', fl.paxArr + '人'], ['乗る予定', fl.paxDep + '人'], ['搭乗済み', Math.round(fl.boarded) + '人']);
     else rows.push(['貨物', P.cargo + 'トン']);
     h += rows.map(([k, v]) => `<div class="row"><b>${k}</b><span>${v}</span></div>`).join('');
+    const gs = gcStatus(pl); if (gs) h += `<div class="warn">🗼 ${gs}</div>`;
+    showRouteLine(pl);
+    if (pl.rail && pl.y < 0.5 && pl.gr) h += `<div class="sub">🗼 線：<b style="color:#3fae5a">緑</b>＝管制塔の許可が出た道　<b style="color:#e5484d">赤</b>＝許可まち</div>`;
     h += `<div class="sub" style="margin-top:6px">${P.desc}</div><div class="btns"><button class="pbtn sm blue" id="iFollow">${UI.follow === pl ? '追いかけるのをやめる' : '📷 カメラで追いかける'}</button></div>`;
     box.innerHTML = h;
     $('#iFollow').onclick = () => { UI.follow = UI.follow === pl ? null : pl; if (UI.follow) Cam.zoom = Math.max(Cam.zoom, 1.8); renderInfo(); };
@@ -1038,6 +1059,9 @@ function doUndo() {
     const b = G.blds[a.uid];
     if (!b || b.busy || !relocateBuilding(a.uid, a.from.x, a.from.y, a.from.rot)) { toast('その建物はもう戻せません', 'bad'); return; }
     Sound.se('close'); toast('移動を元に戻しました', 'good', 'rotate'); renderBuildBar(); return;
+  } else if (a.type === 'oneway') {
+    const o = OW(); for (const [i, prev] of a.tiles) o[i] = prev;
+    RT.planePathCache.clear(); RT.owDirty = true;
   } else if (a.type === 'paint') {
     for (const [i, prev] of a.tiles) { if (G.occ[i]) continue; G.floor[i] = prev; markChunk(i % W, Math.floor(i / W)); }
     worldChanged(null); World.dirtyWalls = true; refund(a.cost, 'build');

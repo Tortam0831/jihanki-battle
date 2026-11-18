@@ -62,7 +62,7 @@ function railNearestS(rail, p) {
 function railFollow(pl, dt, opt) {
   opt = opt || {};
   const rail = pl.rail; if (!rail) return true;
-  const end = Math.min(rail.len, opt.stopS != null ? opt.stopS : rail.len);
+  const end = Math.max(pl.rs, Math.min(rail.len, opt.stopS != null ? opt.stopS : rail.len));
   const remain = end - pl.rs;
   let vt = opt.vmax || V_TAXI;
   // 先のカーブにそなえて減速
@@ -72,16 +72,21 @@ function railFollow(pl, dt, opt) {
     vt = Math.min(vt, Math.sqrt(rail.V[i] * rail.V[i] + 2 * TAXI_DEC * ds));
   }
   vt = Math.min(vt, Math.sqrt(2 * TAXI_DEC * Math.max(0, remain)) + (remain > 0.03 ? 0.05 : 0));
-  // 前の飛行機
+  // 前の飛行機：自分のレールの先（中心線から0.8マス以内）にいる、同じ向きの飛行機だけを見る
+  // （すれちがい・交差は地上管制が整理する）
   if (!opt.reverse) {
     for (const o of RT.planes) {
       if (o === pl || o.y > 0.5 || o.gone) continue;
-      const dx = o.x - pl.x, dz = o.z - pl.z, d = Math.hypot(dx, dz);
+      const d = Math.hypot(o.x - pl.x, o.z - pl.z);
       const minD = (pl.P.len + o.P.len) * 0.45 + 0.4;
-      if (d < minD + 1.5 && d > 0.01) {
-        const fwd = (dx * Math.sin(pl.hdg) + dz * Math.cos(pl.hdg)) / d;
-        if (fwd > 0.6 && (o.state !== 'parked' || d < minD * 0.6)) { pl.blockT = (pl.blockT || 0) + dt; if (pl.blockT < 8) vt = Math.min(vt, Math.max(0, (d - minD) * 0.6)); break; }
-      }
+      if (d > minD + 2 || d < 0.01) continue;
+      const inStand = o.state === 'parked' || o.state === 'parking' || (o.state === 'pushback' && o.pbPhase === 0);
+      const oh = o.state === 'pushback' && o.pbPhase === 1 ? o.hdg + Math.PI : o.hdg;
+      const same = Math.cos(oh - pl.hdg) > 0.3;
+      if (inStand || !same) continue;
+      let along = -1;
+      for (let i = pl.ri || 0; i < rail.n && rail.S[i] - pl.rs < minD + 2; i++) if (Math.hypot(rail.X[i] - o.x, rail.Z[i] - o.z) < 0.8) { along = rail.S[i] - pl.rs; break; }
+      if (along > 0.05) { pl.blockT = (pl.blockT || 0) + dt; pl.blockBy = o; if (pl.blockT < 60) vt = Math.min(vt, Math.max(0, (along - minD) * 0.6)); break; }
     }
   }
   pl.spd += clamp(vt - pl.spd, -TAXI_DEC * dt, TAXI_ACC * dt);
@@ -177,7 +182,7 @@ function taxiInRail(pl, r, stand) {
     const path = target >= 0 ? planePath(ex.tile, target, allow, true) : [ex.tile];
     if (!path) continue;
     const ahead = ex.s >= s0 + 1.0;
-    const cost = ahead ? (ex.s - s0) * 0.6 + path.length : (ax.len - s0) * 1.2 + (ax.len - ex.s) + path.length + 8;
+    const cost = gcPathPenalty(path, pl) + (ahead ? (ex.s - s0) * 0.6 + path.length : (ax.len - s0) * 1.2 + (ax.len - ex.s) + path.length + 8);
     if (!best || cost < best.cost) best = { ex, path, ahead, cost };
   }
   let poly = [{ x: pl.x, z: pl.z }];
@@ -206,7 +211,7 @@ function departRails(pl, r, stand) {
   let best = null;
   for (const ex of rwExits(r, ax)) {
     const path = planePath(src, ex.tile, allow, true); if (!path) continue;
-    const cost = path.length + ex.s * 1.5;   // しきい値に近い入口ほどよい
+    const cost = path.length + ex.s * 1.5 + gcPathPenalty(path, pl) * 0.5;   // しきい値に近い入口ほどよい
     if (!best || cost < best.cost) best = { ex, path, cost };
   }
   if (!best) {

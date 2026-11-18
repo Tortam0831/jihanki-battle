@@ -197,6 +197,7 @@ function markChunk(x, y) {
 // ---------- 床ぬり ----------
 function paintCheck(id, x0, y0, x1, y1) {
   const def = B[id]; const f = def.paint;
+  if (def.oneway) return onewayCheck(x0, y0, x1, y1);
   const xa = Math.min(x0, x1), xb = Math.max(x0, x1), ya = Math.min(y0, y1), yb = Math.max(y0, y1);
   const tiles = [];
   let cost = 0;
@@ -215,6 +216,7 @@ function paintCheck(id, x0, y0, x1, y1) {
 }
 function paintApply(id, x0, y0, x1, y1) {
   const def = B[id];
+  if (def.oneway) return onewayApply(x0, y0, x1, y1);
   const { tiles, cost } = paintCheck(id, x0, y0, x1, y1);
   if (!tiles.length) return 0;
   if (G.money < cost && !G.free) { toast('お金が足りません', 'bad'); Sound.se('error'); return -1; }
@@ -621,7 +623,7 @@ function planePath(fromTile, toTile, allowStands, noRunway) {
     const x = i % W, y = (i / W) | 0;
     for (const [dx, dy] of DIRS4) {
       const nx = x + dx, ny = y + dy; if (!inMap(nx, ny)) continue;
-      const ni = idx(nx, ny); if (prev[ni] !== -2 || !ok(ni)) continue;
+      const ni = idx(nx, ny); if (prev[ni] !== -2 || !ok(ni) || !owAllowed(i, ni, dx, dy)) continue;
       prev[ni] = i; q.push(ni);
     }
   }

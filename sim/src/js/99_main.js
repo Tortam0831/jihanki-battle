@@ -231,7 +231,7 @@ function clearRuntime() {
   RT.planes = []; RT.persons = []; RT.todayFlights = [];
   People.fac.clear();
   clearAmbient(); clearExtras(); if (typeof clearGuide === 'function') clearGuide();
-  RT.fieldCache.clear(); RT.planePathCache.clear();
+  RT.fieldCache.clear(); RT.planePathCache.clear(); gcReset();
   RT.warnings = new Map(); RT.lastDay = null; RT.dirtyWalk = RT.dirtyAir = RT.dirtyBeauty = RT.dirtyCombo = RT.dirtyLinks = true;
   hideInfo(); setTool(null);
   resetWorldMeshes();
@@ -311,7 +311,7 @@ function loop(now) {
   renderPeople(dtReal);
   updateFX(dtReal);
   if (!Game.demo || true) updateExtras(spd > 0 ? dtReal / REAL_SEC_PER_GMIN * Math.min(spd, 4) : 0, dtReal);
-  DayReport.tick();
+  DayReport.tick(); updateOneway();
   if (Cam.shake > 0) Cam.shake = Math.max(0, Cam.shake - dtReal);
   renderFrame();
   // UI
@@ -337,4 +337,4 @@ function loop(now) {
   }
 }
 window.addEventListener('load', boot);
-window.__sora = { serialize, planeModel, PLANES, get G() { return G; }, dbg: { taxiInRail, departRails, rwAxis, planRollout, standGeom, axPt, relocateBuilding, rotateInPlace, openDayReport, openBank, Bank, DayReport, getField, accessTiles, findFacility, findKind, get WALKABLE() { return WALKABLE; }, People, Story, CHAPTERS, Dialog, routeCheck, checkWarnings, relinkGates }, setTool, tryPlace, RT, simStep, World, Cam, R, startGame, placeBuilding, paintApply, openRoute, B, Game, UI };
+window.__sora = { serialize, planeModel, PLANES, get G() { return G; }, dbg: { planePath, GC, showInfo, taxiInRail, departRails, rwAxis, planRollout, standGeom, axPt, relocateBuilding, rotateInPlace, openDayReport, openBank, Bank, DayReport, getField, accessTiles, findFacility, findKind, get WALKABLE() { return WALKABLE; }, People, Story, CHAPTERS, Dialog, routeCheck, checkWarnings, relinkGates }, setTool, tryPlace, RT, simStep, World, Cam, R, startGame, placeBuilding, paintApply, openRoute, B, Game, UI };
