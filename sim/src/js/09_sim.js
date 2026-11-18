@@ -228,7 +228,7 @@ function checkAchievements() {
   const nc = Object.keys(G.combos).length;
   if (nc >= 1) unlockAch('combo1'); if (nc >= 10) unlockAch('combo10'); if (nc >= COMBOS.length) unlockAch('comboall');
   if (countKind('runway') >= 3) unlockAch('runway3');
-  if (Object.keys(G.seenPlanes).some(k => k.startsWith('whale'))) unlockAch('jumbo');
+  if (Object.keys(G.seenPlanes).some(k => k.startsWith('whale') || k.startsWith('cargo_l'))) unlockAch('jumbo');
   if (Object.keys(G.seenPlanes).some(k => k.startsWith('sst'))) unlockAch('sst');
   if (G.sectors.every(v => v)) unlockAch('land');
   const nrs = Object.keys(G.research).length;

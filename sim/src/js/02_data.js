@@ -21,12 +21,12 @@ function defB(id, o) { o.id = id; o.w = o.w || 1; o.h = o.h || 1; o.upkeep = o.u
 
 // ---- 空側 ----
 defB('taxiway', { cat: 'air', name: '誘導路', paint: FLOOR.TAXI, cost: 4000, icon: 'taxiway', desc: '飛行機が通る道。滑走路と駐機場をつなごう。ドラッグで四角くぬれます。' });
-defB('runway_s', { cat: 'air', name: '短い滑走路', kind: 'runway', zone: 'air', w: 12, h: 2, cls: 1, cost: 1200000, upkeep: 6000, icon: 'runway', desc: '小型機（プロペラ機など）が使える滑走路。' });
-defB('runway_m', { cat: 'air', name: 'ふつうの滑走路', kind: 'runway', zone: 'air', w: 18, h: 2, cls: 2, cost: 4500000, upkeep: 16000, rank: 3, icon: 'runway', desc: 'ジェット機（中型まで）が使える滑走路。' });
-defB('runway_l', { cat: 'air', name: '長い滑走路', kind: 'runway', zone: 'air', w: 24, h: 3, cls: 3, cost: 12000000, upkeep: 38000, rank: 6, icon: 'runway', desc: '大型機・ジャンボ機も使える長い滑走路。' });
-defB('stand_s', { cat: 'air', name: '小型駐機場', kind: 'stand', zone: 'air', w: 3, h: 3, cls: 1, cost: 250000, upkeep: 1500, icon: 'stand', desc: '小型機がとまる場所。近く(7マス以内)にターミナルの搭乗口が必要。' });
-defB('stand_m', { cat: 'air', name: '中型駐機場', kind: 'stand', zone: 'air', w: 4, h: 4, cls: 2, cost: 700000, upkeep: 4000, rank: 3, icon: 'stand', desc: '中型ジェット機までとまれる。' });
-defB('stand_l', { cat: 'air', name: '大型駐機場', kind: 'stand', zone: 'air', w: 5, h: 5, cls: 3, cost: 1800000, upkeep: 9000, rank: 6, icon: 'stand', desc: '大型機・ジャンボ機もとまれる。' });
+defB('runway_s', { cat: 'air', name: '短い滑走路', kind: 'runway', zone: 'air', w: 12, h: 2, cls: 1, cost: 1200000, upkeep: 6000, icon: 'runway', desc: '長さ約1,700m。プロペラ機・ビジネスジェットが使える。' });
+defB('runway_m', { cat: 'air', name: 'ふつうの滑走路', kind: 'runway', zone: 'air', w: 18, h: 2, cls: 2, cost: 4500000, upkeep: 16000, rank: 3, icon: 'runway', desc: '長さ約2,500m。737・A320などのジェット機が使える。' });
+defB('runway_l', { cat: 'air', name: '長い滑走路', kind: 'runway', zone: 'air', w: 24, h: 3, cls: 3, cost: 12000000, upkeep: 38000, rank: 6, icon: 'runway', desc: '長さ約3,400m。787・777・A380などの大型機も使える。' });
+defB('stand_s', { cat: 'air', name: '小型駐機場', kind: 'stand', zone: 'air', w: 3, h: 3, cls: 1, cost: 250000, upkeep: 1500, icon: 'stand', desc: 'プロペラ機・ビジネスジェットがとまる場所。近く（7マス以内）にターミナルの搭乗口が必要。' });
+defB('stand_m', { cat: 'air', name: '中型駐機場', kind: 'stand', zone: 'air', w: 4, h: 4, cls: 2, cost: 700000, upkeep: 4000, rank: 3, icon: 'stand', desc: '737やA320などの小型ジェット機までとまれる。' });
+defB('stand_l', { cat: 'air', name: '大型駐機場', kind: 'stand', zone: 'air', w: 6, h: 6, cls: 3, cost: 1800000, upkeep: 9000, rank: 6, icon: 'stand', desc: '787・777・A380などの大型機もとまれる。' });
 defB('tower', { cat: 'air', name: '管制塔', kind: 'tower', zone: 'air', w: 2, h: 2, cost: 600000, upkeep: 5000, unique: true, icon: 'tower', desc: '空港に必ず1つ必要。これがないと飛行機が飛べません。' });
 defB('fire', { cat: 'air', name: '消防署', kind: 'fire', zone: 'air', w: 3, h: 2, cost: 800000, upkeep: 5000, rank: 2, unique: true, icon: 'fire', desc: '安全のための施設。ジェット機の路線を開くのに必要。評価もアップ。' });
 defB('fuel', { cat: 'air', name: '給油施設', kind: 'fuel', zone: 'air', w: 3, h: 2, cost: 900000, upkeep: 4000, rank: 2, unique: true, icon: 'fuel', desc: '飛行機の折り返し時間が20%短くなり、燃料の売上も入る。' });
@@ -149,35 +149,45 @@ const BUILD_ORDER = Object.keys(B);
 //  飛行機
 // ============================================================
 // cls: 必要な滑走路/駐機場の大きさ  len/span: 見た目の長さ・翼幅(マス)  eng: 'prop'|'jet'|'rear'|'jet4'
+// 実在の機体データ（全長・翼幅はメートル、1マス = 12.5m で縮小）
+// eng: prop=プロペラ / jet=主翼下ジェット / rear=胴体後部ジェット / sst / space
+// wing: high=高翼 / low=低翼  tail: T=T字尾翼 / conv=ふつう  tip: 翼端の形
+const TILE_M = 12.5;
 const PLANES = {
-  humming:  { name: 'ハミング19', cls: 1, seats: 19, len: 1.7, span: 2.0, eng: 'prop', engines: 2, turn: 30, fee: 40000, rank: 1, desc: '小さなプロペラ機。島や地方の路線で活躍。' },
-  tsubame:  { name: 'ツバメ72', cls: 1, seats: 72, len: 2.5, span: 2.7, eng: 'prop', engines: 2, turn: 35, fee: 75000, rank: 2, desc: '使いやすいターボプロップ機。' },
-  sparrow:  { name: 'スパロウ8', cls: 1, seats: 8, len: 1.6, span: 1.6, eng: 'rear', engines: 2, turn: 25, fee: 150000, rank: 5, vip: true, desc: 'ビジネスジェット。VIPがたくさん乗る。' },
-  swallow:  { name: 'スワロー90', cls: 2, seats: 90, len: 2.9, span: 2.6, eng: 'rear', engines: 2, turn: 40, fee: 120000, rank: 3, desc: 'リージョナルジェット。速くて静か。' },
-  kamome:   { name: 'カモメ170', cls: 2, seats: 170, len: 3.4, span: 3.4, eng: 'jet', engines: 2, turn: 45, fee: 200000, rank: 3, desc: 'いちばん多く飛んでいる中型ジェット。' },
-  pelican:  { name: 'ペリカン220', cls: 2, seats: 220, len: 3.9, span: 3.5, eng: 'jet', engines: 2, turn: 50, fee: 260000, rank: 5, desc: '胴体が長い中型ジェット。' },
-  cargo_s:  { name: 'カーゴカモメ', cls: 2, seats: 0, cargo: 40, len: 3.4, span: 3.4, eng: 'jet', engines: 2, turn: 50, fee: 220000, rank: 4, desc: '貨物専用の中型機。' },
-  albatross:{ name: 'アルバトロス320', cls: 3, seats: 320, len: 4.6, span: 4.8, eng: 'jet', engines: 2, turn: 70, fee: 450000, rank: 6, wide: true, desc: '長い距離を飛べる大型機。' },
-  whale:    { name: 'ホエール500', cls: 3, seats: 500, len: 5.0, span: 5.2, eng: 'jet4', engines: 4, turn: 85, fee: 750000, rank: 8, wide: true, hump: true, desc: '2階建てのジャンボ機。空の女王。' },
-  cargo_l:  { name: 'カーゴホエール', cls: 3, seats: 0, cargo: 110, len: 5.0, span: 5.2, eng: 'jet4', engines: 4, turn: 90, fee: 650000, rank: 6, wide: true, hump: true, desc: '巨大な貨物機。' },
-  sst:      { name: 'ファルコンSST', cls: 3, stand: 2, seats: 100, len: 4.4, span: 2.4, eng: 'sst', engines: 4, turn: 60, fee: 900000, rank: 9, desc: '音よりも速い夢の旅客機。' },
-  cosmo:    { name: 'コスモライナー', cls: 3, seats: 60, len: 4.6, span: 3.0, eng: 'space', engines: 3, turn: 90, fee: 2500000, rank: 10, desc: '宇宙まで行ける往還機。' },
+  humming:  { name: 'DHC-6 ツインオッター', maker: 'デ・ハビランド・カナダ', cls: 1, seats: 19, lenM: 15.8, spanM: 19.8, dia: 1.7, eng: 'prop', engines: 2, wing: 'high', tail: 'conv', gear: 'fixed', tip: 'none', vapp: 80, turn: 25, fee: 40000, rank: 1, desc: '短い滑走路でも降りられる双発プロペラ機。離島路線の主役。脚は出しっぱなし。' },
+  tsubame:  { name: 'ATR 72-600', maker: 'ATR', cls: 1, seats: 70, lenM: 27.2, spanM: 27.1, dia: 2.6, eng: 'prop', engines: 2, wing: 'high', tail: 'T', gear: 'retract', tip: 'none', vapp: 110, turn: 30, fee: 75000, rank: 2, desc: '高翼・T字尾翼のターボプロップ機。燃費がよく地方路線で大人気。' },
+  q400:     { name: 'DHC-8-400（Q400）', maker: 'デ・ハビランド・カナダ', cls: 1, seats: 74, lenM: 32.8, spanM: 28.4, dia: 2.7, eng: 'prop', engines: 2, wing: 'high', tail: 'T', gear: 'retract', tip: 'none', vapp: 125, turn: 30, fee: 85000, rank: 2, desc: '速いターボプロップ機。長い胴体とT字尾翼が目印。' },
+  sparrow:  { name: 'ガルフストリーム G650ER', maker: 'ガルフストリーム', cls: 1, seats: 13, lenM: 30.4, spanM: 30.4, dia: 2.5, eng: 'rear', engines: 2, wing: 'low', tail: 'T', gear: 'retract', tip: 'blended', vapp: 120, turn: 25, fee: 150000, rank: 5, vip: true, desc: '長距離ビジネスジェット。エンジンは胴体の後ろ。VIPを乗せてくる。' },
+  swallow:  { name: 'エンブラエル E190', maker: 'エンブラエル', cls: 2, seats: 95, lenM: 36.2, spanM: 28.7, dia: 3.0, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'blended', vapp: 130, turn: 35, fee: 120000, rank: 3, desc: '100席クラスのリージョナルジェット。' },
+  a320:     { name: 'エアバス A320neo', maker: 'エアバス', cls: 2, seats: 165, lenM: 37.6, spanM: 35.8, dia: 3.95, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'sharklet', vapp: 136, turn: 40, fee: 190000, rank: 3, desc: '世界中で飛ぶ小型ジェット。翼端の「シャークレット」が特徴。' },
+  kamome:   { name: 'ボーイング 737-800', maker: 'ボーイング', cls: 2, seats: 170, lenM: 39.5, spanM: 35.8, dia: 3.76, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'blended', vapp: 142, turn: 40, fee: 200000, rank: 3, desc: 'もっとも多く作られたジェット旅客機のひとつ。おにぎり形のエンジンが目印。' },
+  pelican:  { name: 'エアバス A321neo', maker: 'エアバス', cls: 2, seats: 220, lenM: 44.5, spanM: 35.8, dia: 3.95, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'sharklet', vapp: 140, turn: 45, fee: 260000, rank: 5, desc: 'A320の胴体を長くした型。たくさん乗れる。' },
+  cargo_s:  { name: 'ボーイング 737-800BCF', maker: 'ボーイング', cls: 2, seats: 0, cargo: 23, lenM: 39.5, spanM: 35.8, dia: 3.76, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'blended', vapp: 142, turn: 45, fee: 220000, rank: 4, desc: '旅客機を改造した貨物機。窓がない。' },
+  b767:     { name: 'ボーイング 767-300ER', maker: 'ボーイング', cls: 3, stand: 3, seats: 260, lenM: 54.9, spanM: 47.6, dia: 5.03, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'blended', vapp: 140, turn: 55, fee: 380000, rank: 6, wide: true, desc: '通路が2本ある中型ワイドボディ機。' },
+  albatross:{ name: 'ボーイング 787-9', maker: 'ボーイング', cls: 3, seats: 290, lenM: 62.8, spanM: 60.1, dia: 5.77, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'raked', vapp: 145, turn: 60, fee: 450000, rank: 6, wide: true, desc: 'しなる主翼とギザギザのエンジンカバー。静かで燃費のよい長距離機。' },
+  a350:     { name: 'エアバス A350-900', maker: 'エアバス', cls: 3, seats: 320, lenM: 66.8, spanM: 64.8, dia: 5.96, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'curved', vapp: 140, turn: 65, fee: 500000, rank: 7, wide: true, desc: 'アイマスクのような操縦席の窓と、上に反った翼端が特徴。' },
+  b777:     { name: 'ボーイング 777-300ER', maker: 'ボーイング', cls: 3, seats: 370, lenM: 73.9, spanM: 64.8, dia: 6.2, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'raked', vapp: 150, turn: 70, fee: 600000, rank: 7, wide: true, bigEng: true, desc: '世界最大級の双発機。エンジンが胴体くらい太い。' },
+  whale:    { name: 'エアバス A380-800', maker: 'エアバス', cls: 3, seats: 500, lenM: 72.7, spanM: 79.8, dia: 7.1, eng: 'jet', engines: 4, wing: 'low', tail: 'conv', gear: 'retract', tip: 'fence', vapp: 140, turn: 85, fee: 750000, rank: 8, wide: true, deck2: true, desc: '総2階建ての世界最大の旅客機。4発エンジン。' },
+  cargo_l:  { name: 'ボーイング 747-8F', maker: 'ボーイング', cls: 3, seats: 0, cargo: 134, lenM: 76.3, spanM: 68.4, dia: 6.5, eng: 'jet', engines: 4, wing: 'low', tail: 'conv', gear: 'retract', tip: 'raked', vapp: 155, turn: 90, fee: 650000, rank: 6, wide: true, hump: true, desc: 'ジャンボ機の貨物型。機首がパカッと開く。' },
+  sst:      { name: '次世代超音速機 SST-X（架空）', maker: '架空', cls: 3, stand: 2, seats: 80, lenM: 61, spanM: 32, dia: 3.2, eng: 'sst', engines: 4, wing: 'low', tail: 'conv', gear: 'retract', tip: 'none', vapp: 160, turn: 60, fee: 900000, rank: 9, desc: '音速の1.7倍で飛ぶ、未来の旅客機（架空）。' },
+  cosmo:    { name: '宇宙往還機 コスモライナー（架空）', maker: '架空', cls: 3, seats: 60, lenM: 62, spanM: 40, dia: 4.5, eng: 'space', engines: 3, wing: 'low', tail: 'conv', gear: 'retract', tip: 'none', vapp: 170, turn: 90, fee: 2500000, rank: 10, desc: '滑走路から飛び立ち、そのまま宇宙へ（架空）。' },
 };
+for (const P of Object.values(PLANES)) { P.len = P.lenM / TILE_M; P.span = P.spanM / TILE_M; }
 
 // ============================================================
 //  航空会社（すべて架空）
 // ============================================================
 const AIRLINES = {
-  soyokaze: { name: 'そよかぜエア', code: 'SY', body: '#ffffff', tail: '#4cb85c', accent: '#ffd84a', fleet: ['humming', 'tsubame'], rank: 1, cities: ['shimo', 'kita', 'sendai', 'niigata', 'kochi', 'matsuyama', 'okushiri', 'tokyo'], desc: '地元の小さな航空会社。担当はツバサさん。' },
-  haruka:   { name: 'はるか航空', code: 'HR', body: '#ffffff', tail: '#3a7bd5', accent: '#e5484d', fleet: ['tsubame', 'swallow', 'kamome', 'pelican'], rank: 2, cities: ['tokyo', 'osaka', 'sapporo', 'fukuoka', 'nagoya', 'sendai', 'hiroshima', 'kagoshima', 'naha'], desc: '国内を広く飛ぶ大手。' },
-  penguin:  { name: 'ペンギンエクスプレス', code: 'PG', body: '#ffffff', tail: '#2a2a36', accent: '#ffd84a', fleet: ['kamome'], rank: 3, lcc: true, cities: ['tokyo', 'osaka', 'sapporo', 'fukuoka', 'naha', 'seoul', 'taipei'], desc: '安い運賃のLCC。たくさん乗るが、お買い物は少なめ。' },
-  mermaid:  { name: 'マーメイドエア', code: 'MM', body: '#ffffff', tail: '#3fd0c9', accent: '#ff7a8a', fleet: ['tsubame', 'kamome'], rank: 3, resort: true, cities: ['naha', 'ishigaki', 'miyako', 'amami', 'guam', 'honolulu'], desc: '南の島へ飛ぶリゾート航空。観光客が多い。' },
-  north:    { name: 'ノースウイング', code: 'NW', body: '#ffffff', tail: '#2b3f80', accent: '#c8d0e0', fleet: ['swallow', 'kamome'], rank: 3, cities: ['sapporo', 'hakodate', 'kushiro', 'aomori', 'sendai', 'vladi'], desc: '北の空にくわしい航空会社。' },
+  soyokaze: { name: 'そよかぜエア', code: 'SY', body: '#ffffff', tail: '#4cb85c', accent: '#ffd84a', fleet: ['humming', 'tsubame', 'q400'], rank: 1, cities: ['shimo', 'kita', 'sendai', 'niigata', 'kochi', 'matsuyama', 'okushiri', 'tokyo'], desc: '地元の小さな航空会社。担当はツバサさん。' },
+  haruka:   { name: 'はるか航空', code: 'HR', body: '#ffffff', tail: '#3a7bd5', accent: '#e5484d', fleet: ['q400', 'swallow', 'a320', 'kamome', 'pelican', 'b767', 'albatross'], rank: 2, cities: ['tokyo', 'osaka', 'sapporo', 'fukuoka', 'nagoya', 'sendai', 'hiroshima', 'kagoshima', 'naha'], desc: '国内を広く飛ぶ大手。' },
+  penguin:  { name: 'ペンギンエクスプレス', code: 'PG', body: '#ffffff', tail: '#2a2a36', accent: '#ffd84a', fleet: ['a320', 'kamome', 'pelican'], rank: 3, lcc: true, cities: ['tokyo', 'osaka', 'sapporo', 'fukuoka', 'naha', 'seoul', 'taipei'], desc: '安い運賃のLCC。たくさん乗るが、お買い物は少なめ。' },
+  mermaid:  { name: 'マーメイドエア', code: 'MM', body: '#ffffff', tail: '#3fd0c9', accent: '#ff7a8a', fleet: ['tsubame', 'a320', 'kamome', 'b767'], rank: 3, resort: true, cities: ['naha', 'ishigaki', 'miyako', 'amami', 'guam', 'honolulu'], desc: '南の島へ飛ぶリゾート航空。観光客が多い。' },
+  north:    { name: 'ノースウイング', code: 'NW', body: '#ffffff', tail: '#2b3f80', accent: '#c8d0e0', fleet: ['q400', 'swallow', 'kamome'], rank: 3, cities: ['sapporo', 'hakodate', 'kushiro', 'aomori', 'sendai', 'vladi'], desc: '北の空にくわしい航空会社。' },
   aozora:   { name: 'あおぞらカーゴ', code: 'AC', body: '#ffffff', tail: '#f08a24', accent: '#2a2a36', fleet: ['cargo_s', 'cargo_l'], rank: 4, cargo: true, cities: ['tokyo', 'osaka', 'shanghai', 'hongkong', 'singapore', 'la'], desc: '荷物を運ぶ貨物航空会社。' },
-  sakura:   { name: 'サクラ・インターナショナル', code: 'SK', body: '#ffffff', tail: '#f07aa8', accent: '#b03060', fleet: ['kamome', 'pelican', 'albatross', 'whale'], rank: 4, cities: ['seoul', 'taipei', 'shanghai', 'hongkong', 'bangkok', 'singapore', 'manila', 'hanoi', 'honolulu', 'sydney', 'paris'], desc: 'アジアを結ぶ国際線の大手。' },
-  eagle:    { name: 'ゴールデンイーグル航空', code: 'GE', body: '#f8f4ec', tail: '#c0302a', accent: '#e8b830', fleet: ['albatross', 'whale'], rank: 6, cities: ['la', 'newyork', 'vancouver', 'honolulu', 'dubai', 'london'], desc: '太平洋をまたぐ大きな航空会社。' },
-  aurora:   { name: 'オーロラ・ノルディック', code: 'AN', body: '#ffffff', tail: '#7a4fc0', accent: '#5ce0a0', fleet: ['pelican', 'albatross'], rank: 7, cities: ['helsinki', 'london', 'paris', 'dubai'], desc: 'ヨーロッパへの直行便。' },
-  koala:    { name: 'コアラ・パシフィック', code: 'KP', body: '#ffffff', tail: '#7a8a90', accent: '#a8d840', fleet: ['albatross'], rank: 7, resort: true, cities: ['sydney', 'cairns', 'auckland', 'guam'], desc: '南半球の航空会社。' },
+  sakura:   { name: 'サクラ・インターナショナル', code: 'SK', body: '#ffffff', tail: '#f07aa8', accent: '#b03060', fleet: ['a320', 'pelican', 'b767', 'albatross', 'a350', 'whale'], rank: 4, cities: ['seoul', 'taipei', 'shanghai', 'hongkong', 'bangkok', 'singapore', 'manila', 'hanoi', 'honolulu', 'sydney', 'paris'], desc: 'アジアを結ぶ国際線の大手。' },
+  eagle:    { name: 'ゴールデンイーグル航空', code: 'GE', body: '#f8f4ec', tail: '#c0302a', accent: '#e8b830', fleet: ['albatross', 'b777', 'whale'], rank: 6, cities: ['la', 'newyork', 'vancouver', 'honolulu', 'dubai', 'london'], desc: '太平洋をまたぐ大きな航空会社。' },
+  aurora:   { name: 'オーロラ・ノルディック', code: 'AN', body: '#ffffff', tail: '#7a4fc0', accent: '#5ce0a0', fleet: ['a350', 'albatross'], rank: 7, cities: ['helsinki', 'london', 'paris', 'dubai'], desc: 'ヨーロッパへの直行便。' },
+  koala:    { name: 'コアラ・パシフィック', code: 'KP', body: '#ffffff', tail: '#7a8a90', accent: '#a8d840', fleet: ['albatross', 'b777'], rank: 7, resort: true, cities: ['sydney', 'cairns', 'auckland', 'guam'], desc: '南半球の航空会社。' },
   falcon:   { name: 'ロイヤルファルコン', code: 'RF', body: '#2a1a22', tail: '#8a1f2f', accent: '#e8c050', fleet: ['sparrow', 'sst'], rank: 8, lux: true, needRating: 4.3, cities: ['tokyo', 'singapore', 'dubai', 'london', 'newyork', 'paris'], desc: '超高級航空会社。評価★4.3以上の空港にしか来ない。' },
   cosmo:    { name: 'コスモライン', code: 'CL', body: '#e8eef8', tail: '#1a1a3a', accent: '#40e0ff', fleet: ['cosmo'], rank: 10, space: true, needRating: 4.5, cities: ['moon', 'orbit'], desc: '宇宙への定期便！' },
 };
@@ -371,8 +381,8 @@ const ACHIEVEMENTS = [
   { id: 'combo10', name: 'くみあわせ名人', desc: '組み合わせを10個発見', icon: 'note' },
   { id: 'comboall', name: 'くみあわせ博士', desc: '組み合わせをすべて発見', icon: 'note' },
   { id: 'runway3', name: '3本の滑走路', desc: '滑走路を3本持つ', icon: 'runway' },
-  { id: 'jumbo', name: '空の女王', desc: 'ホエール500がやってきた', icon: 'plane' },
-  { id: 'sst', name: '音速の翼', desc: 'ファルコンSSTがやってきた', icon: 'plane2' },
+  { id: 'jumbo', name: '空の巨人', desc: 'A380か747がやってきた', icon: 'plane' },
+  { id: 'sst', name: '音速の翼', desc: '超音速機がやってきた', icon: 'plane2' },
   { id: 'land', name: '土地もち', desc: '土地を全部買った', icon: 'flag' },
   { id: 'research', name: '研究熱心', desc: '開発を15こ完了', icon: 'flask' },
   { id: 'research_all', name: '未来の空港', desc: '開発をすべて完了', icon: 'flask' },

@@ -640,125 +640,183 @@ function buildModel(id, opt) {
 }
 
 // ============================================================
-//  飛行機モデル
+//  飛行機モデル（実在機の寸法・形にあわせて作る）
 // ============================================================
 const _planeGeoCache = new Map();
+const LIGHT_MATS = {};
+function lightMat(col) { return LIGHT_MATS[col] || (LIGHT_MATS[col] = new THREE.MeshBasicMaterial({ color: col, fog: false })); }
 function planeModel(typeId, airlineId) {
   const key = typeId + ':' + airlineId;
   let gs = _planeGeoCache.get(key);
   if (!gs) { gs = makePlaneGeos(typeId, airlineId); _planeGeoCache.set(key, gs); }
   const g = new THREE.Group();
-  if (gs.L) { const m = new THREE.Mesh(gs.L, R.matLambert); m.castShadow = true; m.receiveShadow = true; g.add(m); }
-  if (gs.G) { const m = new THREE.Mesh(gs.G, GlowMat()); g.add(m); }
-  if (gs.props) for (const p of gs.props) { const pm = new THREE.Mesh(p.geo, R.matLambert); pm.position.copy(p.pos); pm.userData.prop = true; g.add(pm); }
+  const add = (geo, mat, shadow) => { if (!geo) return null; const m = new THREE.Mesh(geo, mat); m.castShadow = !!shadow; m.receiveShadow = !!shadow; m.userData.shared = true; g.add(m); return m; };
+  add(gs.L, R.matLambert, true);
+  add(gs.G, GlowMat());
+  const gear = add(gs.gear, R.matLambert, true);
+  const beacon = add(gs.beacon, lightMat('#ff2a2a'));
+  const strobe = add(gs.strobe, lightMat('#ffffff'));
+  const land = add(gs.land, lightMat('#fff6d0'));
+  add(gs.nav, lightMat('#ffffff'));
+  const props = [];
+  for (const p of gs.props) { const pm = new THREE.Mesh(p.geo, R.matLambert); pm.position.copy(p.pos); pm.userData.shared = true; g.add(pm); props.push(pm); }
+  g.userData = { gear, beacon, strobe, land, props, door: gs.door, fixedGear: gs.fixedGear };
   return g;
 }
 function makePlaneGeos(typeId, airlineId) {
   const P = PLANES[typeId], A = AIRLINES[airlineId] || AIRLINES.soyokaze;
-  const mb = new ModelBuilder();
-  const L = P.len, S = P.span;
-  const fw = P.wide ? 0.6 : P.cls === 1 ? 0.3 : 0.42, fh = fw * 1.05;
-  const body = A.body, tail = A.tail, acc = A.accent, belly = shade(body, -0.12);
-  const y0 = 0.22 + fh * 0.2;          // 胴体の下端
+  const mb = new ModelBuilder(), gearB = new ModelBuilder(), beaconB = new ModelBuilder(), strobeB = new ModelBuilder(), landB = new ModelBuilder(), navB = new ModelBuilder();
+  const L = P.len, S = P.span, hs = S / 2;
+  const space = P.eng === 'space', sst = P.eng === 'sst', prop = P.eng === 'prop';
+  const fw = Math.max(0.16, P.dia / TILE_M * 1.3), fh = fw * (P.deck2 ? 1.22 : 1.04);
+  const y0 = Math.max(0.07, fw * (prop ? 0.42 : 0.38));
   const zb = -L / 2, zf = L / 2;
-  const space = P.eng === 'space', sst = P.eng === 'sst';
-  // 胴体（段々で細くする）
-  const core0 = zb + L * 0.18, core1 = zf - L * 0.16;
-  mb.box(0, y0, (core0 + core1) / 2, fw, fh, core1 - core0, body);
-  mb.box(0, y0, (core0 + core1) / 2, fw + 0.01, fh * 0.25, core1 - core0, belly);
-  // 機首
-  const nose = [[0.85, 0.9, 0.06], [0.7, 0.8, 0.05], [0.5, 0.6, 0.04]];
-  let z = core1;
-  const nl = (zf - core1) / 3;
-  for (let i = 0; i < 3; i++) {
-    const [sw, sh] = nose[i];
-    mb.box(0, y0 + fh * (1 - sh) * 0.35, z + nl / 2, fw * sw, fh * sh, nl, body);
-    if (i === 0) mb.box(0, y0 + fh * 0.62, z + nl * 0.6, fw * sw * 0.9, fh * 0.16, nl * 0.5, '#2a3a50', { glow: '#8090a0' });
-    z += nl;
+  const body = A.body, tail = A.tail, acc = A.accent, belly = shade(body, -0.1);
+  const WING = body === '#ffffff' || body === '#f8f4ec' ? '#cdd2dc' : shade(body, 0.1), WING2 = '#9aa0ae';
+  const win = '#3a4a60', winGlow = '#ffe2a0';
+  // ---- 胴体 ----
+  const c0 = zb + L * (prop ? 0.24 : 0.22), c1 = zf - L * (P.deck2 ? 0.1 : 0.13);
+  const mid = (c0 + c1) / 2, clen = c1 - c0;
+  mb.box(0, y0 + fh * 0.12, mid, fw, fh * 0.76, clen, body);
+  mb.box(0, y0, mid, fw * 0.78, fh, clen, body);
+  mb.box(0, y0 - 0.005, mid, fw * 0.8, fh * 0.2, clen, belly);
+  // 機首（3段で丸く）
+  const nl = (zf - c1) / 3;
+  [[0.9, 0.92, 0.0], [0.72, 0.8, 0.06], [0.46, 0.55, 0.16]].forEach(([sw, sh, lift], i) => {
+    const z = c1 + nl * (i + 0.5);
+    mb.box(0, y0 + fh * lift, z, fw * sw, fh * sh, nl, body);
+    if (i === 1) mb.box(0, y0 + fh * (lift + sh * 0.62), z + nl * 0.1, fw * sw * (typeId === 'a350' ? 1.02 : 0.92), fh * 0.16, nl * 0.85, '#1e2836', { glow: '#556070' });
+  });
+  if (sst) mb.box(0, y0 + fh * 0.25, zf + nl * 0.5, fw * 0.28, fh * 0.25, nl, body);
+  // 尾部（下が上がっていく）
+  const tl = (c0 - zb) / 4;
+  for (let i = 0; i < 4; i++) {
+    const t = (i + 0.5) / 4, sh = 1 - t * 0.62, sw = 1 - t * 0.55;
+    mb.box(0, y0 + fh * (1 - sh) * 0.92, c0 - tl * (i + 0.5), fw * sw, fh * sh, tl, body);
   }
-  if (P.hump) { mb.box(0, y0 + fh, core1 - L * 0.16, fw * 0.8, fh * 0.4, L * 0.32, body); mb.box(0, y0 + fh + fh * 0.12, core1 - L * 0.16, fw * 0.82, fh * 0.1, L * 0.28, '#3a4a60', { glow: '#ffe8a0' }); }
-  // 尾部（上にすぼむ）
-  z = core0;
-  const tl = (core0 - zb) / 3;
-  for (let i = 0; i < 3; i++) {
-    const sw = 0.85 - i * 0.2, sh = 0.85 - i * 0.22;
-    mb.box(0, y0 + fh * (1 - sh), z - tl / 2, fw * sw, fh * sh, tl, body);
-    z -= tl;
-  }
-  // 窓（夜に光る）
+  if (P.hump) { mb.box(0, y0 + fh * 0.9, c1 - L * 0.12, fw * 0.74, fh * 0.42, L * 0.26, body); mb.box(0, y0 + fh * 0.9, c1 + L * 0.02, fw * 0.6, fh * 0.32, L * 0.06, body); }
+  // 窓・チートライン・ドア
   if (!P.cargo && !space) {
-    for (const sx of [-1, 1]) mb.box(sx * (fw / 2 + 0.003), y0 + fh * 0.5, (core0 + core1) / 2 + L * 0.03, 0.005, fh * 0.12, (core1 - core0) * 0.92, '#3a4a60', { glow: '#ffe8a0' });
+    const rows = P.deck2 ? [0.42, 0.74] : [0.56];
+    for (const ry of rows) for (const sx of [-1, 1]) mb.box(sx * (fw / 2 + 0.003), y0 + fh * ry, mid + clen * 0.02, 0.005, fh * 0.09, clen * 0.94, win, { glow: winGlow });
+    if (P.hump) for (const sx of [-1, 1]) mb.box(sx * (fw * 0.37 + 0.003), y0 + fh * 1.12, c1 - L * 0.12, 0.005, fh * 0.07, L * 0.2, win, { glow: winGlow });
+    // ドア（左側）
+    for (const dz of [c1 - L * 0.02, c0 + L * 0.03]) mb.box(fw / 2 + 0.004, y0 + fh * 0.3, dz, 0.004, fh * 0.5, Math.max(0.05, L * 0.022), shade(body, -0.18));
   }
-  // チートライン
-  for (const sx of [-1, 1]) mb.box(sx * (fw / 2 + 0.004), y0 + fh * 0.32, (core0 + core1) / 2, 0.005, fh * 0.08, (core1 - core0), acc);
-  // 主翼
-  const wy = y0 + (P.eng === 'prop' || P.eng === 'rear' && P.cls === 1 ? fh * 0.85 : fh * 0.18);
-  const wz = -L * 0.02;
-  const wingCol = shade(body, -0.05);
+  for (const sx of [-1, 1]) mb.box(sx * (fw / 2 + 0.006), y0 + fh * (P.deck2 ? 0.24 : 0.36), mid, 0.004, fh * 0.06, clen, acc);
+  // ---- 主翼 ----
+  const sweepDeg = prop ? 3 : sst || space ? 0 : typeId === 'swallow' ? 23 : P.wide ? 32 : 26;
+  const tanS = Math.tan(sweepDeg * Math.PI / 180);
+  const high = P.wing === 'high';
+  const wingY = high ? y0 + fh * 0.96 : y0 + fh * 0.1;
+  const wz = high ? L * 0.04 : -L * 0.03;
+  const cr = prop ? L * 0.11 : L * 0.2, ct = prop ? cr * 0.62 : cr * 0.28;
+  const LE = t => wz + cr / 2 - t * (hs - fw / 2) * tanS;
+  const chord = t => lerp(cr, ct, t);
+  const dih = t => high ? 0 : t * hs * 0.07;
   if (sst || space) {
-    // デルタ翼
+    const n = 7;
+    for (let i = 0; i < n; i++) { const t = i / n, half = hs * (1 - t); mb.box(0, y0 + 0.02 + (space ? 0 : 0.01), wz - L * 0.32 + t * L * 0.6, half * 2 + fw * 0.9, 0.05, L * 0.6 / n + 0.01, space ? '#d8dce8' : WING); }
+    if (space) { mb.box(0, y0 - 0.01, wz - L * 0.05, fw * 1.05, 0.04, L * 0.75, '#22222c'); for (const sx of [-1, 1]) mb.box(sx * hs * 0.98, y0 + 0.05, wz - L * 0.3, 0.04, fh * 0.6, L * 0.12, tail); }
+  } else {
     const n = 6;
     for (let i = 0; i < n; i++) {
-      const t = i / n, half = (S / 2) * (1 - t);
-      mb.box(0, y0 + 0.02, wz - L * 0.3 + t * L * 0.55, half * 2 + fw, 0.05, L * 0.55 / n, space ? '#d8dce8' : wingCol);
+      const t0 = i / n, t1 = (i + 1) / n, tm = (t0 + t1) / 2;
+      const x0 = fw / 2 + t0 * (hs - fw / 2), x1 = fw / 2 + t1 * (hs - fw / 2);
+      const c = chord(tm), zc = LE(tm) - c / 2;
+      for (const sx of [-1, 1]) {
+        mb.box(sx * (x0 + x1) / 2, wingY + dih(tm), zc, x1 - x0 + 0.012, 0.05, c, WING);
+        mb.box(sx * (x0 + x1) / 2, wingY + dih(tm) + 0.051, zc - c * 0.38, x1 - x0, 0.003, c * 0.18, WING2); // フラップ
+      }
     }
-    if (space) { mb.box(0, y0 - 0.01, wz, fw * 1.1, 0.04, L * 0.7, '#2a2a36'); }
+    mb.box(0, wingY, LE(0) - cr / 2, fw * 0.98, 0.05, cr, WING);
+    // 翼端
+    for (const sx of [-1, 1]) {
+      const tx = sx * (hs - 0.02), tz = LE(1) - ct / 2, ty = wingY + dih(1);
+      if (P.tip === 'blended') { mb.box(tx, ty, tz - ct * 0.1, 0.03, fh * 0.5, ct * 0.8, tail); }
+      else if (P.tip === 'sharklet') { mb.box(tx, ty, tz, 0.03, fh * 0.38, ct * 0.65, tail); }
+      else if (P.tip === 'curved') { mb.box(tx, ty, tz, 0.03, fh * 0.22, ct * 0.8, WING); mb.box(tx + sx * 0.02, ty + fh * 0.2, tz - ct * 0.15, 0.03, fh * 0.2, ct * 0.5, WING); }
+      else if (P.tip === 'raked') { mb.box(tx + sx * hs * 0.04, ty + 0.01, tz - ct * 0.4, hs * 0.08, 0.04, ct * 0.55, WING); }
+      else if (P.tip === 'fence') { mb.box(tx, ty - fh * 0.1, tz, 0.03, fh * 0.32, ct * 0.7, tail); }
+      // 航行灯（左＝赤・右＝緑）と衝突防止灯
+      const nxp = sx * (hs + (P.tip === 'raked' ? hs * 0.08 : 0)), nzp = tz + (P.tip === 'raked' ? -ct * 0.4 : 0);
+      navB.box(nxp, ty + 0.02, nzp, 0.05, 0.05, 0.05, sx > 0 ? '#ff3030' : '#30ff60');
+      strobeB.box(nxp, ty + 0.02, nzp - 0.05, 0.06, 0.06, 0.06, '#ffffff');
+      landB.box(sx * (fw / 2 + 0.12), wingY + 0.01, LE(0.05) + 0.02, 0.07, 0.05, 0.03, '#fff6d0');
+    }
+  }
+  // ---- 尾翼 ----
+  const fin = fh * (prop ? 1.75 : P.deck2 ? 1.25 : 1.6), finZ = zb + L * 0.1;
+  const finSweep = prop ? 0.06 : 0.1;
+  if (!space) {
+    for (let i = 0; i < 5; i++) { const t = i / 5; mb.box(0, y0 + fh * 0.75 + t * fin, finZ - t * L * finSweep, 0.05, fin / 5 + 0.005, L * (sst ? 0.22 : 0.16) * (1 - t * 0.5), tail); }
+    mb.box(0, y0 + fh * 0.75 + fin * 0.45, finZ - L * finSweep * 0.5, 0.055, fin * 0.16, L * 0.08, acc);
+    navB.box(0, y0 + fh * 0.75 + fin + 0.02, finZ - L * finSweep, 0.04, 0.04, 0.04, '#ffffff');
   } else {
-    const seg = 4, sweep = P.eng === 'prop' ? 0 : 0.16 * S;
-    for (let i = 0; i < seg; i++) {
-      const t0 = i / seg, t1 = (i + 1) / seg, x0 = fw / 2 + t0 * (S / 2 - fw / 2), x1 = fw / 2 + t1 * (S / 2 - fw / 2);
-      const chord = lerp(L * 0.2, L * 0.08, (t0 + t1) / 2);
-      const zc = wz - sweep * (t0 + t1) / 2;
-      for (const sx of [-1, 1]) mb.box(sx * (x0 + x1) / 2, wy, zc, x1 - x0 + 0.01, 0.05, chord, wingCol);
-    }
-    for (const sx of [-1, 1]) mb.box(sx * (S / 2 - 0.03), wy + 0.05, wz - sweep, 0.05, 0.12, 0.08, acc); // ウィングレット
-    mb.box(0, wy, wz, fw + 0.02, 0.05, L * 0.2, wingCol);
+    for (const sx of [-1, 1]) for (let i = 0; i < 4; i++) { const t = i / 4; mb.box(sx * (fw * 0.3 + t * 0.06), y0 + fh * 0.7 + t * fin * 0.8, finZ - t * L * 0.08, 0.04, fin * 0.2, L * 0.13 * (1 - t * 0.4), tail); }
   }
-  // 尾翼
-  const fin = fh * (P.cls === 1 ? 1.6 : 1.9), finZ = zb + tl * 0.8;
-  for (let i = 0; i < 4; i++) { const t = i / 4; mb.box(0, y0 + fh * 0.6 + t * fin, finZ - t * L * 0.07, 0.06, fin / 4, L * 0.17 * (1 - t * 0.45), tail); }
-  mb.box(0, y0 + fh * 0.6 + fin * 0.45, finZ - L * 0.035, 0.065, fin * 0.18, L * 0.08, acc);
-  if (P.eng === 'rear' || P.eng === 'prop' && P.cls === 1 && false) {
-    // T字尾翼
-    mb.box(0, y0 + fh * 0.6 + fin, finZ - L * 0.08, S * 0.36, 0.04, L * 0.08, tail);
-  } else if (!sst && !space) {
-    mb.box(0, y0 + fh * 0.5, finZ + 0.02, S * 0.34, 0.04, L * 0.08, wingCol);
+  const hsSpan = S * (P.wide ? 0.19 : 0.17);
+  if (!sst && !space) {
+    const tY = P.tail === 'T' ? y0 + fh * 0.75 + fin : y0 + fh * 0.62;
+    const tZ = P.tail === 'T' ? finZ - L * finSweep - L * 0.02 : finZ - L * 0.01;
+    for (let i = 0; i < 3; i++) { const t = (i + 0.5) / 3; for (const sx of [-1, 1]) mb.box(sx * (fw * 0.3 + t * hsSpan), tY, tZ - t * hsSpan * (prop ? 0.08 : 0.5), hsSpan / 3 + 0.01, 0.035, L * 0.085 * (1 - t * 0.45), P.tail === 'T' ? tail : WING); }
   }
-  // エンジン
+  // ---- エンジン ----
   const props = [];
-  if (P.eng === 'jet' || P.eng === 'jet4') {
-    const xs = P.eng === 'jet4' ? [S * 0.18, S * 0.33] : [S * 0.2];
-    for (const xx of xs) for (const sx of [-1, 1]) {
-      const r = P.wide ? 0.18 : 0.13;
-      mb.cylZ(sx * xx, wy - r * 1.1, wz + L * 0.08 - xx * 0.3, r, L * 0.16, shade(acc, 0.1), 8);
-      mb.box(sx * xx, wy - r * 0.5, wz + L * 0.02 - xx * 0.3, 0.04, r * 0.6, L * 0.1, wingCol);
-      mb.cylZ(sx * xx, wy - r * 1.1, wz + L * 0.165 - xx * 0.3, r * 0.75, 0.01, '#2a2a36', 8);
+  if (P.eng === 'jet') {
+    const ts = P.engines === 4 ? [0.3, 0.58] : [P.wide ? 0.33 : 0.36];
+    const r = fw * (P.bigEng ? 0.4 : P.wide ? 0.33 : typeId === 'swallow' ? 0.3 : 0.27);
+    const eL = L * (P.wide ? 0.12 : 0.13);
+    for (const t of ts) for (const sx of [-1, 1]) {
+      const x = sx * (fw / 2 + t * (hs - fw / 2)), z = LE(t) + r * 0.9, y = wingY + dih(t) - r * 1.05;
+      mb.cylZ(x, y, z, r, eL, shade(acc === '#2a2a36' ? '#c8ccd4' : '#d8dce4', 0), 10);
+      mb.cylZ(x, y, z + eL / 2, r * 0.78, 0.012, '#1a1a22', 10);
+      mb.cylZ(x, y, z + eL / 2 - 0.004, r * 1.02, 0.03, '#a8acb8', 10);
+      mb.cylZ(x, y, z - eL / 2 - 0.04, r * 0.5, 0.1, '#7a7e8a', 8);
+      mb.box(x, y + r * 0.7, z - eL * 0.2, 0.04, r * 0.7, eL * 0.8, WING);
+      if (typeId === 'kamome' || typeId === 'cargo_s') mb.box(x, y - r * 0.9, z, r * 1.6, 0.02, eL * 0.6, shade('#d8dce4', -0.08)); // おにぎり形
     }
   } else if (P.eng === 'rear') {
-    for (const sx of [-1, 1]) { mb.cylZ(sx * (fw / 2 + 0.12), y0 + fh * 0.7, zb + L * 0.3, 0.1, L * 0.18, '#d8d8e0', 8); mb.box(sx * (fw / 2 + 0.05), y0 + fh * 0.7, zb + L * 0.3, 0.1, 0.04, 0.2, wingCol); }
-  } else if (P.eng === 'prop') {
-    const xs = [S * 0.22];
-    for (const xx of xs) for (const sx of [-1, 1]) {
-      mb.cylZ(sx * xx, wy - 0.02, wz + L * 0.06, 0.09, L * 0.22, body, 6);
+    for (const sx of [-1, 1]) { const r = fw * 0.28; mb.cylZ(sx * (fw / 2 + r * 1.1), y0 + fh * 0.62, zb + L * 0.27, r, L * 0.17, '#d8dce4', 8); mb.cylZ(sx * (fw / 2 + r * 1.1), y0 + fh * 0.62, zb + L * 0.355, r * 0.75, 0.01, '#1a1a22', 8); mb.box(sx * (fw / 2 + 0.03), y0 + fh * 0.62, zb + L * 0.27, r * 1.2, 0.04, L * 0.1, WING); }
+  } else if (prop) {
+    const t = P.engines === 2 ? 0.32 : 0.3;
+    for (const sx of [-1, 1]) {
+      const x = sx * (fw / 2 + t * (hs - fw / 2)), r = fw * 0.24, y = high ? wingY - r * 0.4 : wingY, z = LE(t) + L * 0.05;
+      mb.cylZ(x, y, z, r, L * 0.2, body, 8);
+      mb.cylZ(x, y, z + L * 0.1 + 0.02, r * 0.6, 0.06, '#3a3a44', 8);
+      if (high) mb.box(x, y - r * 0.6, z - L * 0.04, r * 1.1, r * 0.8, L * 0.12, body);
       const pg = new ModelBuilder();
-      pg.box(0, -0.35, 0, 0.06, 0.7, 0.02, '#3a3a44'); pg.box(0, -0.03, 0, 0.7, 0.06, 0.02, '#3a3a44'); pg.box(0, -0.04, 0.01, 0.08, 0.08, 0.06, acc);
-      props.push({ geo: pg.geos().L, pos: new THREE.Vector3(sx * xx, wy - 0.02, wz + L * 0.06 + L * 0.115) });
+      const bl = S * (typeId === 'humming' ? 0.13 : 0.15);
+      for (let k = 0; k < (typeId === 'humming' ? 3 : 6); k++) { const a = k / (typeId === 'humming' ? 3 : 6) * TAU; const m4 = new THREE.Matrix4().makeRotationZ(a); pg.setMat(m4); pg.box(0, 0, 0, 0.035, bl, 0.012, '#30303a'); }
+      pg.setMat(null); pg.cylZ(0, 0, 0.02, r * 0.45, 0.08, acc, 8);
+      props.push({ geo: pg.geos().L, pos: new THREE.Vector3(x, y, z + L * 0.1 + 0.06) });
     }
   } else if (sst) {
-    for (const sx of [-1, 1]) for (const k of [0.22, 0.36]) mb.box(sx * k * S / 1.2, y0 - 0.08, wz - L * 0.12, 0.14, 0.12, L * 0.24, '#c0c0c8');
-    mb.box(0, y0 + fh * 0.2, zf + 0.05, fw * 0.3, fh * 0.3, 0.2, body);
+    for (const sx of [-1, 1]) for (const k of [0.2, 0.34]) mb.box(sx * k * hs * 1.6, y0 - 0.08, wz - L * 0.16, 0.13, 0.12, L * 0.25, '#c0c4cc');
   } else if (space) {
-    for (const [ex, ey] of [[-0.12, 0.05], [0.12, 0.05], [0, 0.22]]) { mb.cylZ(ex, y0 + fh * 0.3 + ey, zb - 0.05, 0.1, 0.18, '#4a4a58', 8); mb.cylZ(ex, y0 + fh * 0.3 + ey, zb - 0.13, 0.07, 0.02, '#40e0ff', 8, { glow: '#80f0ff' }); }
+    for (const [ex, ey] of [[-0.13, 0.05], [0.13, 0.05], [0, 0.25]]) { mb.cylZ(ex, y0 + fh * 0.3 + ey, zb - 0.04, 0.11, 0.18, '#3a3a46', 8); mb.cylZ(ex, y0 + fh * 0.3 + ey, zb - 0.14, 0.08, 0.02, '#40e0ff', 8, { glow: '#9ff8ff' }); }
   }
-  // 脚
-  mb.box(0, 0, zf - L * 0.12, 0.06, y0, 0.06, '#3a3a44'); mb.box(0, 0, zf - L * 0.12, 0.08, 0.1, 0.12, '#1a1a22');
-  for (const sx of [-1, 1]) { mb.box(sx * fw * 0.4, 0, wz - 0.05, 0.07, y0, 0.07, '#3a3a44'); mb.box(sx * fw * 0.4, 0, wz - 0.05, 0.12, 0.12, 0.2, '#1a1a22'); }
-  // ライト
-  mb.box(-S / 2 + 0.02, wy, wz - (sst || space ? 0 : 0.16 * S), 0.05, 0.05, 0.05, '#ff3030', { glow: '#ff2020' });
-  mb.box(S / 2 - 0.02, wy, wz - (sst || space ? 0 : 0.16 * S), 0.05, 0.05, 0.05, '#30ff60', { glow: '#20ff40' });
-  mb.box(0, y0 + fh * 0.6 + fin, finZ - L * 0.06, 0.05, 0.05, 0.05, '#ffffff', { glow: '#ffffff' });
+  // ---- 脚 ----
+  const G2 = P.gear === 'fixed' ? mb : gearB;
+  const tire = '#1a1a22', strut = '#8a8e98';
+  G2.box(0, 0, zf - L * 0.1, 0.03, y0, 0.03, strut); G2.box(0, 0, zf - L * 0.1, 0.06, 0.07, 0.08, tire);
+  const mgX = high ? fw * 0.55 : fw * 0.42, mgZ = high ? wz - cr * 0.2 : LE(0.15) - cr * 0.45;
+  const bogie = P.wide ? (P.deck2 ? 3 : 2) : 1;
+  for (const sx of [-1, 1]) for (let k = 0; k < (P.deck2 ? 2 : 1); k++) {
+    const x = sx * (mgX + k * fw * 0.25), z = mgZ - k * L * 0.05;
+    G2.box(x, 0, z, 0.035, y0 + (high ? fh * 0.5 : 0), 0.035, strut);
+    for (let b = 0; b < bogie; b++) G2.box(x, 0, z + (b - (bogie - 1) / 2) * 0.09, 0.08, 0.08, 0.08, tire);
+    if (high) G2.box(x - sx * 0.05, y0 * 0.5, z, 0.12, 0.08, 0.2, body);
+  }
+  // ---- 衝突防止灯（上と下） ----
+  beaconB.box(0, y0 + fh + (P.hump ? fh * 0.32 : 0) + 0.015, mid, 0.05, 0.03, 0.05, '#ff2a2a');
+  beaconB.box(0, y0 - 0.02, mid, 0.05, 0.03, 0.05, '#ff2a2a');
+  strobeB.box(0, y0 + fh * 0.6, zb - 0.02, 0.04, 0.04, 0.04, '#ffffff');
+  landB.box(0, y0 + fh * 0.2, zf - L * 0.08, 0.06, 0.04, 0.04, '#fff6d0');
   const gs = mb.geos();
-  gs.props = props;
+  gs.gear = gearB.geos().L; gs.beacon = beaconB.geos().L; gs.strobe = strobeB.geos().L; gs.land = landB.geos().L; gs.nav = navB.geos().L;
+  gs.props = props; gs.fixedGear = P.gear === 'fixed';
+  gs.door = new THREE.Vector3(fw / 2, y0 + fh * 0.45, c1 - L * 0.02);
   return gs;
 }
 
@@ -776,7 +834,9 @@ function vehicleGeo(kind, color) {
     case 'car': mb.box(0, 0.08, 0, 0.42, 0.22, 0.82, color); mb.box(0, 0.3, -0.05, 0.38, 0.18, 0.44, color); mb.box(0, 0.32, -0.05, 0.4, 0.12, 0.46, '#3a4a5a'); mb.box(0, 0.12, 0.42, 0.3, 0.06, 0.02, '#fff8e0', { glow: '#fff0b0' }); break;
     case 'taxi': mb.box(0, 0.08, 0, 0.42, 0.22, 0.82, '#ffd84a'); mb.box(0, 0.3, -0.05, 0.38, 0.18, 0.44, '#ffd84a'); mb.box(0, 0.32, -0.05, 0.4, 0.12, 0.46, '#3a4a5a'); mb.box(0, 0.48, -0.05, 0.12, 0.06, 0.08, '#ffffff', { glow: '#ffe080' }); break;
     case 'fuel': mb.box(0, 0.08, 0.35, 0.45, 0.4, 0.35, '#e5484d'); mb.cylZ(0, 0.35, -0.15, 0.22, 0.7, '#f4f2ee', 8); mb.box(0, 0.08, -0.15, 0.4, 0.1, 0.75, '#3a3a44'); break;
-    case 'tug': mb.box(0, 0.06, 0, 0.45, 0.2, 0.6, '#ffd84a'); mb.box(0, 0.26, -0.12, 0.3, 0.2, 0.25, '#3a4a5a'); break;
+    case 'tug': mb.box(0, 0.04, 0, 0.5, 0.16, 0.75, '#ffd84a'); mb.box(0, 0.2, -0.22, 0.34, 0.16, 0.2, '#3a4a5a'); mb.box(0, 0.08, 0.42, 0.08, 0.06, 0.25, '#4a4a58'); mb.box(0, 0.2, 0.05, 0.08, 0.06, 0.08, '#ff9030', { glow: '#ffb040' }); break;
+    case 'belt': mb.box(0, 0.05, 0.2, 0.32, 0.18, 0.4, '#e8e8f0'); { const m4 = new THREE.Matrix4().makeTranslation(0, 0.25, -0.15).multiply(new THREE.Matrix4().makeRotationX(0.45)); mb.setMat(m4); mb.box(0, 0, 0, 0.2, 0.04, 0.8, '#3a3a44'); mb.setMat(null); } break;
+    case 'gpu': mb.box(0, 0.05, 0, 0.3, 0.25, 0.4, '#4cb85c'); break;
     case 'cart': mb.box(0, 0.06, 0.3, 0.35, 0.25, 0.3, '#f39a3c'); for (let i = 0; i < 2; i++) { mb.box(0, 0.08, -0.15 - i * 0.45, 0.4, 0.06, 0.38, '#9a9aa6'); mb.box(-0.05, 0.14, -0.15 - i * 0.45, 0.2, 0.15, 0.2, ['#e5484d', '#4a8fe0'][i]); mb.box(0.1, 0.14, -0.15 - i * 0.45, 0.12, 0.12, 0.2, '#ffd84a'); } break;
     case 'catering': mb.box(0, 0.08, 0.38, 0.45, 0.35, 0.3, '#f4f2ee'); mb.box(0, 0.4, -0.12, 0.5, 0.5, 0.75, '#f4f2ee'); mb.box(0, 0.08, -0.12, 0.42, 0.32, 0.7, '#9a9aa6'); mb.box(0, 0.6, 0.27, 0.51, 0.1, 0.02, color || '#3a7bd5'); break;
     case 'stairs': mb.box(0, 0.06, 0.2, 0.4, 0.2, 0.5, '#f4f2ee'); for (let i = 0; i < 4; i++) mb.box(0, 0.26 + i * 0.1, -0.1 - i * 0.12, 0.3, 0.05, 0.14, '#c0c0c8'); break;

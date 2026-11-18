@@ -96,7 +96,7 @@ function buildDemo() {
   P('cafe', 27, 20, 1); P('book', 27, 22 - 0, 1);
   P('ramen', 31, 20, 0); P('souvenir', 33, 20, 0); P('wagashi', 35, 20, 0);
   P('toilet', 41, 20, 3); P('bench', 37, 21, 0); P('plant', 39, 21); P('fids', 40, 21);
-  P('deck', 23 + 1, 26, 0);
+  P('deck', 24, 26, 2); paint('walk', 24, 24, 26, 25); paint('walk', 27, 24, 27, 24);
   for (const [x, y] of [[30, 15], [39, 14], [26, 15], [44, 15], [31, 15], [39, 15], [44, 13], [27, 26], [24, 23]]) P(['sakura', 'tree', 'pine'][(x + y) % 3], x, y);
   P('flowerbed', 32, 14); P('flowerbed', 36, 14); P('fountain', 41, 13 + 1); P('lamp', 33, 15); P('lamp', 37, 15);
   P('parking', 25, 12, 0);
@@ -104,7 +104,7 @@ function buildDemo() {
   G.routes = [];
   for (const [al, c] of [['soyokaze', 'shimo'], ['haruka', 'tokyo'], ['mermaid', 'naha'], ['haruka', 'osaka']]) {
     const t = bestPlaneFor(al, c);
-    if (t) G.routes.push({ id: al + '-' + c, airline: al, city: c, type: t, freq: 4, active: true, opened: 0, flights: 0, pax: 0, seats: 0, ontime: 0 });
+    if (t) G.routes.push({ id: al + '-' + c, airline: al, city: c, type: t, freq: 3, active: true, opened: 0, flights: 0, pax: 0, seats: 0, ontime: 0 });
   }
   G.min = 8 * 60 + 30; G.day = 0; G.rating = 4;
   Cam.tx = 35; Cam.tz = 24; Cam.zoom = 1.25;
@@ -289,4 +289,4 @@ function loop(now) {
   }
 }
 window.addEventListener('load', boot);
-window.__sora = { get G() { return G; }, dbg: { getField, accessTiles, findFacility, findKind, get WALKABLE() { return WALKABLE; }, People, Story, CHAPTERS, Dialog, routeCheck, checkWarnings, relinkGates }, setTool, tryPlace, RT, simStep, World, Cam, R, startGame, placeBuilding, paintApply, openRoute, B, Game, UI };
+window.__sora = { planeModel, PLANES, get G() { return G; }, dbg: { getField, accessTiles, findFacility, findKind, get WALKABLE() { return WALKABLE; }, People, Story, CHAPTERS, Dialog, routeCheck, checkWarnings, relinkGates }, setTool, tryPlace, RT, simStep, World, Cam, R, startGame, placeBuilding, paintApply, openRoute, B, Game, UI };

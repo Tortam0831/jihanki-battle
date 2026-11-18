@@ -162,7 +162,7 @@ const CHAPTERS = [
     title: 'ハブ空港をめざして', desc: '大型機が行き来する、地域の玄関口へ。', reward: 50000000,
     obj: [
       { t: '長い滑走路を建てる（ランク6）', c: () => has('runway_l') },
-      { t: '大型機をむかえる（アルバトロス320 など）', c: () => Object.keys(G.seenPlanes).some(k => PLANES[k.split(':')[0]].cls === 3) },
+      { t: '大型機をむかえる（ボーイング787 など）', c: () => Object.keys(G.seenPlanes).some(k => PLANES[k.split(':')[0]].cls === 3) },
       { t: '路線を15にする', c: () => G.routes.length >= 15, p: () => G.routes.length + '/15' },
       { t: '評価 ★4.0', c: () => G.rating >= 4 },
       { t: 'ランク6「地域の玄関口」になる', c: () => G.rank >= 6 },
@@ -333,6 +333,7 @@ function initStoryEvents() {
   Bus.on('routeOpened', r => toast(`${CITIES[r.city].name}行きの路線が開きました！（${AIRLINES[r.airline].name}）`, 'good', 'globe'));
   Bus.on('cancel', (fl, why) => toast(`${fl.code} ${CITIES[fl.city].name}便 欠航：${why}`, 'bad', 'anger'));
   Bus.on('divert', fl => toast(`${fl.code} 着陸できず他の空港へ…`, 'bad', 'anger'));
+  Bus.on('goAround', fl => toast(`${fl.code} 滑走路が空いていないため着陸やり直し（ゴーアラウンド）`, '', 'plane'));
   Bus.on('firstFlight', fl => { Sound.se('levelup'); toast('はじめての飛行機が到着しました！', 'gold', 'plane'); });
   Bus.on('event', ev => { toast(`今日は「${ev.name}」！ ${ev.desc}`, 'gold', 'star'); if (Sound.cur !== 'event' && (ev.visitors || 0) >= 2) Sound.bgm('event'); });
   Bus.on('departed', fl => { if (fl.type === 'cosmo') { G.flags.spaceLaunch = true; Sound.bgm('space'); } });

@@ -1251,12 +1251,12 @@ function defB(id, o) { o.id = id; o.w = o.w || 1; o.h = o.h || 1; o.upkeep = o.u
 
 // ---- 空側 ----
 defB('taxiway', { cat: 'air', name: '誘導路', paint: FLOOR.TAXI, cost: 4000, icon: 'taxiway', desc: '飛行機が通る道。滑走路と駐機場をつなごう。ドラッグで四角くぬれます。' });
-defB('runway_s', { cat: 'air', name: '短い滑走路', kind: 'runway', zone: 'air', w: 12, h: 2, cls: 1, cost: 1200000, upkeep: 6000, icon: 'runway', desc: '小型機（プロペラ機など）が使える滑走路。' });
-defB('runway_m', { cat: 'air', name: 'ふつうの滑走路', kind: 'runway', zone: 'air', w: 18, h: 2, cls: 2, cost: 4500000, upkeep: 16000, rank: 3, icon: 'runway', desc: 'ジェット機（中型まで）が使える滑走路。' });
-defB('runway_l', { cat: 'air', name: '長い滑走路', kind: 'runway', zone: 'air', w: 24, h: 3, cls: 3, cost: 12000000, upkeep: 38000, rank: 6, icon: 'runway', desc: '大型機・ジャンボ機も使える長い滑走路。' });
-defB('stand_s', { cat: 'air', name: '小型駐機場', kind: 'stand', zone: 'air', w: 3, h: 3, cls: 1, cost: 250000, upkeep: 1500, icon: 'stand', desc: '小型機がとまる場所。近く(7マス以内)にターミナルの搭乗口が必要。' });
-defB('stand_m', { cat: 'air', name: '中型駐機場', kind: 'stand', zone: 'air', w: 4, h: 4, cls: 2, cost: 700000, upkeep: 4000, rank: 3, icon: 'stand', desc: '中型ジェット機までとまれる。' });
-defB('stand_l', { cat: 'air', name: '大型駐機場', kind: 'stand', zone: 'air', w: 5, h: 5, cls: 3, cost: 1800000, upkeep: 9000, rank: 6, icon: 'stand', desc: '大型機・ジャンボ機もとまれる。' });
+defB('runway_s', { cat: 'air', name: '短い滑走路', kind: 'runway', zone: 'air', w: 12, h: 2, cls: 1, cost: 1200000, upkeep: 6000, icon: 'runway', desc: '長さ約1,700m。プロペラ機・ビジネスジェットが使える。' });
+defB('runway_m', { cat: 'air', name: 'ふつうの滑走路', kind: 'runway', zone: 'air', w: 18, h: 2, cls: 2, cost: 4500000, upkeep: 16000, rank: 3, icon: 'runway', desc: '長さ約2,500m。737・A320などのジェット機が使える。' });
+defB('runway_l', { cat: 'air', name: '長い滑走路', kind: 'runway', zone: 'air', w: 24, h: 3, cls: 3, cost: 12000000, upkeep: 38000, rank: 6, icon: 'runway', desc: '長さ約3,400m。787・777・A380などの大型機も使える。' });
+defB('stand_s', { cat: 'air', name: '小型駐機場', kind: 'stand', zone: 'air', w: 3, h: 3, cls: 1, cost: 250000, upkeep: 1500, icon: 'stand', desc: 'プロペラ機・ビジネスジェットがとまる場所。近く（7マス以内）にターミナルの搭乗口が必要。' });
+defB('stand_m', { cat: 'air', name: '中型駐機場', kind: 'stand', zone: 'air', w: 4, h: 4, cls: 2, cost: 700000, upkeep: 4000, rank: 3, icon: 'stand', desc: '737やA320などの小型ジェット機までとまれる。' });
+defB('stand_l', { cat: 'air', name: '大型駐機場', kind: 'stand', zone: 'air', w: 6, h: 6, cls: 3, cost: 1800000, upkeep: 9000, rank: 6, icon: 'stand', desc: '787・777・A380などの大型機もとまれる。' });
 defB('tower', { cat: 'air', name: '管制塔', kind: 'tower', zone: 'air', w: 2, h: 2, cost: 600000, upkeep: 5000, unique: true, icon: 'tower', desc: '空港に必ず1つ必要。これがないと飛行機が飛べません。' });
 defB('fire', { cat: 'air', name: '消防署', kind: 'fire', zone: 'air', w: 3, h: 2, cost: 800000, upkeep: 5000, rank: 2, unique: true, icon: 'fire', desc: '安全のための施設。ジェット機の路線を開くのに必要。評価もアップ。' });
 defB('fuel', { cat: 'air', name: '給油施設', kind: 'fuel', zone: 'air', w: 3, h: 2, cost: 900000, upkeep: 4000, rank: 2, unique: true, icon: 'fuel', desc: '飛行機の折り返し時間が20%短くなり、燃料の売上も入る。' });
@@ -1379,35 +1379,45 @@ const BUILD_ORDER = Object.keys(B);
 //  飛行機
 // ============================================================
 // cls: 必要な滑走路/駐機場の大きさ  len/span: 見た目の長さ・翼幅(マス)  eng: 'prop'|'jet'|'rear'|'jet4'
+// 実在の機体データ（全長・翼幅はメートル、1マス = 12.5m で縮小）
+// eng: prop=プロペラ / jet=主翼下ジェット / rear=胴体後部ジェット / sst / space
+// wing: high=高翼 / low=低翼  tail: T=T字尾翼 / conv=ふつう  tip: 翼端の形
+const TILE_M = 12.5;
 const PLANES = {
-  humming:  { name: 'ハミング19', cls: 1, seats: 19, len: 1.7, span: 2.0, eng: 'prop', engines: 2, turn: 30, fee: 40000, rank: 1, desc: '小さなプロペラ機。島や地方の路線で活躍。' },
-  tsubame:  { name: 'ツバメ72', cls: 1, seats: 72, len: 2.5, span: 2.7, eng: 'prop', engines: 2, turn: 35, fee: 75000, rank: 2, desc: '使いやすいターボプロップ機。' },
-  sparrow:  { name: 'スパロウ8', cls: 1, seats: 8, len: 1.6, span: 1.6, eng: 'rear', engines: 2, turn: 25, fee: 150000, rank: 5, vip: true, desc: 'ビジネスジェット。VIPがたくさん乗る。' },
-  swallow:  { name: 'スワロー90', cls: 2, seats: 90, len: 2.9, span: 2.6, eng: 'rear', engines: 2, turn: 40, fee: 120000, rank: 3, desc: 'リージョナルジェット。速くて静か。' },
-  kamome:   { name: 'カモメ170', cls: 2, seats: 170, len: 3.4, span: 3.4, eng: 'jet', engines: 2, turn: 45, fee: 200000, rank: 3, desc: 'いちばん多く飛んでいる中型ジェット。' },
-  pelican:  { name: 'ペリカン220', cls: 2, seats: 220, len: 3.9, span: 3.5, eng: 'jet', engines: 2, turn: 50, fee: 260000, rank: 5, desc: '胴体が長い中型ジェット。' },
-  cargo_s:  { name: 'カーゴカモメ', cls: 2, seats: 0, cargo: 40, len: 3.4, span: 3.4, eng: 'jet', engines: 2, turn: 50, fee: 220000, rank: 4, desc: '貨物専用の中型機。' },
-  albatross:{ name: 'アルバトロス320', cls: 3, seats: 320, len: 4.6, span: 4.8, eng: 'jet', engines: 2, turn: 70, fee: 450000, rank: 6, wide: true, desc: '長い距離を飛べる大型機。' },
-  whale:    { name: 'ホエール500', cls: 3, seats: 500, len: 5.0, span: 5.2, eng: 'jet4', engines: 4, turn: 85, fee: 750000, rank: 8, wide: true, hump: true, desc: '2階建てのジャンボ機。空の女王。' },
-  cargo_l:  { name: 'カーゴホエール', cls: 3, seats: 0, cargo: 110, len: 5.0, span: 5.2, eng: 'jet4', engines: 4, turn: 90, fee: 650000, rank: 6, wide: true, hump: true, desc: '巨大な貨物機。' },
-  sst:      { name: 'ファルコンSST', cls: 3, stand: 2, seats: 100, len: 4.4, span: 2.4, eng: 'sst', engines: 4, turn: 60, fee: 900000, rank: 9, desc: '音よりも速い夢の旅客機。' },
-  cosmo:    { name: 'コスモライナー', cls: 3, seats: 60, len: 4.6, span: 3.0, eng: 'space', engines: 3, turn: 90, fee: 2500000, rank: 10, desc: '宇宙まで行ける往還機。' },
+  humming:  { name: 'DHC-6 ツインオッター', maker: 'デ・ハビランド・カナダ', cls: 1, seats: 19, lenM: 15.8, spanM: 19.8, dia: 1.7, eng: 'prop', engines: 2, wing: 'high', tail: 'conv', gear: 'fixed', tip: 'none', vapp: 80, turn: 25, fee: 40000, rank: 1, desc: '短い滑走路でも降りられる双発プロペラ機。離島路線の主役。脚は出しっぱなし。' },
+  tsubame:  { name: 'ATR 72-600', maker: 'ATR', cls: 1, seats: 70, lenM: 27.2, spanM: 27.1, dia: 2.6, eng: 'prop', engines: 2, wing: 'high', tail: 'T', gear: 'retract', tip: 'none', vapp: 110, turn: 30, fee: 75000, rank: 2, desc: '高翼・T字尾翼のターボプロップ機。燃費がよく地方路線で大人気。' },
+  q400:     { name: 'DHC-8-400（Q400）', maker: 'デ・ハビランド・カナダ', cls: 1, seats: 74, lenM: 32.8, spanM: 28.4, dia: 2.7, eng: 'prop', engines: 2, wing: 'high', tail: 'T', gear: 'retract', tip: 'none', vapp: 125, turn: 30, fee: 85000, rank: 2, desc: '速いターボプロップ機。長い胴体とT字尾翼が目印。' },
+  sparrow:  { name: 'ガルフストリーム G650ER', maker: 'ガルフストリーム', cls: 1, seats: 13, lenM: 30.4, spanM: 30.4, dia: 2.5, eng: 'rear', engines: 2, wing: 'low', tail: 'T', gear: 'retract', tip: 'blended', vapp: 120, turn: 25, fee: 150000, rank: 5, vip: true, desc: '長距離ビジネスジェット。エンジンは胴体の後ろ。VIPを乗せてくる。' },
+  swallow:  { name: 'エンブラエル E190', maker: 'エンブラエル', cls: 2, seats: 95, lenM: 36.2, spanM: 28.7, dia: 3.0, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'blended', vapp: 130, turn: 35, fee: 120000, rank: 3, desc: '100席クラスのリージョナルジェット。' },
+  a320:     { name: 'エアバス A320neo', maker: 'エアバス', cls: 2, seats: 165, lenM: 37.6, spanM: 35.8, dia: 3.95, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'sharklet', vapp: 136, turn: 40, fee: 190000, rank: 3, desc: '世界中で飛ぶ小型ジェット。翼端の「シャークレット」が特徴。' },
+  kamome:   { name: 'ボーイング 737-800', maker: 'ボーイング', cls: 2, seats: 170, lenM: 39.5, spanM: 35.8, dia: 3.76, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'blended', vapp: 142, turn: 40, fee: 200000, rank: 3, desc: 'もっとも多く作られたジェット旅客機のひとつ。おにぎり形のエンジンが目印。' },
+  pelican:  { name: 'エアバス A321neo', maker: 'エアバス', cls: 2, seats: 220, lenM: 44.5, spanM: 35.8, dia: 3.95, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'sharklet', vapp: 140, turn: 45, fee: 260000, rank: 5, desc: 'A320の胴体を長くした型。たくさん乗れる。' },
+  cargo_s:  { name: 'ボーイング 737-800BCF', maker: 'ボーイング', cls: 2, seats: 0, cargo: 23, lenM: 39.5, spanM: 35.8, dia: 3.76, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'blended', vapp: 142, turn: 45, fee: 220000, rank: 4, desc: '旅客機を改造した貨物機。窓がない。' },
+  b767:     { name: 'ボーイング 767-300ER', maker: 'ボーイング', cls: 3, stand: 3, seats: 260, lenM: 54.9, spanM: 47.6, dia: 5.03, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'blended', vapp: 140, turn: 55, fee: 380000, rank: 6, wide: true, desc: '通路が2本ある中型ワイドボディ機。' },
+  albatross:{ name: 'ボーイング 787-9', maker: 'ボーイング', cls: 3, seats: 290, lenM: 62.8, spanM: 60.1, dia: 5.77, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'raked', vapp: 145, turn: 60, fee: 450000, rank: 6, wide: true, desc: 'しなる主翼とギザギザのエンジンカバー。静かで燃費のよい長距離機。' },
+  a350:     { name: 'エアバス A350-900', maker: 'エアバス', cls: 3, seats: 320, lenM: 66.8, spanM: 64.8, dia: 5.96, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'curved', vapp: 140, turn: 65, fee: 500000, rank: 7, wide: true, desc: 'アイマスクのような操縦席の窓と、上に反った翼端が特徴。' },
+  b777:     { name: 'ボーイング 777-300ER', maker: 'ボーイング', cls: 3, seats: 370, lenM: 73.9, spanM: 64.8, dia: 6.2, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'raked', vapp: 150, turn: 70, fee: 600000, rank: 7, wide: true, bigEng: true, desc: '世界最大級の双発機。エンジンが胴体くらい太い。' },
+  whale:    { name: 'エアバス A380-800', maker: 'エアバス', cls: 3, seats: 500, lenM: 72.7, spanM: 79.8, dia: 7.1, eng: 'jet', engines: 4, wing: 'low', tail: 'conv', gear: 'retract', tip: 'fence', vapp: 140, turn: 85, fee: 750000, rank: 8, wide: true, deck2: true, desc: '総2階建ての世界最大の旅客機。4発エンジン。' },
+  cargo_l:  { name: 'ボーイング 747-8F', maker: 'ボーイング', cls: 3, seats: 0, cargo: 134, lenM: 76.3, spanM: 68.4, dia: 6.5, eng: 'jet', engines: 4, wing: 'low', tail: 'conv', gear: 'retract', tip: 'raked', vapp: 155, turn: 90, fee: 650000, rank: 6, wide: true, hump: true, desc: 'ジャンボ機の貨物型。機首がパカッと開く。' },
+  sst:      { name: '次世代超音速機 SST-X（架空）', maker: '架空', cls: 3, stand: 2, seats: 80, lenM: 61, spanM: 32, dia: 3.2, eng: 'sst', engines: 4, wing: 'low', tail: 'conv', gear: 'retract', tip: 'none', vapp: 160, turn: 60, fee: 900000, rank: 9, desc: '音速の1.7倍で飛ぶ、未来の旅客機（架空）。' },
+  cosmo:    { name: '宇宙往還機 コスモライナー（架空）', maker: '架空', cls: 3, seats: 60, lenM: 62, spanM: 40, dia: 4.5, eng: 'space', engines: 3, wing: 'low', tail: 'conv', gear: 'retract', tip: 'none', vapp: 170, turn: 90, fee: 2500000, rank: 10, desc: '滑走路から飛び立ち、そのまま宇宙へ（架空）。' },
 };
+for (const P of Object.values(PLANES)) { P.len = P.lenM / TILE_M; P.span = P.spanM / TILE_M; }
 
 // ============================================================
 //  航空会社（すべて架空）
 // ============================================================
 const AIRLINES = {
-  soyokaze: { name: 'そよかぜエア', code: 'SY', body: '#ffffff', tail: '#4cb85c', accent: '#ffd84a', fleet: ['humming', 'tsubame'], rank: 1, cities: ['shimo', 'kita', 'sendai', 'niigata', 'kochi', 'matsuyama', 'okushiri', 'tokyo'], desc: '地元の小さな航空会社。担当はツバサさん。' },
-  haruka:   { name: 'はるか航空', code: 'HR', body: '#ffffff', tail: '#3a7bd5', accent: '#e5484d', fleet: ['tsubame', 'swallow', 'kamome', 'pelican'], rank: 2, cities: ['tokyo', 'osaka', 'sapporo', 'fukuoka', 'nagoya', 'sendai', 'hiroshima', 'kagoshima', 'naha'], desc: '国内を広く飛ぶ大手。' },
-  penguin:  { name: 'ペンギンエクスプレス', code: 'PG', body: '#ffffff', tail: '#2a2a36', accent: '#ffd84a', fleet: ['kamome'], rank: 3, lcc: true, cities: ['tokyo', 'osaka', 'sapporo', 'fukuoka', 'naha', 'seoul', 'taipei'], desc: '安い運賃のLCC。たくさん乗るが、お買い物は少なめ。' },
-  mermaid:  { name: 'マーメイドエア', code: 'MM', body: '#ffffff', tail: '#3fd0c9', accent: '#ff7a8a', fleet: ['tsubame', 'kamome'], rank: 3, resort: true, cities: ['naha', 'ishigaki', 'miyako', 'amami', 'guam', 'honolulu'], desc: '南の島へ飛ぶリゾート航空。観光客が多い。' },
-  north:    { name: 'ノースウイング', code: 'NW', body: '#ffffff', tail: '#2b3f80', accent: '#c8d0e0', fleet: ['swallow', 'kamome'], rank: 3, cities: ['sapporo', 'hakodate', 'kushiro', 'aomori', 'sendai', 'vladi'], desc: '北の空にくわしい航空会社。' },
+  soyokaze: { name: 'そよかぜエア', code: 'SY', body: '#ffffff', tail: '#4cb85c', accent: '#ffd84a', fleet: ['humming', 'tsubame', 'q400'], rank: 1, cities: ['shimo', 'kita', 'sendai', 'niigata', 'kochi', 'matsuyama', 'okushiri', 'tokyo'], desc: '地元の小さな航空会社。担当はツバサさん。' },
+  haruka:   { name: 'はるか航空', code: 'HR', body: '#ffffff', tail: '#3a7bd5', accent: '#e5484d', fleet: ['q400', 'swallow', 'a320', 'kamome', 'pelican', 'b767', 'albatross'], rank: 2, cities: ['tokyo', 'osaka', 'sapporo', 'fukuoka', 'nagoya', 'sendai', 'hiroshima', 'kagoshima', 'naha'], desc: '国内を広く飛ぶ大手。' },
+  penguin:  { name: 'ペンギンエクスプレス', code: 'PG', body: '#ffffff', tail: '#2a2a36', accent: '#ffd84a', fleet: ['a320', 'kamome', 'pelican'], rank: 3, lcc: true, cities: ['tokyo', 'osaka', 'sapporo', 'fukuoka', 'naha', 'seoul', 'taipei'], desc: '安い運賃のLCC。たくさん乗るが、お買い物は少なめ。' },
+  mermaid:  { name: 'マーメイドエア', code: 'MM', body: '#ffffff', tail: '#3fd0c9', accent: '#ff7a8a', fleet: ['tsubame', 'a320', 'kamome', 'b767'], rank: 3, resort: true, cities: ['naha', 'ishigaki', 'miyako', 'amami', 'guam', 'honolulu'], desc: '南の島へ飛ぶリゾート航空。観光客が多い。' },
+  north:    { name: 'ノースウイング', code: 'NW', body: '#ffffff', tail: '#2b3f80', accent: '#c8d0e0', fleet: ['q400', 'swallow', 'kamome'], rank: 3, cities: ['sapporo', 'hakodate', 'kushiro', 'aomori', 'sendai', 'vladi'], desc: '北の空にくわしい航空会社。' },
   aozora:   { name: 'あおぞらカーゴ', code: 'AC', body: '#ffffff', tail: '#f08a24', accent: '#2a2a36', fleet: ['cargo_s', 'cargo_l'], rank: 4, cargo: true, cities: ['tokyo', 'osaka', 'shanghai', 'hongkong', 'singapore', 'la'], desc: '荷物を運ぶ貨物航空会社。' },
-  sakura:   { name: 'サクラ・インターナショナル', code: 'SK', body: '#ffffff', tail: '#f07aa8', accent: '#b03060', fleet: ['kamome', 'pelican', 'albatross', 'whale'], rank: 4, cities: ['seoul', 'taipei', 'shanghai', 'hongkong', 'bangkok', 'singapore', 'manila', 'hanoi', 'honolulu', 'sydney', 'paris'], desc: 'アジアを結ぶ国際線の大手。' },
-  eagle:    { name: 'ゴールデンイーグル航空', code: 'GE', body: '#f8f4ec', tail: '#c0302a', accent: '#e8b830', fleet: ['albatross', 'whale'], rank: 6, cities: ['la', 'newyork', 'vancouver', 'honolulu', 'dubai', 'london'], desc: '太平洋をまたぐ大きな航空会社。' },
-  aurora:   { name: 'オーロラ・ノルディック', code: 'AN', body: '#ffffff', tail: '#7a4fc0', accent: '#5ce0a0', fleet: ['pelican', 'albatross'], rank: 7, cities: ['helsinki', 'london', 'paris', 'dubai'], desc: 'ヨーロッパへの直行便。' },
-  koala:    { name: 'コアラ・パシフィック', code: 'KP', body: '#ffffff', tail: '#7a8a90', accent: '#a8d840', fleet: ['albatross'], rank: 7, resort: true, cities: ['sydney', 'cairns', 'auckland', 'guam'], desc: '南半球の航空会社。' },
+  sakura:   { name: 'サクラ・インターナショナル', code: 'SK', body: '#ffffff', tail: '#f07aa8', accent: '#b03060', fleet: ['a320', 'pelican', 'b767', 'albatross', 'a350', 'whale'], rank: 4, cities: ['seoul', 'taipei', 'shanghai', 'hongkong', 'bangkok', 'singapore', 'manila', 'hanoi', 'honolulu', 'sydney', 'paris'], desc: 'アジアを結ぶ国際線の大手。' },
+  eagle:    { name: 'ゴールデンイーグル航空', code: 'GE', body: '#f8f4ec', tail: '#c0302a', accent: '#e8b830', fleet: ['albatross', 'b777', 'whale'], rank: 6, cities: ['la', 'newyork', 'vancouver', 'honolulu', 'dubai', 'london'], desc: '太平洋をまたぐ大きな航空会社。' },
+  aurora:   { name: 'オーロラ・ノルディック', code: 'AN', body: '#ffffff', tail: '#7a4fc0', accent: '#5ce0a0', fleet: ['a350', 'albatross'], rank: 7, cities: ['helsinki', 'london', 'paris', 'dubai'], desc: 'ヨーロッパへの直行便。' },
+  koala:    { name: 'コアラ・パシフィック', code: 'KP', body: '#ffffff', tail: '#7a8a90', accent: '#a8d840', fleet: ['albatross', 'b777'], rank: 7, resort: true, cities: ['sydney', 'cairns', 'auckland', 'guam'], desc: '南半球の航空会社。' },
   falcon:   { name: 'ロイヤルファルコン', code: 'RF', body: '#2a1a22', tail: '#8a1f2f', accent: '#e8c050', fleet: ['sparrow', 'sst'], rank: 8, lux: true, needRating: 4.3, cities: ['tokyo', 'singapore', 'dubai', 'london', 'newyork', 'paris'], desc: '超高級航空会社。評価★4.3以上の空港にしか来ない。' },
   cosmo:    { name: 'コスモライン', code: 'CL', body: '#e8eef8', tail: '#1a1a3a', accent: '#40e0ff', fleet: ['cosmo'], rank: 10, space: true, needRating: 4.5, cities: ['moon', 'orbit'], desc: '宇宙への定期便！' },
 };
@@ -1601,8 +1611,8 @@ const ACHIEVEMENTS = [
   { id: 'combo10', name: 'くみあわせ名人', desc: '組み合わせを10個発見', icon: 'note' },
   { id: 'comboall', name: 'くみあわせ博士', desc: '組み合わせをすべて発見', icon: 'note' },
   { id: 'runway3', name: '3本の滑走路', desc: '滑走路を3本持つ', icon: 'runway' },
-  { id: 'jumbo', name: '空の女王', desc: 'ホエール500がやってきた', icon: 'plane' },
-  { id: 'sst', name: '音速の翼', desc: 'ファルコンSSTがやってきた', icon: 'plane2' },
+  { id: 'jumbo', name: '空の巨人', desc: 'A380か747がやってきた', icon: 'plane' },
+  { id: 'sst', name: '音速の翼', desc: '超音速機がやってきた', icon: 'plane2' },
   { id: 'land', name: '土地もち', desc: '土地を全部買った', icon: 'flag' },
   { id: 'research', name: '研究熱心', desc: '開発を15こ完了', icon: 'flask' },
   { id: 'research_all', name: '未来の空港', desc: '開発をすべて完了', icon: 'flask' },
@@ -2851,125 +2861,183 @@ function buildModel(id, opt) {
 }
 
 // ============================================================
-//  飛行機モデル
+//  飛行機モデル（実在機の寸法・形にあわせて作る）
 // ============================================================
 const _planeGeoCache = new Map();
+const LIGHT_MATS = {};
+function lightMat(col) { return LIGHT_MATS[col] || (LIGHT_MATS[col] = new THREE.MeshBasicMaterial({ color: col, fog: false })); }
 function planeModel(typeId, airlineId) {
   const key = typeId + ':' + airlineId;
   let gs = _planeGeoCache.get(key);
   if (!gs) { gs = makePlaneGeos(typeId, airlineId); _planeGeoCache.set(key, gs); }
   const g = new THREE.Group();
-  if (gs.L) { const m = new THREE.Mesh(gs.L, R.matLambert); m.castShadow = true; m.receiveShadow = true; g.add(m); }
-  if (gs.G) { const m = new THREE.Mesh(gs.G, GlowMat()); g.add(m); }
-  if (gs.props) for (const p of gs.props) { const pm = new THREE.Mesh(p.geo, R.matLambert); pm.position.copy(p.pos); pm.userData.prop = true; g.add(pm); }
+  const add = (geo, mat, shadow) => { if (!geo) return null; const m = new THREE.Mesh(geo, mat); m.castShadow = !!shadow; m.receiveShadow = !!shadow; m.userData.shared = true; g.add(m); return m; };
+  add(gs.L, R.matLambert, true);
+  add(gs.G, GlowMat());
+  const gear = add(gs.gear, R.matLambert, true);
+  const beacon = add(gs.beacon, lightMat('#ff2a2a'));
+  const strobe = add(gs.strobe, lightMat('#ffffff'));
+  const land = add(gs.land, lightMat('#fff6d0'));
+  add(gs.nav, lightMat('#ffffff'));
+  const props = [];
+  for (const p of gs.props) { const pm = new THREE.Mesh(p.geo, R.matLambert); pm.position.copy(p.pos); pm.userData.shared = true; g.add(pm); props.push(pm); }
+  g.userData = { gear, beacon, strobe, land, props, door: gs.door, fixedGear: gs.fixedGear };
   return g;
 }
 function makePlaneGeos(typeId, airlineId) {
   const P = PLANES[typeId], A = AIRLINES[airlineId] || AIRLINES.soyokaze;
-  const mb = new ModelBuilder();
-  const L = P.len, S = P.span;
-  const fw = P.wide ? 0.6 : P.cls === 1 ? 0.3 : 0.42, fh = fw * 1.05;
-  const body = A.body, tail = A.tail, acc = A.accent, belly = shade(body, -0.12);
-  const y0 = 0.22 + fh * 0.2;          // 胴体の下端
+  const mb = new ModelBuilder(), gearB = new ModelBuilder(), beaconB = new ModelBuilder(), strobeB = new ModelBuilder(), landB = new ModelBuilder(), navB = new ModelBuilder();
+  const L = P.len, S = P.span, hs = S / 2;
+  const space = P.eng === 'space', sst = P.eng === 'sst', prop = P.eng === 'prop';
+  const fw = Math.max(0.16, P.dia / TILE_M * 1.3), fh = fw * (P.deck2 ? 1.22 : 1.04);
+  const y0 = Math.max(0.07, fw * (prop ? 0.42 : 0.38));
   const zb = -L / 2, zf = L / 2;
-  const space = P.eng === 'space', sst = P.eng === 'sst';
-  // 胴体（段々で細くする）
-  const core0 = zb + L * 0.18, core1 = zf - L * 0.16;
-  mb.box(0, y0, (core0 + core1) / 2, fw, fh, core1 - core0, body);
-  mb.box(0, y0, (core0 + core1) / 2, fw + 0.01, fh * 0.25, core1 - core0, belly);
-  // 機首
-  const nose = [[0.85, 0.9, 0.06], [0.7, 0.8, 0.05], [0.5, 0.6, 0.04]];
-  let z = core1;
-  const nl = (zf - core1) / 3;
-  for (let i = 0; i < 3; i++) {
-    const [sw, sh] = nose[i];
-    mb.box(0, y0 + fh * (1 - sh) * 0.35, z + nl / 2, fw * sw, fh * sh, nl, body);
-    if (i === 0) mb.box(0, y0 + fh * 0.62, z + nl * 0.6, fw * sw * 0.9, fh * 0.16, nl * 0.5, '#2a3a50', { glow: '#8090a0' });
-    z += nl;
+  const body = A.body, tail = A.tail, acc = A.accent, belly = shade(body, -0.1);
+  const WING = body === '#ffffff' || body === '#f8f4ec' ? '#cdd2dc' : shade(body, 0.1), WING2 = '#9aa0ae';
+  const win = '#3a4a60', winGlow = '#ffe2a0';
+  // ---- 胴体 ----
+  const c0 = zb + L * (prop ? 0.24 : 0.22), c1 = zf - L * (P.deck2 ? 0.1 : 0.13);
+  const mid = (c0 + c1) / 2, clen = c1 - c0;
+  mb.box(0, y0 + fh * 0.12, mid, fw, fh * 0.76, clen, body);
+  mb.box(0, y0, mid, fw * 0.78, fh, clen, body);
+  mb.box(0, y0 - 0.005, mid, fw * 0.8, fh * 0.2, clen, belly);
+  // 機首（3段で丸く）
+  const nl = (zf - c1) / 3;
+  [[0.9, 0.92, 0.0], [0.72, 0.8, 0.06], [0.46, 0.55, 0.16]].forEach(([sw, sh, lift], i) => {
+    const z = c1 + nl * (i + 0.5);
+    mb.box(0, y0 + fh * lift, z, fw * sw, fh * sh, nl, body);
+    if (i === 1) mb.box(0, y0 + fh * (lift + sh * 0.62), z + nl * 0.1, fw * sw * (typeId === 'a350' ? 1.02 : 0.92), fh * 0.16, nl * 0.85, '#1e2836', { glow: '#556070' });
+  });
+  if (sst) mb.box(0, y0 + fh * 0.25, zf + nl * 0.5, fw * 0.28, fh * 0.25, nl, body);
+  // 尾部（下が上がっていく）
+  const tl = (c0 - zb) / 4;
+  for (let i = 0; i < 4; i++) {
+    const t = (i + 0.5) / 4, sh = 1 - t * 0.62, sw = 1 - t * 0.55;
+    mb.box(0, y0 + fh * (1 - sh) * 0.92, c0 - tl * (i + 0.5), fw * sw, fh * sh, tl, body);
   }
-  if (P.hump) { mb.box(0, y0 + fh, core1 - L * 0.16, fw * 0.8, fh * 0.4, L * 0.32, body); mb.box(0, y0 + fh + fh * 0.12, core1 - L * 0.16, fw * 0.82, fh * 0.1, L * 0.28, '#3a4a60', { glow: '#ffe8a0' }); }
-  // 尾部（上にすぼむ）
-  z = core0;
-  const tl = (core0 - zb) / 3;
-  for (let i = 0; i < 3; i++) {
-    const sw = 0.85 - i * 0.2, sh = 0.85 - i * 0.22;
-    mb.box(0, y0 + fh * (1 - sh), z - tl / 2, fw * sw, fh * sh, tl, body);
-    z -= tl;
-  }
-  // 窓（夜に光る）
+  if (P.hump) { mb.box(0, y0 + fh * 0.9, c1 - L * 0.12, fw * 0.74, fh * 0.42, L * 0.26, body); mb.box(0, y0 + fh * 0.9, c1 + L * 0.02, fw * 0.6, fh * 0.32, L * 0.06, body); }
+  // 窓・チートライン・ドア
   if (!P.cargo && !space) {
-    for (const sx of [-1, 1]) mb.box(sx * (fw / 2 + 0.003), y0 + fh * 0.5, (core0 + core1) / 2 + L * 0.03, 0.005, fh * 0.12, (core1 - core0) * 0.92, '#3a4a60', { glow: '#ffe8a0' });
+    const rows = P.deck2 ? [0.42, 0.74] : [0.56];
+    for (const ry of rows) for (const sx of [-1, 1]) mb.box(sx * (fw / 2 + 0.003), y0 + fh * ry, mid + clen * 0.02, 0.005, fh * 0.09, clen * 0.94, win, { glow: winGlow });
+    if (P.hump) for (const sx of [-1, 1]) mb.box(sx * (fw * 0.37 + 0.003), y0 + fh * 1.12, c1 - L * 0.12, 0.005, fh * 0.07, L * 0.2, win, { glow: winGlow });
+    // ドア（左側）
+    for (const dz of [c1 - L * 0.02, c0 + L * 0.03]) mb.box(fw / 2 + 0.004, y0 + fh * 0.3, dz, 0.004, fh * 0.5, Math.max(0.05, L * 0.022), shade(body, -0.18));
   }
-  // チートライン
-  for (const sx of [-1, 1]) mb.box(sx * (fw / 2 + 0.004), y0 + fh * 0.32, (core0 + core1) / 2, 0.005, fh * 0.08, (core1 - core0), acc);
-  // 主翼
-  const wy = y0 + (P.eng === 'prop' || P.eng === 'rear' && P.cls === 1 ? fh * 0.85 : fh * 0.18);
-  const wz = -L * 0.02;
-  const wingCol = shade(body, -0.05);
+  for (const sx of [-1, 1]) mb.box(sx * (fw / 2 + 0.006), y0 + fh * (P.deck2 ? 0.24 : 0.36), mid, 0.004, fh * 0.06, clen, acc);
+  // ---- 主翼 ----
+  const sweepDeg = prop ? 3 : sst || space ? 0 : typeId === 'swallow' ? 23 : P.wide ? 32 : 26;
+  const tanS = Math.tan(sweepDeg * Math.PI / 180);
+  const high = P.wing === 'high';
+  const wingY = high ? y0 + fh * 0.96 : y0 + fh * 0.1;
+  const wz = high ? L * 0.04 : -L * 0.03;
+  const cr = prop ? L * 0.11 : L * 0.2, ct = prop ? cr * 0.62 : cr * 0.28;
+  const LE = t => wz + cr / 2 - t * (hs - fw / 2) * tanS;
+  const chord = t => lerp(cr, ct, t);
+  const dih = t => high ? 0 : t * hs * 0.07;
   if (sst || space) {
-    // デルタ翼
+    const n = 7;
+    for (let i = 0; i < n; i++) { const t = i / n, half = hs * (1 - t); mb.box(0, y0 + 0.02 + (space ? 0 : 0.01), wz - L * 0.32 + t * L * 0.6, half * 2 + fw * 0.9, 0.05, L * 0.6 / n + 0.01, space ? '#d8dce8' : WING); }
+    if (space) { mb.box(0, y0 - 0.01, wz - L * 0.05, fw * 1.05, 0.04, L * 0.75, '#22222c'); for (const sx of [-1, 1]) mb.box(sx * hs * 0.98, y0 + 0.05, wz - L * 0.3, 0.04, fh * 0.6, L * 0.12, tail); }
+  } else {
     const n = 6;
     for (let i = 0; i < n; i++) {
-      const t = i / n, half = (S / 2) * (1 - t);
-      mb.box(0, y0 + 0.02, wz - L * 0.3 + t * L * 0.55, half * 2 + fw, 0.05, L * 0.55 / n, space ? '#d8dce8' : wingCol);
+      const t0 = i / n, t1 = (i + 1) / n, tm = (t0 + t1) / 2;
+      const x0 = fw / 2 + t0 * (hs - fw / 2), x1 = fw / 2 + t1 * (hs - fw / 2);
+      const c = chord(tm), zc = LE(tm) - c / 2;
+      for (const sx of [-1, 1]) {
+        mb.box(sx * (x0 + x1) / 2, wingY + dih(tm), zc, x1 - x0 + 0.012, 0.05, c, WING);
+        mb.box(sx * (x0 + x1) / 2, wingY + dih(tm) + 0.051, zc - c * 0.38, x1 - x0, 0.003, c * 0.18, WING2); // フラップ
+      }
     }
-    if (space) { mb.box(0, y0 - 0.01, wz, fw * 1.1, 0.04, L * 0.7, '#2a2a36'); }
+    mb.box(0, wingY, LE(0) - cr / 2, fw * 0.98, 0.05, cr, WING);
+    // 翼端
+    for (const sx of [-1, 1]) {
+      const tx = sx * (hs - 0.02), tz = LE(1) - ct / 2, ty = wingY + dih(1);
+      if (P.tip === 'blended') { mb.box(tx, ty, tz - ct * 0.1, 0.03, fh * 0.5, ct * 0.8, tail); }
+      else if (P.tip === 'sharklet') { mb.box(tx, ty, tz, 0.03, fh * 0.38, ct * 0.65, tail); }
+      else if (P.tip === 'curved') { mb.box(tx, ty, tz, 0.03, fh * 0.22, ct * 0.8, WING); mb.box(tx + sx * 0.02, ty + fh * 0.2, tz - ct * 0.15, 0.03, fh * 0.2, ct * 0.5, WING); }
+      else if (P.tip === 'raked') { mb.box(tx + sx * hs * 0.04, ty + 0.01, tz - ct * 0.4, hs * 0.08, 0.04, ct * 0.55, WING); }
+      else if (P.tip === 'fence') { mb.box(tx, ty - fh * 0.1, tz, 0.03, fh * 0.32, ct * 0.7, tail); }
+      // 航行灯（左＝赤・右＝緑）と衝突防止灯
+      const nxp = sx * (hs + (P.tip === 'raked' ? hs * 0.08 : 0)), nzp = tz + (P.tip === 'raked' ? -ct * 0.4 : 0);
+      navB.box(nxp, ty + 0.02, nzp, 0.05, 0.05, 0.05, sx > 0 ? '#ff3030' : '#30ff60');
+      strobeB.box(nxp, ty + 0.02, nzp - 0.05, 0.06, 0.06, 0.06, '#ffffff');
+      landB.box(sx * (fw / 2 + 0.12), wingY + 0.01, LE(0.05) + 0.02, 0.07, 0.05, 0.03, '#fff6d0');
+    }
+  }
+  // ---- 尾翼 ----
+  const fin = fh * (prop ? 1.75 : P.deck2 ? 1.25 : 1.6), finZ = zb + L * 0.1;
+  const finSweep = prop ? 0.06 : 0.1;
+  if (!space) {
+    for (let i = 0; i < 5; i++) { const t = i / 5; mb.box(0, y0 + fh * 0.75 + t * fin, finZ - t * L * finSweep, 0.05, fin / 5 + 0.005, L * (sst ? 0.22 : 0.16) * (1 - t * 0.5), tail); }
+    mb.box(0, y0 + fh * 0.75 + fin * 0.45, finZ - L * finSweep * 0.5, 0.055, fin * 0.16, L * 0.08, acc);
+    navB.box(0, y0 + fh * 0.75 + fin + 0.02, finZ - L * finSweep, 0.04, 0.04, 0.04, '#ffffff');
   } else {
-    const seg = 4, sweep = P.eng === 'prop' ? 0 : 0.16 * S;
-    for (let i = 0; i < seg; i++) {
-      const t0 = i / seg, t1 = (i + 1) / seg, x0 = fw / 2 + t0 * (S / 2 - fw / 2), x1 = fw / 2 + t1 * (S / 2 - fw / 2);
-      const chord = lerp(L * 0.2, L * 0.08, (t0 + t1) / 2);
-      const zc = wz - sweep * (t0 + t1) / 2;
-      for (const sx of [-1, 1]) mb.box(sx * (x0 + x1) / 2, wy, zc, x1 - x0 + 0.01, 0.05, chord, wingCol);
-    }
-    for (const sx of [-1, 1]) mb.box(sx * (S / 2 - 0.03), wy + 0.05, wz - sweep, 0.05, 0.12, 0.08, acc); // ウィングレット
-    mb.box(0, wy, wz, fw + 0.02, 0.05, L * 0.2, wingCol);
+    for (const sx of [-1, 1]) for (let i = 0; i < 4; i++) { const t = i / 4; mb.box(sx * (fw * 0.3 + t * 0.06), y0 + fh * 0.7 + t * fin * 0.8, finZ - t * L * 0.08, 0.04, fin * 0.2, L * 0.13 * (1 - t * 0.4), tail); }
   }
-  // 尾翼
-  const fin = fh * (P.cls === 1 ? 1.6 : 1.9), finZ = zb + tl * 0.8;
-  for (let i = 0; i < 4; i++) { const t = i / 4; mb.box(0, y0 + fh * 0.6 + t * fin, finZ - t * L * 0.07, 0.06, fin / 4, L * 0.17 * (1 - t * 0.45), tail); }
-  mb.box(0, y0 + fh * 0.6 + fin * 0.45, finZ - L * 0.035, 0.065, fin * 0.18, L * 0.08, acc);
-  if (P.eng === 'rear' || P.eng === 'prop' && P.cls === 1 && false) {
-    // T字尾翼
-    mb.box(0, y0 + fh * 0.6 + fin, finZ - L * 0.08, S * 0.36, 0.04, L * 0.08, tail);
-  } else if (!sst && !space) {
-    mb.box(0, y0 + fh * 0.5, finZ + 0.02, S * 0.34, 0.04, L * 0.08, wingCol);
+  const hsSpan = S * (P.wide ? 0.19 : 0.17);
+  if (!sst && !space) {
+    const tY = P.tail === 'T' ? y0 + fh * 0.75 + fin : y0 + fh * 0.62;
+    const tZ = P.tail === 'T' ? finZ - L * finSweep - L * 0.02 : finZ - L * 0.01;
+    for (let i = 0; i < 3; i++) { const t = (i + 0.5) / 3; for (const sx of [-1, 1]) mb.box(sx * (fw * 0.3 + t * hsSpan), tY, tZ - t * hsSpan * (prop ? 0.08 : 0.5), hsSpan / 3 + 0.01, 0.035, L * 0.085 * (1 - t * 0.45), P.tail === 'T' ? tail : WING); }
   }
-  // エンジン
+  // ---- エンジン ----
   const props = [];
-  if (P.eng === 'jet' || P.eng === 'jet4') {
-    const xs = P.eng === 'jet4' ? [S * 0.18, S * 0.33] : [S * 0.2];
-    for (const xx of xs) for (const sx of [-1, 1]) {
-      const r = P.wide ? 0.18 : 0.13;
-      mb.cylZ(sx * xx, wy - r * 1.1, wz + L * 0.08 - xx * 0.3, r, L * 0.16, shade(acc, 0.1), 8);
-      mb.box(sx * xx, wy - r * 0.5, wz + L * 0.02 - xx * 0.3, 0.04, r * 0.6, L * 0.1, wingCol);
-      mb.cylZ(sx * xx, wy - r * 1.1, wz + L * 0.165 - xx * 0.3, r * 0.75, 0.01, '#2a2a36', 8);
+  if (P.eng === 'jet') {
+    const ts = P.engines === 4 ? [0.3, 0.58] : [P.wide ? 0.33 : 0.36];
+    const r = fw * (P.bigEng ? 0.4 : P.wide ? 0.33 : typeId === 'swallow' ? 0.3 : 0.27);
+    const eL = L * (P.wide ? 0.12 : 0.13);
+    for (const t of ts) for (const sx of [-1, 1]) {
+      const x = sx * (fw / 2 + t * (hs - fw / 2)), z = LE(t) + r * 0.9, y = wingY + dih(t) - r * 1.05;
+      mb.cylZ(x, y, z, r, eL, shade(acc === '#2a2a36' ? '#c8ccd4' : '#d8dce4', 0), 10);
+      mb.cylZ(x, y, z + eL / 2, r * 0.78, 0.012, '#1a1a22', 10);
+      mb.cylZ(x, y, z + eL / 2 - 0.004, r * 1.02, 0.03, '#a8acb8', 10);
+      mb.cylZ(x, y, z - eL / 2 - 0.04, r * 0.5, 0.1, '#7a7e8a', 8);
+      mb.box(x, y + r * 0.7, z - eL * 0.2, 0.04, r * 0.7, eL * 0.8, WING);
+      if (typeId === 'kamome' || typeId === 'cargo_s') mb.box(x, y - r * 0.9, z, r * 1.6, 0.02, eL * 0.6, shade('#d8dce4', -0.08)); // おにぎり形
     }
   } else if (P.eng === 'rear') {
-    for (const sx of [-1, 1]) { mb.cylZ(sx * (fw / 2 + 0.12), y0 + fh * 0.7, zb + L * 0.3, 0.1, L * 0.18, '#d8d8e0', 8); mb.box(sx * (fw / 2 + 0.05), y0 + fh * 0.7, zb + L * 0.3, 0.1, 0.04, 0.2, wingCol); }
-  } else if (P.eng === 'prop') {
-    const xs = [S * 0.22];
-    for (const xx of xs) for (const sx of [-1, 1]) {
-      mb.cylZ(sx * xx, wy - 0.02, wz + L * 0.06, 0.09, L * 0.22, body, 6);
+    for (const sx of [-1, 1]) { const r = fw * 0.28; mb.cylZ(sx * (fw / 2 + r * 1.1), y0 + fh * 0.62, zb + L * 0.27, r, L * 0.17, '#d8dce4', 8); mb.cylZ(sx * (fw / 2 + r * 1.1), y0 + fh * 0.62, zb + L * 0.355, r * 0.75, 0.01, '#1a1a22', 8); mb.box(sx * (fw / 2 + 0.03), y0 + fh * 0.62, zb + L * 0.27, r * 1.2, 0.04, L * 0.1, WING); }
+  } else if (prop) {
+    const t = P.engines === 2 ? 0.32 : 0.3;
+    for (const sx of [-1, 1]) {
+      const x = sx * (fw / 2 + t * (hs - fw / 2)), r = fw * 0.24, y = high ? wingY - r * 0.4 : wingY, z = LE(t) + L * 0.05;
+      mb.cylZ(x, y, z, r, L * 0.2, body, 8);
+      mb.cylZ(x, y, z + L * 0.1 + 0.02, r * 0.6, 0.06, '#3a3a44', 8);
+      if (high) mb.box(x, y - r * 0.6, z - L * 0.04, r * 1.1, r * 0.8, L * 0.12, body);
       const pg = new ModelBuilder();
-      pg.box(0, -0.35, 0, 0.06, 0.7, 0.02, '#3a3a44'); pg.box(0, -0.03, 0, 0.7, 0.06, 0.02, '#3a3a44'); pg.box(0, -0.04, 0.01, 0.08, 0.08, 0.06, acc);
-      props.push({ geo: pg.geos().L, pos: new THREE.Vector3(sx * xx, wy - 0.02, wz + L * 0.06 + L * 0.115) });
+      const bl = S * (typeId === 'humming' ? 0.13 : 0.15);
+      for (let k = 0; k < (typeId === 'humming' ? 3 : 6); k++) { const a = k / (typeId === 'humming' ? 3 : 6) * TAU; const m4 = new THREE.Matrix4().makeRotationZ(a); pg.setMat(m4); pg.box(0, 0, 0, 0.035, bl, 0.012, '#30303a'); }
+      pg.setMat(null); pg.cylZ(0, 0, 0.02, r * 0.45, 0.08, acc, 8);
+      props.push({ geo: pg.geos().L, pos: new THREE.Vector3(x, y, z + L * 0.1 + 0.06) });
     }
   } else if (sst) {
-    for (const sx of [-1, 1]) for (const k of [0.22, 0.36]) mb.box(sx * k * S / 1.2, y0 - 0.08, wz - L * 0.12, 0.14, 0.12, L * 0.24, '#c0c0c8');
-    mb.box(0, y0 + fh * 0.2, zf + 0.05, fw * 0.3, fh * 0.3, 0.2, body);
+    for (const sx of [-1, 1]) for (const k of [0.2, 0.34]) mb.box(sx * k * hs * 1.6, y0 - 0.08, wz - L * 0.16, 0.13, 0.12, L * 0.25, '#c0c4cc');
   } else if (space) {
-    for (const [ex, ey] of [[-0.12, 0.05], [0.12, 0.05], [0, 0.22]]) { mb.cylZ(ex, y0 + fh * 0.3 + ey, zb - 0.05, 0.1, 0.18, '#4a4a58', 8); mb.cylZ(ex, y0 + fh * 0.3 + ey, zb - 0.13, 0.07, 0.02, '#40e0ff', 8, { glow: '#80f0ff' }); }
+    for (const [ex, ey] of [[-0.13, 0.05], [0.13, 0.05], [0, 0.25]]) { mb.cylZ(ex, y0 + fh * 0.3 + ey, zb - 0.04, 0.11, 0.18, '#3a3a46', 8); mb.cylZ(ex, y0 + fh * 0.3 + ey, zb - 0.14, 0.08, 0.02, '#40e0ff', 8, { glow: '#9ff8ff' }); }
   }
-  // 脚
-  mb.box(0, 0, zf - L * 0.12, 0.06, y0, 0.06, '#3a3a44'); mb.box(0, 0, zf - L * 0.12, 0.08, 0.1, 0.12, '#1a1a22');
-  for (const sx of [-1, 1]) { mb.box(sx * fw * 0.4, 0, wz - 0.05, 0.07, y0, 0.07, '#3a3a44'); mb.box(sx * fw * 0.4, 0, wz - 0.05, 0.12, 0.12, 0.2, '#1a1a22'); }
-  // ライト
-  mb.box(-S / 2 + 0.02, wy, wz - (sst || space ? 0 : 0.16 * S), 0.05, 0.05, 0.05, '#ff3030', { glow: '#ff2020' });
-  mb.box(S / 2 - 0.02, wy, wz - (sst || space ? 0 : 0.16 * S), 0.05, 0.05, 0.05, '#30ff60', { glow: '#20ff40' });
-  mb.box(0, y0 + fh * 0.6 + fin, finZ - L * 0.06, 0.05, 0.05, 0.05, '#ffffff', { glow: '#ffffff' });
+  // ---- 脚 ----
+  const G2 = P.gear === 'fixed' ? mb : gearB;
+  const tire = '#1a1a22', strut = '#8a8e98';
+  G2.box(0, 0, zf - L * 0.1, 0.03, y0, 0.03, strut); G2.box(0, 0, zf - L * 0.1, 0.06, 0.07, 0.08, tire);
+  const mgX = high ? fw * 0.55 : fw * 0.42, mgZ = high ? wz - cr * 0.2 : LE(0.15) - cr * 0.45;
+  const bogie = P.wide ? (P.deck2 ? 3 : 2) : 1;
+  for (const sx of [-1, 1]) for (let k = 0; k < (P.deck2 ? 2 : 1); k++) {
+    const x = sx * (mgX + k * fw * 0.25), z = mgZ - k * L * 0.05;
+    G2.box(x, 0, z, 0.035, y0 + (high ? fh * 0.5 : 0), 0.035, strut);
+    for (let b = 0; b < bogie; b++) G2.box(x, 0, z + (b - (bogie - 1) / 2) * 0.09, 0.08, 0.08, 0.08, tire);
+    if (high) G2.box(x - sx * 0.05, y0 * 0.5, z, 0.12, 0.08, 0.2, body);
+  }
+  // ---- 衝突防止灯（上と下） ----
+  beaconB.box(0, y0 + fh + (P.hump ? fh * 0.32 : 0) + 0.015, mid, 0.05, 0.03, 0.05, '#ff2a2a');
+  beaconB.box(0, y0 - 0.02, mid, 0.05, 0.03, 0.05, '#ff2a2a');
+  strobeB.box(0, y0 + fh * 0.6, zb - 0.02, 0.04, 0.04, 0.04, '#ffffff');
+  landB.box(0, y0 + fh * 0.2, zf - L * 0.08, 0.06, 0.04, 0.04, '#fff6d0');
   const gs = mb.geos();
-  gs.props = props;
+  gs.gear = gearB.geos().L; gs.beacon = beaconB.geos().L; gs.strobe = strobeB.geos().L; gs.land = landB.geos().L; gs.nav = navB.geos().L;
+  gs.props = props; gs.fixedGear = P.gear === 'fixed';
+  gs.door = new THREE.Vector3(fw / 2, y0 + fh * 0.45, c1 - L * 0.02);
   return gs;
 }
 
@@ -2987,7 +3055,9 @@ function vehicleGeo(kind, color) {
     case 'car': mb.box(0, 0.08, 0, 0.42, 0.22, 0.82, color); mb.box(0, 0.3, -0.05, 0.38, 0.18, 0.44, color); mb.box(0, 0.32, -0.05, 0.4, 0.12, 0.46, '#3a4a5a'); mb.box(0, 0.12, 0.42, 0.3, 0.06, 0.02, '#fff8e0', { glow: '#fff0b0' }); break;
     case 'taxi': mb.box(0, 0.08, 0, 0.42, 0.22, 0.82, '#ffd84a'); mb.box(0, 0.3, -0.05, 0.38, 0.18, 0.44, '#ffd84a'); mb.box(0, 0.32, -0.05, 0.4, 0.12, 0.46, '#3a4a5a'); mb.box(0, 0.48, -0.05, 0.12, 0.06, 0.08, '#ffffff', { glow: '#ffe080' }); break;
     case 'fuel': mb.box(0, 0.08, 0.35, 0.45, 0.4, 0.35, '#e5484d'); mb.cylZ(0, 0.35, -0.15, 0.22, 0.7, '#f4f2ee', 8); mb.box(0, 0.08, -0.15, 0.4, 0.1, 0.75, '#3a3a44'); break;
-    case 'tug': mb.box(0, 0.06, 0, 0.45, 0.2, 0.6, '#ffd84a'); mb.box(0, 0.26, -0.12, 0.3, 0.2, 0.25, '#3a4a5a'); break;
+    case 'tug': mb.box(0, 0.04, 0, 0.5, 0.16, 0.75, '#ffd84a'); mb.box(0, 0.2, -0.22, 0.34, 0.16, 0.2, '#3a4a5a'); mb.box(0, 0.08, 0.42, 0.08, 0.06, 0.25, '#4a4a58'); mb.box(0, 0.2, 0.05, 0.08, 0.06, 0.08, '#ff9030', { glow: '#ffb040' }); break;
+    case 'belt': mb.box(0, 0.05, 0.2, 0.32, 0.18, 0.4, '#e8e8f0'); { const m4 = new THREE.Matrix4().makeTranslation(0, 0.25, -0.15).multiply(new THREE.Matrix4().makeRotationX(0.45)); mb.setMat(m4); mb.box(0, 0, 0, 0.2, 0.04, 0.8, '#3a3a44'); mb.setMat(null); } break;
+    case 'gpu': mb.box(0, 0.05, 0, 0.3, 0.25, 0.4, '#4cb85c'); break;
     case 'cart': mb.box(0, 0.06, 0.3, 0.35, 0.25, 0.3, '#f39a3c'); for (let i = 0; i < 2; i++) { mb.box(0, 0.08, -0.15 - i * 0.45, 0.4, 0.06, 0.38, '#9a9aa6'); mb.box(-0.05, 0.14, -0.15 - i * 0.45, 0.2, 0.15, 0.2, ['#e5484d', '#4a8fe0'][i]); mb.box(0.1, 0.14, -0.15 - i * 0.45, 0.12, 0.12, 0.2, '#ffd84a'); } break;
     case 'catering': mb.box(0, 0.08, 0.38, 0.45, 0.35, 0.3, '#f4f2ee'); mb.box(0, 0.4, -0.12, 0.5, 0.5, 0.75, '#f4f2ee'); mb.box(0, 0.08, -0.12, 0.42, 0.32, 0.7, '#9a9aa6'); mb.box(0, 0.6, 0.27, 0.51, 0.1, 0.02, color || '#3a7bd5'); break;
     case 'stairs': mb.box(0, 0.06, 0.2, 0.4, 0.2, 0.5, '#f4f2ee'); for (let i = 0; i < 4; i++) mb.box(0, 0.26 + i * 0.1, -0.1 - i * 0.12, 0.3, 0.05, 0.14, '#c0c0c8'); break;
@@ -4385,7 +4455,6 @@ function renderPeople(dtReal) {
 // ============================================================
 //  飛行機・ダイヤ・地上の車両
 // ============================================================
-const SPD = { approach: 3.0, roll0: 2.6, taxi: 1.1, takeoff: 3.6, climb: 3.6, hold: 2.2 };
 let flightSeq = 1;
 
 function opsWindow() {
@@ -4484,7 +4553,7 @@ function updateFlights(dt) {
         if (n > 0) { spawnDeparting(fl, n, fl.paxDep / fl.depSpr); fl.depSpawned += n; }
       }
     }
-    if (fl.status === 'sched' && now >= fl.arrT - 30) startApproach(fl);
+    if (fl.status === 'sched' && now >= fl.arrT - 48) startApproach(fl);
     if (fl.status === 'parked') {
       // 到着客
       if (!fl.cargo && fl.arrSpawned < fl.arrSpr) {
@@ -4550,10 +4619,15 @@ function startApproach(fl) {
 function makePlane(fl) {
   const m = planeModel(fl.type, fl.airline);
   R.scene.add(m);
-  const pl = { fl, mesh: m, x: 0, y: 10, z: 0, hdg: 0, pitch: 0, bank: 0, spd: SPD.approach, state: 'approach', path: null, pi: 0, wait: 0, runway: 0, stand: 0, vehicles: [], P: PLANES[fl.type] };
+  const P = PLANES[fl.type];
+  const pl = { fl, mesh: m, x: 0, y: 8, z: 0, hdg: 0, pitch: 0, bank: 0, spd: vApp(P), state: 'approach', path: null, pi: 0, wait: 0, runway: 0, stand: 0, vehicles: [], P, gearT: 1, engines: true };
   RT.planes.push(pl);
   return pl;
 }
+// 速さ（マス/ゲーム分）。実際の進入速度の比率にあわせる
+const vApp = P => 3.6 * (P.vapp / 140);
+const vRot = P => vApp(P) * 1.08;
+const V_TAXI = 1.4, V_TAXI_TURN = 0.65, GLIDE = Math.tan(5 * Math.PI / 180); // 見やすさのため5°の進入角
 function rwAxis(r, e) {
   // e: 0=始点側から進入
   const ri = runwayInfo(r);
@@ -4565,15 +4639,21 @@ function rwAxis(r, e) {
 function setApproachPath(pl, r) {
   const ax = rwAxis(r, G.windDir || 0);
   pl.ax = ax;
-  const start = ax.P(-48, 13);
-  if (pl.state !== 'hold') { pl.x = start.x; pl.y = start.y; pl.z = start.z; }
-  pl.td = ax.P(2.5, 0);
-  pl.hdg = Math.atan2(pl.td.x - pl.x, pl.td.z - pl.z);
-  pl.state = 'approach'; pl.spd = SPD.approach;
+  if (pl.state !== 'hold') {
+    // 最終進入の少し横から入ってきて、旋回して滑走路に正対する
+    const side = Math.random() < 0.5 ? -1 : 1;
+    const s = ax.P(-62, 62 * GLIDE + 1.5);
+    const perp = ax.ri.horiz ? { x: 0, z: 1 } : { x: 1, z: 0 };
+    pl.x = s.x + perp.x * side * 14; pl.z = s.z + perp.z * side * 14; pl.y = s.y + 1;
+    pl.hdg = ax.hdg + side * 0.5 * (ax.ri.horiz ? (ax.dir > 0 ? -1 : 1) : (ax.dir > 0 ? 1 : -1));
+  }
+  pl.faf = ax.P(-24, 24 * GLIDE);
+  pl.td = ax.P(clamp(ax.len * 0.12, 1.2, 3), 0);
+  pl.state = 'approach'; pl.phase = 'base'; pl.spd = vApp(pl.P) * 1.1;
 }
-function runwayFreeFor(r, pl) { return !r.busy || r.busy === pl; }
+function runwayFreeFor(r, pl) { return (!r.busy || r.busy === pl) && G.min >= (r.wakeUntil || 0); }
 function landingClose(r, except) {
-  for (const p of RT.planes) if (p !== except && p.runway === r.uid && (p.state === 'approach' && Math.hypot(p.x - p.td.x, p.z - p.td.z) < 20)) return true;
+  for (const p of RT.planes) if (p !== except && p.runway === r.uid && p.state === 'approach' && p.phase === 'final' && Math.hypot(p.x - p.td.x, p.z - p.td.z) < 28) return true;
   return false;
 }
 function pickStand(pl) {
@@ -4585,46 +4665,85 @@ function pickStand(pl) {
   cands.sort((a, b) => (B[a.id].cls - sc) * 5 - (B[b.id].cls - sc) * 5 + (a.gate && G.blds[a.gate] && B[G.blds[a.gate].id].bus ? 3 : 0) - (b.gate && G.blds[b.gate] && B[G.blds[b.gate].id].bus ? 3 : 0) + Math.random());
   return cands[0];
 }
+function turnToward(pl, target, rate, dt) {
+  const d = angDiff(pl.hdg, target), st = rate * dt;
+  pl.hdg += Math.abs(d) <= st ? d : Math.sign(d) * st;
+  return d;
+}
 function updatePlane(pl, dt) {
-  const fl = pl.fl;
+  const fl = pl.fl, P = pl.P;
   const r = G.blds[pl.runway];
   if (!r && pl.state !== 'climb' && pl.state !== 'parked') { removePlane(pl); if (fl.status !== 'departed') cancelFlight(fl, '滑走路がなくなりました'); return; }
+  let targetBank = 0;
   switch (pl.state) {
     case 'approach': {
-      const dx = pl.td.x - pl.x, dz = pl.td.z - pl.z, d = Math.hypot(dx, dz);
-      // 霧（ILSなし）・駐機場なし・滑走路使用中 → 待機
-      if (d < 22 && !pl.cleared) {
+      // 進入許可（駐機場・滑走路・霧）
+      const dTD = Math.hypot(pl.td.x - pl.x, pl.td.z - pl.z);
+      if (!pl.cleared && dTD < 40) {
         const fogBlock = G.weather === 'fog' && !hasKind('ils');
-        const stand = !fogBlock && runwayFreeFor(r, pl) ? pickStand(pl) : null;
+        const stand = !fogBlock ? pickStand(pl) : null;
         if (!stand) { startHold(pl); return; }
-        pl.cleared = true; r.busy = pl; pl.stand = stand.uid; stand.busy = fl.id; fl.stand = stand.uid; fl.gate = stand.gate || 0;
+        pl.cleared = true; pl.stand = stand.uid; stand.busy = fl.id; fl.stand = stand.uid; fl.gate = stand.gate || 0;
         if (fl.gate && !fl.cargo) spawnCrew(fl, G.blds[fl.gate]);
       }
-      const st = pl.spd * dt;
-      if (d <= st) {
-        pl.x = pl.td.x; pl.z = pl.td.z; pl.y = 0; pl.state = 'roll'; pl.rollT = 0; pl.spd = SPD.roll0;
-        pl.hdg = pl.ax.hdg;
-        Sound.se('land');
-        fl.status = 'landed'; fl.landT = G.min;
-        onLanded(fl);
+      if (pl.phase === 'base') {
+        // FAF へ向かいながら旋回
+        const dx = pl.faf.x - pl.x, dz = pl.faf.z - pl.z, d = Math.hypot(dx, dz);
+        const want = Math.atan2(dx, dz);
+        // 中心線の延長上の点（FAF）へ向かい、着いたら最終進入へ
+        const turn = turnToward(pl, want, 0.42, dt);
+        targetBank = clamp(-turn * 1.4, -0.45, 0.45);
+        pl.x += Math.sin(pl.hdg) * pl.spd * dt; pl.z += Math.cos(pl.hdg) * pl.spd * dt;
+        pl.y += (Math.max(pl.faf.y, 1.5) - pl.y) * Math.min(1, dt * 0.15);
+        if (d < 2.2) pl.phase = 'final';
+        pl.pitch = lerp(pl.pitch, 0.03, 0.1);
       } else {
-        pl.x += dx / d * st; pl.z += dz / d * st;
-        const tot = 50.5;
-        pl.y = Math.max(0, 13 * clamp(d / tot, 0, 1));
-        pl.hdg = lerpAngle(pl.hdg, Math.atan2(dx, dz), 0.1);
-        pl.pitch = -0.04; pl.bank *= 0.95;
+        // 最終進入：滑走路の中心線にのり、5°で降下
+        const hx = Math.sin(pl.ax.hdg), hz = Math.cos(pl.ax.hdg);
+        const along = (pl.x - pl.td.x) * hx + (pl.z - pl.td.z) * hz;   // 負＝手前
+        const cross = (pl.x - pl.td.x) * hz - (pl.z - pl.td.z) * hx;
+        // 横ずれを直しながら中心線にのる（ローカライザー）
+        const wantH = pl.ax.hdg - clamp(cross * 0.35, -0.6, 0.6);
+        const tr = turnToward(pl, wantH, 0.6, dt);
+        targetBank = clamp(-tr * 2, -0.3, 0.3);
+        pl.spd = lerp(pl.spd, vApp(P), Math.min(1, dt * 0.3));
+        pl.x += Math.sin(pl.hdg) * pl.spd * dt; pl.z += Math.cos(pl.hdg) * pl.spd * dt;
+        const gs = Math.max(0, -along) * GLIDE;
+        // 滑走路が空いていなければ着陸やり直し（ゴーアラウンド）
+        if (along > -9 && r.busy !== pl) {
+          if (runwayFreeFor(r, pl)) r.busy = pl;
+          else { goAround(pl); break; }
+        }
+        // フレア（接地直前に機首を上げて降下をゆるめる）
+        if (pl.y < 0.6) { pl.pitch = lerp(pl.pitch, 0.1, Math.min(1, dt * 0.8)); pl.y = Math.max(0, Math.min(pl.y, gs) - dt * pl.spd * 0.03); }
+        else { pl.y = lerp(pl.y, gs, Math.min(1, dt * 0.5)); pl.pitch = lerp(pl.pitch, 0.045, 0.1); }
+        if (along >= 0 && Math.abs(cross) > 0.7) { goAround(pl); break; }
+        if (along >= 0 || (pl.y <= 0.005 && along > -1.5)) {
+          // 接地は中心線の上に
+          pl.x -= cross * hz; pl.z += cross * hx;
+          pl.y = 0; pl.state = 'roll'; pl.rollT = 0; pl.hdg = pl.ax.hdg; pl.bank = 0;
+          // 滑走路の残りで止まれるように減速度を決める
+          const remain = Math.max(4, pl.ax.len - (pl.td && Math.abs(along)) - 5);
+          pl.decel = (pl.spd * pl.spd - V_TAXI * V_TAXI) / (2 * Math.min(remain, Math.max(5, pl.ax.len * 0.55)));
+          Sound.se('land'); if (P.eng !== 'prop') setTimeout(() => Sound.se('jet'), 300);
+          fl.status = 'landed'; fl.landT = G.min;
+          onLanded(fl);
+        }
       }
       break;
     }
     case 'hold': {
+      // 待機経路（だ円のレーストラック）
       pl.holdT += dt;
-      pl.ha += dt * SPD.hold / 11;
-      const cx = pl.hc.x + Math.cos(pl.ha) * 11, cz = pl.hc.z + Math.sin(pl.ha) * 11;
-      pl.hdg = Math.atan2(cx - pl.x, cz - pl.z);
-      pl.x = cx; pl.z = cz; pl.y = 11; pl.bank = -0.35; pl.pitch = 0;
-      if (pl.holdT > 4 && Math.floor(pl.holdT) % 3 === 0) {
+      pl.ha += dt * pl.spd / 12;
+      const cx = pl.hc.x + Math.cos(pl.ha) * 14, cz = pl.hc.z + Math.sin(pl.ha) * 8;
+      const want = Math.atan2(cx - pl.x, cz - pl.z);
+      turnToward(pl, want, 0.5, dt);
+      pl.x += Math.sin(pl.hdg) * pl.spd * dt; pl.z += Math.cos(pl.hdg) * pl.spd * dt;
+      pl.y = lerp(pl.y, 7, 0.02); targetBank = -0.4; pl.pitch = 0.02; pl.spd = vApp(P);
+      if (pl.holdT > 4 && Math.floor(pl.holdT * 2) % 6 === 0) {
         const fogBlock = G.weather === 'fog' && !hasKind('ils');
-        if (!fogBlock && !r.busy && pickStand(pl)) { pl.cleared = false; setApproachPath(pl, r); pl.state = 'approach'; }
+        if (!fogBlock && (pl.cleared || pickStand(pl)) && !landingClose(r, pl)) { setApproachPath(pl, r); pl.phase = 'base'; }
       }
       if (pl.holdT > 100) { // ダイバート
         removePlane(pl); fl.status = 'cancel'; fl.why = '着陸できず他の空港へ';
@@ -4635,44 +4754,60 @@ function updatePlane(pl, dt) {
       }
       break;
     }
+    case 'climb_ga': {
+      // 再上昇して待機経路へ
+      pl.gaT += dt;
+      pl.pitch = lerp(pl.pitch, 0.14, 0.08); pl.spd = Math.min(vApp(P) * 1.3, pl.spd + dt * 0.3);
+      pl.x += Math.sin(pl.hdg) * pl.spd * dt; pl.z += Math.cos(pl.hdg) * pl.spd * dt; pl.y += pl.spd * dt * 0.12;
+      if (pl.gaT > 6) { const s2 = G.blds[pl.stand]; startHold(pl); }
+      break;
+    }
     case 'roll': {
-      pl.spd = Math.max(SPD.taxi * 0.9, pl.spd - dt * 0.6);
+      // 接地 → 前輪を下ろす → 逆噴射・ブレーキで減速
+      pl.pitch = Math.max(0, pl.pitch - dt * 0.12);
+      pl.spd = Math.max(V_TAXI, pl.spd - dt * (pl.decel || 0.5));
       const st = pl.spd * dt;
       pl.x += Math.sin(pl.hdg) * st; pl.z += Math.cos(pl.hdg) * st;
       pl.rollT += st;
-      if (pl.spd <= SPD.taxi * 0.92 || pl.rollT > pl.ax.len - 4) {
-        // 駐機場へ
+      if (pl.spd <= V_TAXI * 1.02 || pl.rollT > pl.ax.len - 4) {
         const stand = G.blds[pl.stand];
         const cur = idx(clamp(Math.floor(pl.x), 0, W - 1), clamp(Math.floor(pl.z), 0, H - 1));
         if (!stand) { pl.state = 'taxi_out'; break; }
-        const sc = bCenter(stand);
-        const path = planePath(cur, idx(Math.floor(sc.x), Math.floor(sc.z)), [stand.uid]);
-        if (!path) {
-          // 進行方向の先の端から
-          const alt = planePath(runwayInfo(r).endTile(G.windDir ? 0 : 1), idx(Math.floor(sc.x), Math.floor(sc.z)), [stand.uid]);
-          pl.path = alt ? alt.map(tilePt) : [{ x: sc.x, z: sc.z }];
-        } else pl.path = path.map(tilePt);
-        // 最後は駐機場の中心（ずらし）
+        const sc = bCenter(stand), goal = idx(Math.floor(sc.x), Math.floor(sc.z));
+        let path = planePath(cur, goal, [stand.uid]);
+        if (!path) path = planePath(runwayInfo(r).endTile(G.windDir ? 0 : 1), goal, [stand.uid]);
+        pl.path = smoothPath(path ? path.map(tilePt) : [], pl);
         pl.path.push({ x: sc.x, z: sc.z });
-        pl.pi = 0; pl.state = 'taxi_in';
-        if (r.busy === pl) r.busy = null;
+        pl.pi = 0; pl.state = 'taxi_in'; pl.leaveRw = true;
       }
       break;
     }
     case 'taxi_in':
     case 'taxi_out': {
+      // 滑走路を出たら使用中を解除
+      if (pl.leaveRw && r && r.busy === pl && !onRunway(pl, r)) { r.busy = null; pl.leaveRw = false; r.wakeUntil = G.min + (P.cls >= 3 ? 2.5 : 1); }
+      // 離陸前は滑走路の手前で一時停止（ホールドショート）
+      if (pl.state === 'taxi_out' && pl.holdIdx != null && pl.pi >= pl.holdIdx && !pl.rwCleared) {
+        pl.spd = Math.max(0, pl.spd - dt * 0.8);
+        pl.wait += dt;
+        if (runwayFreeFor(r, pl) && !landingClose(r, pl)) { pl.rwCleared = true; r.busy = pl; }
+        if (pl.wait > 220) removePlane(pl);
+        break;
+      }
       if (followPath(pl, dt)) {
         if (pl.state === 'taxi_in') {
           pl.state = 'parking'; const stand = G.blds[pl.stand];
           pl.tHdg = stand ? Math.atan2(frontDir(stand.rot)[0], frontDir(stand.rot)[1]) : pl.hdg;
-        } else { pl.state = 'lineup'; pl.wait = 0; }
+        } else { pl.state = 'align'; pl.wait = 0; if (!pl.rwCleared) { pl.rwCleared = true; r.busy = pl; } }
       }
       break;
     }
     case 'parking': {
-      { const dA = angDiff(pl.hdg, pl.tHdg), stp = dt * 0.9; pl.hdg += Math.abs(dA) <= stp ? dA : Math.sign(dA) * stp; }
-      if (Math.abs(angDiff(pl.hdg, pl.tHdg)) < 0.01) {
-        pl.hdg = pl.tHdg; pl.state = 'parked';
+      // 停止線に向かってゆっくり旋回して止まる
+      const dA = turnToward(pl, pl.tHdg, 0.6, dt);
+      pl.spd = 0.15;
+      if (Math.abs(dA) < 0.01) {
+        pl.hdg = pl.tHdg; pl.state = 'parked'; pl.spd = 0; pl.engines = false;
         fl.status = 'parked'; fl.parkT = G.min;
         spawnTurnVehicles(pl);
       }
@@ -4680,100 +4815,162 @@ function updatePlane(pl, dt) {
     }
     case 'parked': break;
     case 'pushback': {
-      // 後ろへ少し下がる
+      // トーイングカーで後ろに押し出し、誘導路の向きへ回す
       pl.pbT += dt;
-      const sp = 0.12 * dt;
-      pl.x -= Math.sin(pl.hdg) * sp; pl.z -= Math.cos(pl.hdg) * sp;
-      if (pl.pbT > 4) { pl.state = 'taxi_out'; pl.pi = 0; }
-      break;
-    }
-    case 'lineup': {
-      pl.wait += dt;
-      const can = runwayFreeFor(r, pl) && !landingClose(r, pl);
-      if (can) {
-        r.busy = pl; pl.state = 'align';
+      const back = pl.pbDist || 1.5;
+      if (pl.pbDone < back) {
+        const sp = 0.18 * dt; pl.pbDone += sp;
+        pl.x -= Math.sin(pl.hdg) * sp; pl.z -= Math.cos(pl.hdg) * sp;
+        if (pl.pbDone > back * 0.45 && pl.pbTurn) turnToward(pl, pl.pbTurn, 0.22, dt);
+      } else if (pl.pbT < pl.pbEnd) {
+        // エンジン始動・トーイングカーが離れる
+        if (!pl.engines) { pl.engines = true; Sound.se(P.eng === 'prop' ? 'prop' : 'jet'); }
+      } else {
+        if (pl.tug) { R.scene.remove(pl.tug); pl.tug = null; }
+        pl.state = 'taxi_out'; pl.pi = 0; pl.spd = 0.1;
+        // 後ろにある経路点はとばす
+        while (pl.pi < pl.path.length - 1) { const p = pl.path[pl.pi]; const f = (p.x - pl.x) * Math.sin(pl.hdg) + (p.z - pl.z) * Math.cos(pl.hdg); if (f > 0.3) break; pl.pi++; }
       }
-      if (pl.wait > 200) { removePlane(pl); }
+      if (pl.tug) { const nx = pl.x + Math.sin(pl.hdg) * (P.len / 2 + 0.4), nz = pl.z + Math.cos(pl.hdg) * (P.len / 2 + 0.4); pl.tug.position.set(nx, 0, nz); pl.tug.rotation.y = pl.hdg + Math.PI; }
       break;
     }
     case 'align': {
-      { const dA = angDiff(pl.hdg, pl.ax.hdg), stp = dt * 0.9; pl.hdg += Math.abs(dA) <= stp ? dA : Math.sign(dA) * stp; }
-      const tp = pl.ax.P(1, 0);
-      pl.x += (tp.x - pl.x) * Math.min(1, dt * 0.6); pl.z += (tp.z - pl.z) * Math.min(1, dt * 0.6);
-      if (Math.abs(angDiff(pl.hdg, pl.ax.hdg)) < 0.01 && Math.hypot(tp.x - pl.x, tp.z - pl.z) < 0.4) { pl.hdg = pl.ax.hdg; pl.state = 'takeoff'; pl.spd = 0.3; pl.rollT = 0; Sound.se(pl.P.eng === 'prop' ? 'prop' : 'jet'); }
+      // 滑走路の端で中心線にのって正対する
+      const tp = pl.ax.P(Math.min(1.2, P.len * 0.4), 0);
+      const dx = tp.x - pl.x, dz = tp.z - pl.z, d = Math.hypot(dx, dz);
+      const k = Math.min(1, dt * 0.6);
+      pl.x += dx * k; pl.z += dz * k;
+      const dA = turnToward(pl, pl.ax.hdg, 0.7, dt);
+      pl.spd = 0.2;
+      if (Math.abs(dA) < 0.01 && d < 0.12) {
+        pl.hdg = pl.ax.hdg; pl.x = tp.x; pl.z = tp.z; pl.state = 'takeoff'; pl.spd = 0.05; pl.rollT = 0;
+        pl.acc = vRot(P) * vRot(P) / (2 * Math.max(4, pl.ax.len * (P.eng === 'prop' ? 0.32 : 0.48)));
+        Sound.se(P.eng === 'prop' ? 'prop' : 'jet');
+      }
       break;
     }
     case 'takeoff': {
-      pl.spd = Math.min(SPD.takeoff, pl.spd + dt * 0.5);
+      // 加速 → ローテーション（機首上げ） → 離陸
+      pl.spd = Math.min(vRot(P) * 1.25, pl.spd + dt * (pl.acc || 0.6));
       const st = pl.spd * dt;
       pl.x += Math.sin(pl.hdg) * st; pl.z += Math.cos(pl.hdg) * st; pl.rollT += st;
-      if (pl.rollT > pl.ax.len * 0.6) { pl.state = 'climb'; if (r.busy === pl) r.busy = null; }
+      if (pl.spd >= vRot(P)) {
+        pl.pitch = Math.min(0.16, pl.pitch + dt * 0.25);
+        if (pl.pitch > 0.11) pl.y += st * Math.tan(pl.pitch) * 0.9;
+      }
+      if (pl.y > 0.5) { pl.state = 'climb'; pl.climbT = 0; pl.depTurn = (Math.random() - 0.5) * 1.6; }
       break;
     }
     case 'climb': {
-      pl.spd = Math.min(SPD.climb * 1.2, pl.spd + dt * 0.2);
+      pl.climbT += dt;
+      pl.spd = Math.min(vApp(P) * 1.7, pl.spd + dt * 0.25);
+      if (pl.y > 0.9 && pl.gearT > 0) pl.gearT = Math.max(0, pl.gearT - dt * 0.8);
+      if (r && r.busy === pl && pl.y > 1.2) { r.busy = null; r.wakeUntil = G.min + (P.cls >= 3 ? 2.5 : 1.2); }
+      // 高度がとれたら行き先の方向へ旋回
+      if (pl.y > 3.5 && Math.abs(pl.depTurn) > 0.02) { const t0 = pl.depTurn; const st2 = Math.sign(t0) * Math.min(Math.abs(t0), 0.12 * dt); pl.hdg += st2; pl.depTurn -= st2; targetBank = -Math.sign(t0) * 0.35; }
       const st = pl.spd * dt;
       pl.x += Math.sin(pl.hdg) * st; pl.z += Math.cos(pl.hdg) * st;
-      pl.y += st * 0.28; pl.pitch = lerp(pl.pitch, 0.18, 0.05);
-      if (pl.y > 16 || pl.x < -40 || pl.x > W + 40 || pl.z < -40 || pl.z > H + 40) removePlane(pl);
+      pl.y += st * Math.tan(pl.pitch) * 0.85; pl.pitch = lerp(pl.pitch, 0.13, 0.05);
+      if (pl.y > 22 || pl.x < -60 || pl.x > W + 60 || pl.z < -60 || pl.z > H + 60) removePlane(pl);
       break;
     }
   }
+  pl.bank = lerp(pl.bank, targetBank, 0.08);
+  // 着陸脚
+  if (pl.state === 'approach' || pl.state === 'hold') { const want = pl.y < 6 ? 1 : 0; pl.gearT = clamp(pl.gearT + (want ? 1 : -1) * dt * 0.6, 0, 1); }
   // メッシュ
-  const m = pl.mesh;
-  const base = pl.y <= 0.001 ? 0 : 0;
-  m.position.set(pl.x, pl.y + base, pl.z);
-  m.rotation.set(0, 0, 0);
+  const m = pl.mesh, u = m.userData;
+  m.position.set(pl.x, pl.y, pl.z);
   m.rotation.order = 'YXZ';
   m.rotation.y = pl.hdg; m.rotation.x = -pl.pitch; m.rotation.z = pl.bank;
+  if (u.gear) { u.gear.visible = pl.gearT > 0.05; u.gear.scale.y = Math.max(0.05, pl.gearT); }
+  // ライト：衝突防止灯（エンジンがかかっている間、1秒に1回）・ストロボ（滑走路と空中）・着陸灯
+  const tt = RT.time;
+  if (u.beacon) u.beacon.visible = pl.engines && (tt % 1.0) < 0.12;
+  const inAirOrRw = pl.state === 'approach' || pl.state === 'hold' || pl.state === 'roll' || pl.state === 'takeoff' || pl.state === 'climb' || pl.state === 'align';
+  if (u.strobe) u.strobe.visible = inAirOrRw && ((tt % 1.2) < 0.05 || ((tt % 1.2) > 0.15 && (tt % 1.2) < 0.2));
+  if (u.land) u.land.visible = (pl.state === 'approach' && pl.phase === 'final') || pl.state === 'roll' || pl.state === 'takeoff' || (pl.state === 'climb' && pl.y < 6);
   // プロペラ
-  for (const c of m.children) if (c.userData.prop) c.rotation.z += 0.9;
-  // 地上車両
+  for (const c of u.props || []) c.rotation.z += pl.engines ? 0.9 : (c.userData.spin = Math.max(0, (c.userData.spin || 0.9) * 0.96));
+  // 地上車両・搭乗橋
   for (const v of pl.vehicles) updateTurnVehicle(pl, v, dt);
+}
+function onRunway(pl, r) {
+  const def = B[r.id], [w, h] = dims(def, r.rot);
+  return pl.x > r.x - 0.2 && pl.x < r.x + w + 0.2 && pl.z > r.y - 0.2 && pl.z < r.y + h + 0.2;
+}
+// タイルの中心をつないだ経路から、ほぼ一直線の点をはぶく
+function smoothPath(pts, pl, keep) {
+  if (pts.length < 3) return pts;
+  const out = [pts[0]];
+  for (let i = 1; i < pts.length - 1; i++) {
+    const a = out[out.length - 1], b = pts[i], c = pts[i + 1];
+    const cr = (b.x - a.x) * (c.z - b.z) - (b.z - a.z) * (c.x - b.x);
+    if (Math.abs(cr) > 0.01 || i === keep) out.push(b);
+  }
+  out.push(pts[pts.length - 1]);
+  return out;
 }
 function tilePt(i) { return { x: i % W + 0.5, z: Math.floor(i / W) + 0.5 }; }
 function angDiff(a, b) { let d = b - a; while (d > Math.PI) d -= TAU; while (d < -Math.PI) d += TAU; return d; }
 function lerpAngle(a, b, t) { return a + angDiff(a, b) * t; }
+// 目標点を少し先に置いて追いかける（カーブがなめらかになる）
 function followPath(pl, dt) {
-  // 前の飛行機
   let blocked = false;
   for (const o of RT.planes) {
     if (o === pl || o.y > 0.5 || o.gone) continue;
     const dx = o.x - pl.x, dz = o.z - pl.z, d = Math.hypot(dx, dz);
-    const minD = (pl.P.len + o.P.len) * 0.42 + 0.3;
+    const minD = (pl.P.len + o.P.len) * 0.45 + 0.4;
     if (d < minD && d > 0.01) {
       const fwd = (dx * Math.sin(pl.hdg) + dz * Math.cos(pl.hdg)) / d;
-      if (fwd > 0.55 && (o.state !== 'parked' || d < minD * 0.7)) { blocked = true; break; }
+      if (fwd > 0.6 && (o.state !== 'parked' || d < minD * 0.6)) { blocked = true; break; }
     }
   }
-  if (blocked) { pl.blockT = (pl.blockT || 0) + dt; if (pl.blockT < 7) return false; }
+  if (blocked) { pl.blockT = (pl.blockT || 0) + dt; pl.spd = Math.max(0, pl.spd - dt * 1.2); if (pl.blockT < 8) return false; }
   else pl.blockT = 0;
-  let rem = pl.spd * dt;
-  while (rem > 0 && pl.pi < pl.path.length) {
-    const t = pl.path[pl.pi];
-    const dx = t.x - pl.x, dz = t.z - pl.z, d = Math.hypot(dx, dz);
-    if (d < 0.001) { pl.pi++; continue; }
-    const want = Math.atan2(dx, dz);
-    const turn = Math.abs(angDiff(pl.hdg, want));
-    pl.hdg = lerpAngle(pl.hdg, want, Math.min(1, dt * 0.9 + (d < 0.6 ? 0.3 : 0)));
-    const spd = turn > 0.6 ? 0.5 : 1;
-    const st = rem * spd;
-    if (d <= st) { pl.x = t.x; pl.z = t.z; pl.pi++; rem -= d / spd; }
-    else { pl.x += dx / d * st; pl.z += dz / d * st; rem = 0; }
+  // 目標点
+  // 近い点・うしろの点はとばす（最後の点以外）
+  const rMin = 0.45 + pl.P.len * 0.12;   // 最小旋回半径
+  while (pl.pi < pl.path.length - 1) {
+    const q = pl.path[pl.pi], qd = Math.hypot(q.x - pl.x, q.z - pl.z);
+    const fwd = (q.x - pl.x) * Math.sin(pl.hdg) + (q.z - pl.z) * Math.cos(pl.hdg);
+    if (qd < 0.4 || (qd < rMin * 1.6 && fwd < qd * 0.2)) pl.pi++; else break;
   }
-  pl.spd = Math.min(SPD.taxi, pl.spd + dt * 0.4);
-  return pl.pi >= pl.path.length;
+  if (pl.pi >= pl.path.length) return true;
+  const t = pl.path[pl.pi];
+  const last = pl.pi === pl.path.length - 1;
+  const dx = t.x - pl.x, dz = t.z - pl.z, d = Math.hypot(dx, dz);
+  const want = Math.atan2(dx, dz);
+  const diff = Math.abs(angDiff(pl.hdg, want));
+  // 曲がるときと止まる前はゆっくり
+  let vt = diff > 0.9 ? 0.3 : diff > 0.4 ? V_TAXI_TURN : V_TAXI;
+  if (pl.pi + 1 < pl.path.length) { const n = pl.path[pl.pi + 1]; const nd = Math.abs(angDiff(want, Math.atan2(n.x - t.x, n.z - t.z))); if (nd > 0.6 && d < 1.6) vt = Math.min(vt, V_TAXI_TURN); }
+  if (last) vt = Math.min(vt, Math.max(0.15, d * 0.5));
+  if (pl.state === 'taxi_out' && pl.holdIdx != null && !pl.rwCleared && pl.pi >= pl.holdIdx - 1) vt = Math.min(vt, Math.max(0.12, d * 0.4));
+  pl.spd += clamp(vt - pl.spd, -dt * 0.9, dt * 0.35);
+  // 速さ÷最小旋回半径 ＝ 曲がれる角速度（小さい機体ほど小回り）
+  turnToward(pl, want, Math.max(0.25, pl.spd / rMin), dt);
+  const st = pl.spd * dt;
+  pl.x += Math.sin(pl.hdg) * st; pl.z += Math.cos(pl.hdg) * st;
+  if (last && d < 0.12) { pl.pi++; return true; }
+  return false;
+}
+function goAround(pl) {
+  pl.state = 'climb_ga'; pl.gaT = 0; pl.fl.goAround = (pl.fl.goAround || 0) + 1;
+  Sound.se('jet');
+  Bus.emit('goAround', pl.fl);
 }
 function startHold(pl) {
   pl.state = 'hold'; pl.holdT = pl.holdT || 0;
-  pl.hc = { x: clamp(pl.x, 5, W - 5), z: clamp(pl.z, 5, H - 5) };
-  pl.ha = Math.atan2(pl.z - pl.hc.z, pl.x - pl.hc.x);
+  pl.hc = { x: clamp(pl.x, 8, W - 8), z: clamp(pl.z, 6, H - 6) };
+  pl.ha = Math.atan2((pl.z - pl.hc.z) / 8, (pl.x - pl.hc.x) / 14);
   pl.fl.status = 'hold';
 }
 function removePlane(pl) {
   pl.gone = true;
   R.scene.remove(pl.mesh);
   for (const v of pl.vehicles) R.scene.remove(v.mesh);
+  if (pl.tug) R.scene.remove(pl.tug);
   pl.vehicles = [];
   const s = G.blds[pl.stand]; if (s && s.busy === pl.fl.id) s.busy = 0;
   const r = G.blds[pl.runway]; if (r) { if (r.busy === pl) r.busy = null; r._load = Math.max(0, (r._load || 1) - 1); }
@@ -4814,10 +5011,10 @@ function pushback(fl) {
   } else earn(PLANES[fl.type].cargo * 7000 * rnd(0.8, 1.2), 'cargo');
   const route = G.routes.find(r => r.id === fl.rid);
   if (route) { route.flights = (route.flights || 0) + 1; route.pax = (route.pax || 0) + fl.boarded + fl.paxArr; route.seats = (route.seats || 0) + PLANES[fl.type].seats * 2; if (fl.delay <= 15) route.ontime = (route.ontime || 0) + 1; }
-  // 車両片づけ
+  // 車両片づけ（搭乗橋を外す）
   for (const v of pl.vehicles) R.scene.remove(v.mesh);
   pl.vehicles = [];
-  // 経路
+  // 経路：駐機場 → 誘導路 → 滑走路の手前で停止 → 滑走路へ
   const r = G.blds[pl.runway], stand = G.blds[pl.stand];
   const ax = rwAxis(r, G.windDir || 0); pl.ax = ax;
   const sc = stand ? bCenter(stand) : { x: pl.x, z: pl.z };
@@ -4825,37 +5022,108 @@ function pushback(fl) {
   const e = G.windDir || 0;
   let path = planePath(startTile, runwayInfo(r).endTile(e), [stand ? stand.uid : 0]);
   if (!path) path = planePath(startTile, runwayInfo(r).endTile(1 - e), [stand ? stand.uid : 0]);
-  pl.path = path ? path.map(tilePt) : [];
-  pl.state = 'pushback'; pl.pbT = 0; pl.spd = 0.2;
+  path = path || [];
+  // 最初の滑走路マス＝ホールドショートの位置
+  let hi = path.findIndex(i => G.floor[i] === FLOOR.RUNWAY);
+  const pts = path.map(tilePt);
+  pl.path = smoothPath(pts, pl, hi > 0 ? hi - 1 : -1);
+  if (hi > 0) { const hp = pts[hi - 1]; pl.holdIdx = pl.path.indexOf(hp); if (pl.holdIdx < 0) pl.holdIdx = null; } else pl.holdIdx = null;
+  pl.rwCleared = false; pl.wait = 0;
+  // プッシュバック：誘導路の方へ下がって向きを変える
+  const sd = stand ? dims(B[stand.id], stand.rot) : [3, 3];
+  pl.pbDist = Math.max(0.8, Math.min(sd[0], sd[1]) / 2 - 0.3 + pl.P.len * 0.15);
+  pl.pbDone = 0; pl.pbEnd = 5 + pl.P.cls;
+  const j = pl.path.findIndex(p => G.floor[idx(Math.floor(p.x), Math.floor(p.z))] !== FLOOR.APRON);
+  pl.pbTurn = null;
+  if (j >= 0) {
+    const p0 = pl.path[j], p1 = pl.path[j + 1] || p0;
+    const D = p1 !== p0 ? Math.atan2(p1.x - p0.x, p1.z - p0.z) : Math.atan2(p0.x - pl.x, p0.z - pl.z);
+    const dd = angDiff(pl.hdg, D);
+    pl.pbTurn = pl.hdg + clamp(dd, -Math.PI / 2, Math.PI / 2);
+  }
+  pl.tug = vehicleMesh('tug'); pl.tug.scale.setScalar(0.7); R.scene.add(pl.tug);
+  pl.state = 'pushback'; pl.pbT = 0; pl.spd = 0;
   if (stand) stand.busy = 0;
   Bus.emit('departed', fl);
 }
 
-// ---------- 折り返しの車 ----------
+// ---------- 折り返しの車と搭乗橋 ----------
+const _dv = new THREE.Vector3();
 function spawnTurnVehicles(pl) {
-  const kinds = ['cart'];
-  if (hasKind('fuel')) kinds.push('fuel');
-  if (!pl.fl.cargo && pl.P.cls >= 2) kinds.push('catering');
-  const gate = G.blds[pl.fl.gate];
-  if (pl.P.cls === 1 || (gate && B[gate.id].bus)) kinds.push('stairs');
-  if (gate && B[gate.id].bus) kinds.push('rampbus');
-  const side = [[1, 0.3], [-1, -0.1], [1, -0.5], [-1, 0.45], [1.3, 0.8]];
-  kinds.forEach((k, i) => {
-    const m = vehicleMesh(k, AIRLINES[pl.fl.airline].tail);
+  const P = pl.P, gate = G.blds[pl.fl.gate];
+  const bridge = gate && !B[gate.id].bus && !pl.fl.cargo && P.cls >= 2 && makeJetBridge(pl, gate);
+  // 機体のまわりの車（ローカル座標：x=左翼側、z=機首側）
+  const hs = P.span / 2, L = P.len;
+  const list = [];
+  list.push({ k: 'belt', lx: -0.45, lz: -L * 0.12 });                  // 貨物の積みこみ
+  list.push({ k: 'cart', lx: -0.95, lz: -L * 0.12 });
+  list.push({ k: 'cart', lx: -0.6, lz: L * 0.2 });
+  if (hasKind('fuel')) list.push({ k: 'fuel', lx: hs * 0.45, lz: -L * 0.05, r: Math.PI / 2 });
+  if (!pl.fl.cargo && P.cls >= 2) list.push({ k: 'catering', lx: -0.5, lz: -L * 0.36, r: -Math.PI / 2 });
+  list.push({ k: 'gpu', lx: -0.35, lz: L * 0.38 });
+  if (!bridge && !pl.fl.cargo) list.push({ k: 'stairs', lx: 0.45, lz: L * 0.3, r: -Math.PI / 2 });
+  if (gate && B[gate.id].bus && !pl.fl.cargo) list.push({ k: 'rampbus', lx: 1.3, lz: L * 0.15, r: 0 });
+  list.forEach((o, i) => {
+    const m = vehicleMesh(o.k, AIRLINES[pl.fl.airline].tail);
+    m.scale.setScalar(o.k === 'rampbus' ? 0.8 : 0.62);
     R.scene.add(m);
-    const [sx, sz] = side[i % side.length];
-    const off = (pl.P.span / 2) * 0.55 + 0.3;
-    pl.vehicles.push({ mesh: m, k, lx: sx * (k === 'stairs' ? pl.P.span * 0.12 + 0.35 : off), lz: sz * pl.P.len * 0.4, t: -i * 2 - 1 });
+    pl.vehicles.push({ mesh: m, k: o.k, lx: o.lx, lz: o.lz, r: o.r || 0, t: -i * 1.5 - 1 });
   });
+  if (bridge) pl.vehicles.push(bridge);
+}
+// ボーディングブリッジ（ターミナルの搭乗口から飛行機のドアへ）
+function makeJetBridge(pl, gate) {
+  const u = pl.mesh.userData;
+  pl.mesh.updateMatrixWorld(true);
+  const door = u.door.clone().applyMatrix4(pl.mesh.matrixWorld);
+  const def = B[gate.id], [w, h] = dims(def, gate.rot), c = bCenter(gate);
+  const [fx, fy] = frontDir(gate.rot);
+  // 搭乗口の裏側（ターミナルの外壁）
+  const sx = c.x - fx * (h / 2 + 0.1) * (fy !== 0 ? 1 : 0) - fx * (w / 2 + 0.1) * (fx !== 0 ? 1 : 0);
+  const sz = c.z - fy * (h / 2 + 0.1) * (fy !== 0 ? 1 : 0) - fy * (w / 2 + 0.1) * (fx !== 0 ? 1 : 0);
+  const dx = door.x - sx, dz = door.z - sz, len = Math.hypot(dx, dz);
+  if (len > 7 || len < 0.5) return null;
+  const g = new THREE.Group();
+  const mb = new ModelBuilder();
+  const y0 = FLOOR_H[FLOOR.TERM] + 0.35, y1 = door.y;
+  // 回転台
+  mb.cyl(0, 0, 0, 0.32, 0.32, y0 + 0.3, '#c8ccd4', 8);
+  mb.box(0, y0 + 0.3, 0, 0.7, 0.06, 0.7, '#9aa0aa');
+  // 通路（伸びる部分）
+  const n = 3;
+  for (let i = 0; i < n; i++) {
+    const t0 = i / n, t1 = (i + 1) / n, tm = (t0 + t1) / 2;
+    const yy = lerp(y0, y1 - 0.1, tm), ww = 0.34 - i * 0.02;
+    mb.box(0, yy - 0.12, lerp(0, len - 0.25, tm), ww, 0.3, (len - 0.25) / n + 0.02, i % 2 ? '#d8dce4' : '#c8ccd6');
+    mb.box(0, yy + 0.18, lerp(0, len - 0.25, tm), ww + 0.01, 0.02, (len - 0.25) / n, '#8a90a0');
+  }
+  for (const s of [-1, 1]) mb.box(s * 0.1, y0 + 0.02, len * 0.18 + 0.1, 0.03, 0.06, len * 0.5, '#4a8fe0');
+  // 支柱と車輪
+  mb.box(0, 0, len * 0.68, 0.06, lerp(y0, y1, 0.68) - 0.12, 0.06, '#7a7e8a');
+  mb.box(0, 0, len * 0.68, 0.36, 0.1, 0.16, '#2a2a36');
+  // 機体側のキャブ
+  mb.box(0, y1 - 0.2, len - 0.14, 0.42, 0.36, 0.3, '#b8bcc8');
+  const geo = mb.build({ shadow: true });
+  g.add(geo);
+  g.position.set(sx, 0, sz);
+  g.rotation.y = Math.atan2(dx, dz);
+  R.scene.add(g);
+  return { mesh: g, k: 'bridge', t: 0, len };
 }
 function updateTurnVehicle(pl, v, dt) {
   v.t += dt;
+  if (v.k === 'bridge') {
+    // 伸びていくアニメーション
+    v.mesh.scale.z = clamp(0.35 + v.t * 0.25, 0.35, 1);
+    return;
+  }
   const s = Math.sin(pl.hdg), c = Math.cos(pl.hdg);
   const k = clamp(v.t / 4, 0, 1);
-  const lx = v.lx * (1 + (1 - k) * 2.5), lz = v.lz;
+  const lx = v.lx * (1 + (1 - k) * 3), lz = v.lz;
+  // ローカル→ワールド（x=左, z=前）
   const x = pl.x + c * lx + s * lz, z = pl.z - s * lx + c * lz;
   v.mesh.position.set(x, 0, z);
-  v.mesh.rotation.y = pl.hdg + (v.k === 'stairs' ? (v.lx > 0 ? -Math.PI / 2 : Math.PI / 2) : 0);
+  v.mesh.rotation.y = pl.hdg + v.r;
   v.mesh.visible = v.t > 0;
 }
 
@@ -5180,7 +5448,7 @@ function checkAchievements() {
   const nc = Object.keys(G.combos).length;
   if (nc >= 1) unlockAch('combo1'); if (nc >= 10) unlockAch('combo10'); if (nc >= COMBOS.length) unlockAch('comboall');
   if (countKind('runway') >= 3) unlockAch('runway3');
-  if (Object.keys(G.seenPlanes).some(k => k.startsWith('whale'))) unlockAch('jumbo');
+  if (Object.keys(G.seenPlanes).some(k => k.startsWith('whale') || k.startsWith('cargo_l'))) unlockAch('jumbo');
   if (Object.keys(G.seenPlanes).some(k => k.startsWith('sst'))) unlockAch('sst');
   if (G.sectors.every(v => v)) unlockAch('land');
   const nrs = Object.keys(G.research).length;
@@ -6429,7 +6697,7 @@ const CHAPTERS = [
     title: 'ハブ空港をめざして', desc: '大型機が行き来する、地域の玄関口へ。', reward: 50000000,
     obj: [
       { t: '長い滑走路を建てる（ランク6）', c: () => has('runway_l') },
-      { t: '大型機をむかえる（アルバトロス320 など）', c: () => Object.keys(G.seenPlanes).some(k => PLANES[k.split(':')[0]].cls === 3) },
+      { t: '大型機をむかえる（ボーイング787 など）', c: () => Object.keys(G.seenPlanes).some(k => PLANES[k.split(':')[0]].cls === 3) },
       { t: '路線を15にする', c: () => G.routes.length >= 15, p: () => G.routes.length + '/15' },
       { t: '評価 ★4.0', c: () => G.rating >= 4 },
       { t: 'ランク6「地域の玄関口」になる', c: () => G.rank >= 6 },
@@ -6600,6 +6868,7 @@ function initStoryEvents() {
   Bus.on('routeOpened', r => toast(`${CITIES[r.city].name}行きの路線が開きました！（${AIRLINES[r.airline].name}）`, 'good', 'globe'));
   Bus.on('cancel', (fl, why) => toast(`${fl.code} ${CITIES[fl.city].name}便 欠航：${why}`, 'bad', 'anger'));
   Bus.on('divert', fl => toast(`${fl.code} 着陸できず他の空港へ…`, 'bad', 'anger'));
+  Bus.on('goAround', fl => toast(`${fl.code} 滑走路が空いていないため着陸やり直し（ゴーアラウンド）`, '', 'plane'));
   Bus.on('firstFlight', fl => { Sound.se('levelup'); toast('はじめての飛行機が到着しました！', 'gold', 'plane'); });
   Bus.on('event', ev => { toast(`今日は「${ev.name}」！ ${ev.desc}`, 'gold', 'star'); if (Sound.cur !== 'event' && (ev.visitors || 0) >= 2) Sound.bgm('event'); });
   Bus.on('departed', fl => { if (fl.type === 'cosmo') { G.flags.spaceLaunch = true; Sound.bgm('space'); } });
@@ -6835,7 +7104,7 @@ function buildDemo() {
   P('cafe', 27, 20, 1); P('book', 27, 22 - 0, 1);
   P('ramen', 31, 20, 0); P('souvenir', 33, 20, 0); P('wagashi', 35, 20, 0);
   P('toilet', 41, 20, 3); P('bench', 37, 21, 0); P('plant', 39, 21); P('fids', 40, 21);
-  P('deck', 23 + 1, 26, 0);
+  P('deck', 24, 26, 2); paint('walk', 24, 24, 26, 25); paint('walk', 27, 24, 27, 24);
   for (const [x, y] of [[30, 15], [39, 14], [26, 15], [44, 15], [31, 15], [39, 15], [44, 13], [27, 26], [24, 23]]) P(['sakura', 'tree', 'pine'][(x + y) % 3], x, y);
   P('flowerbed', 32, 14); P('flowerbed', 36, 14); P('fountain', 41, 13 + 1); P('lamp', 33, 15); P('lamp', 37, 15);
   P('parking', 25, 12, 0);
@@ -6843,7 +7112,7 @@ function buildDemo() {
   G.routes = [];
   for (const [al, c] of [['soyokaze', 'shimo'], ['haruka', 'tokyo'], ['mermaid', 'naha'], ['haruka', 'osaka']]) {
     const t = bestPlaneFor(al, c);
-    if (t) G.routes.push({ id: al + '-' + c, airline: al, city: c, type: t, freq: 4, active: true, opened: 0, flights: 0, pax: 0, seats: 0, ontime: 0 });
+    if (t) G.routes.push({ id: al + '-' + c, airline: al, city: c, type: t, freq: 3, active: true, opened: 0, flights: 0, pax: 0, seats: 0, ontime: 0 });
   }
   G.min = 8 * 60 + 30; G.day = 0; G.rating = 4;
   Cam.tx = 35; Cam.tz = 24; Cam.zoom = 1.25;
@@ -7028,7 +7297,7 @@ function loop(now) {
   }
 }
 window.addEventListener('load', boot);
-window.__sora = { get G() { return G; }, dbg: { getField, accessTiles, findFacility, findKind, get WALKABLE() { return WALKABLE; }, People, Story, CHAPTERS, Dialog, routeCheck, checkWarnings, relinkGates }, setTool, tryPlace, RT, simStep, World, Cam, R, startGame, placeBuilding, paintApply, openRoute, B, Game, UI };
+window.__sora = { planeModel, PLANES, get G() { return G; }, dbg: { getField, accessTiles, findFacility, findKind, get WALKABLE() { return WALKABLE; }, People, Story, CHAPTERS, Dialog, routeCheck, checkWarnings, relinkGates }, setTool, tryPlace, RT, simStep, World, Cam, R, startGame, placeBuilding, paintApply, openRoute, B, Game, UI };
 
 })();
 </script>
