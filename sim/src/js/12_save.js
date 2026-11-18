@@ -68,6 +68,7 @@ function deserialize(json) {
   G.stat.today = Object.assign(newStatDay(), G.stat.today);
   if (g.cam) { Cam.tx = g.cam.tx; Cam.tz = g.cam.tz; Cam.zoom = g.cam.zoom; Cam.rot = g.cam.rot || 0; Cam.yaw = Cam.yawT = Math.PI / 4 + Cam.rot * Math.PI / 2; }
   G.flags.event = G.flags.event || null;
+  if (G.landBought == null) { let n = 0; for (const v of G.sectors) n += v; G.landBought = Math.max(0, n - (oldMap ? 4 : 6)); }
   clearAirsideTrees();
   return G;
 }

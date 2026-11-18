@@ -231,9 +231,14 @@ function clearFloor(x0, y0, x1, y1) {
 function isFixedRoad(x, y) { return y <= 12 + OY && (x === 35 + OX || x === 36 + OX) && G.floor[idx(x, y)] === FLOOR.ROAD; }
 
 // ---------- 土地 ----------
-function sectorPrice() {
-  let n = 0; for (const v of G.sectors) n += v;
-  return n <= 6 ? 0 : Math.round(500000 * Math.pow(n - 6, 1.65) / 10000) * 10000;
+// 最初の1区画だけ無料。そのあとは買うほど高く、最初の土地から遠いほど高い
+const START_SECTORS = [[3, 2], [4, 2], [5, 2], [3, 3], [4, 3], [5, 3]];
+function sectorDist(sx, sy) { let d = 99; for (const [a, b] of START_SECTORS) d = Math.min(d, Math.max(Math.abs(sx - a), Math.abs(sy - b))); return d; }
+function sectorPrice(sx, sy) {
+  const k = G.landBought || 0;
+  if (k === 0) return 0;
+  const dist = sx == null ? 1 : sectorDist(sx, sy);
+  return Math.round(400000 * Math.pow(k, 1.5) * (1 + 0.5 * Math.max(0, dist - 1)) / 10000) * 10000;
 }
 function canBuySector(sx, sy) {
   if (G.sectors[sy * SECW + sx]) return false;
@@ -242,15 +247,16 @@ function canBuySector(sx, sy) {
 }
 function landTilesIn(sx, sy) { let n = 0; for (let y = sy * SEC; y < sy * SEC + SEC; y++) for (let x = sx * SEC; x < sx * SEC + SEC; x++) if (isLand(x, y)) n++; return n; }
 function buySector(sx, sy) {
-  const p = sectorPrice();
+  const p = sectorPrice(sx, sy);
   if (!canBuySector(sx, sy)) return false;
   if (G.money < p && !G.free) { toast('お金が足りません', 'bad'); Sound.se('error'); return false; }
   if (!G.free) G.money -= p;
   G.sectors[sy * SECW + sx] = 1;
+  G.landBought = (G.landBought || 0) + 1;
   for (let y = sy * SEC; y < sy * SEC + SEC; y++) for (let x = sx * SEC; x < sx * SEC + SEC; x++) markChunk(x, y);
   buildLockMesh();
   Sound.se('levelup');
-  toast(`土地を買いました（${fmtYen(p)}）`, 'good');
+  toast(p ? `土地を買いました（${fmtYen(p)}）` : '土地を無料でもらいました！ 次からはお金がかかります', 'good');
   Bus.emit('land');
   return true;
 }

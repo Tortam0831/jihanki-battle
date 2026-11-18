@@ -229,7 +229,7 @@ function renderBuildBar() {
   } else if (t.type === 'demolish') {
     h = `${iconImg('dozer')}<div class="msg"><b>撤去</b><div class="sub" id="bbMsg">建物をタップ／ドラッグで床をはがす（半額もどる）</div></div><button class="pbtn sm red" id="bbX">やめる</button>`;
   } else if (t.type === 'land') {
-    h = `${iconImg('flag')}<div class="msg"><b>土地を買う</b><div class="sub">となりの土地を買って空港を広げよう。次の土地：${fmtYen(sectorPrice())}</div></div><button class="pbtn sm red" id="bbX">やめる</button>`;
+    h = `${iconImg('flag')}<div class="msg"><b>土地を買う</b><div class="sub">となりの土地を買って空港を広げよう。${(G.landBought || 0) === 0 ? '<b>最初の1区画は無料！</b>' : '最初の土地から遠いほど高くなります。'}</div></div><button class="pbtn sm red" id="bbX">やめる</button>`;
   }
   bar.innerHTML = h;
   const x = $('#bbX'); if (x) x.onclick = () => { cancelTool(); };
@@ -515,8 +515,8 @@ function tapDemolish(x, y) {
 function askBuySector(sx, sy) {
   if (G.sectors[sy * SECW + sx]) { toast('もう買った土地です'); return; }
   if (!canBuySector(sx, sy)) { toast('となりの土地から順に買えます', 'bad'); Sound.se('error'); return; }
-  const p = sectorPrice();
-  openModal('土地を買う', `<div style="text-align:center">${iconImg('flag', 'xl')}<p>この土地（${SEC}×${SEC}マス・陸地${landTilesIn(sx, sy)}マス）を<br><b style="font-size:20px">${fmtYen(p)}</b> で買いますか？</p>
+  const p = sectorPrice(sx, sy);
+  openModal('土地を買う', `<div style="text-align:center">${iconImg('flag', 'xl')}<p>この土地（${SEC}×${SEC}マス・陸地${landTilesIn(sx, sy)}マス）を<br><b style="font-size:20px">${p ? fmtYen(p) : '無料'}</b> で${p ? '買いますか' : 'もらいますか'}？</p>${p ? `<div class="sub">最初の土地からの距離：${sectorDist(sx, sy)}区画</div>` : '<div class="sub">最初の1区画だけ無料です。次からはお金がかかります。</div>'}
     <div style="display:flex;gap:8px;justify-content:center"><button class="pbtn green" id="buyY">買う</button><button class="pbtn" id="buyN">やめる</button></div></div>`, { narrow: true });
   $('#buyY').onclick = () => { if (buySector(sx, sy)) { closeModal(); updateLandLabels(true); renderBuildBar(); } };
   $('#buyN').onclick = () => closeModal();
@@ -529,7 +529,8 @@ function updateLandLabels(force) {
     for (let sy = 0; sy < SECH; sy++) for (let sx = 0; sx < SECW; sx++) {
       if (G.sectors[sy * SECW + sx] || !canBuySector(sx, sy) || landTilesIn(sx, sy) < 6) continue;
       const el = document.createElement('div'); el.className = 'lbl px';
-      el.innerHTML = `${iconImg('flag', 's')} ${fmtYenShort(sectorPrice())}`;
+      const pr = sectorPrice(sx, sy);
+      el.innerHTML = `${iconImg('flag', 's')} ${pr ? fmtYenShort(pr) : '<b style="color:var(--good)">無料</b>'}`;
       el.onclick = () => askBuySector(sx, sy);
       box.appendChild(el);
       UI.landLbl.push({ el, x: sx * SEC + SEC / 2, z: sy * SEC + SEC / 2 });
