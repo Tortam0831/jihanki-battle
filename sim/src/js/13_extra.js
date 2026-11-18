@@ -324,3 +324,13 @@ function extraAchievements() {
 function updateExtras(dt, dtReal) {
   updateSalute(dtReal); updateBirds(dtReal); updateWindsocks(); updateBusArrivals(dt); updateSpotters();
 }
+
+function clearExtras() {
+  for (const s of Salute.list) for (const t of s.trucks) R.scene.remove(t.m);
+  Salute.list = [];
+  for (const f of Birds.flocks) R.scene.remove(f.g);
+  Birds.flocks = [];
+  for (const a of BusArr.list) R.scene.remove(a.m);
+  BusArr.list = [];
+  if (FX.life) FX.life.fill(0);
+}

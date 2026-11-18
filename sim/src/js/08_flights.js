@@ -467,7 +467,21 @@ function onRunway(pl, r) {
   return pl.x > r.x - 0.2 && pl.x < r.x + w + 0.2 && pl.z > r.y - 0.2 && pl.z < r.y + h + 0.2;
 }
 // タイルの中心をつないだ経路から、ほぼ一直線の点をはぶく
+// 太い誘導路では真ん中を走る
+function centerOnTaxi(pts) {
+  const T = pts.map(p => [Math.floor(p.x), Math.floor(p.z)]);
+  const isT = (x, y) => inMap(x, y) && G.floor[idx(x, y)] === FLOOR.TAXI;
+  const side = (x, y, dx, dy) => { let c = 0; for (let k = 1; k <= 2; k++) { if (isT(x + dx * k, y + dy * k)) c++; else break; } return c; };
+  for (let i = 0; i < pts.length; i++) {
+    const [x, y] = T[i]; if (!isT(x, y)) continue;
+    const a = T[Math.max(0, i - 1)], b = T[Math.min(pts.length - 1, i + 1)];
+    const mx = Math.sign(b[0] - a[0]), my = Math.sign(b[1] - a[1]);
+    if (my !== 0) pts[i].x += (side(x, y, 1, 0) - side(x, y, -1, 0)) * 0.5;
+    if (mx !== 0) pts[i].z += (side(x, y, 0, 1) - side(x, y, 0, -1)) * 0.5;
+  }
+}
 function smoothPath(pts, pl, keep) {
+  centerOnTaxi(pts);
   if (pts.length < 3) return pts;
   const out = [pts[0]];
   for (let i = 1; i < pts.length - 1; i++) {

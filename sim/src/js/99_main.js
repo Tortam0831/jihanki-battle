@@ -82,8 +82,8 @@ function startAirshow() {
 
 // ---------- タイトル用のデモ空港 ----------
 function buildDemo() {
-  const P = (id, x, y, rot) => placeBuilding(id, x, y, rot || 0, { free: true, silent: true, ignoreRank: true });
-  const paint = (id, x0, y0, x1, y1) => { G.free = true; paintApply(id, x0, y0, x1, y1); };
+  const P = (id, x, y, rot) => placeBuilding(id, x + OX, y + OY, rot || 0, { free: true, silent: true, ignoreRank: true });
+  const paint = (id, x0, y0, x1, y1) => { G.free = true; paintApply(id, x0 + OX, y0 + OY, x1 + OX, y1 + OY); };
   paint('walk', 34, 14, 35, 15);
   paint('tfloor', 27, 16, 42, 23);
   paint('taxiway', 26, 29, 43, 29); paint('taxiway', 26, 30, 26, 30); paint('taxiway', 43, 30, 43, 30);
@@ -105,10 +105,10 @@ function buildDemo() {
   G.routes = [];
   for (const [al, c] of [['soyokaze', 'shimo'], ['haruka', 'tokyo'], ['mermaid', 'naha'], ['haruka', 'osaka']]) {
     const t = bestPlaneFor(al, c);
-    if (t) G.routes.push({ id: al + '-' + c, airline: al, city: c, type: t, freq: 3, active: true, opened: 0, flights: 0, pax: 0, seats: 0, ontime: 0 });
+    if (t) G.routes.push({ id: al + '-' + c, airline: al, city: c, type: t, freq: 3, active: true, opened: 0, flights: 0, pax: 0, seats: 0, ontime: 0, saluted: true });
   }
   G.min = 8 * 60 + 30; G.day = 0; G.rating = 4;
-  Cam.tx = 35; Cam.tz = 24; Cam.zoom = 1.25;
+  Cam.tx = 35 + OX; Cam.tz = 24 + OY; Cam.zoom = 1.25;
 }
 
 // ---------- 起動 ----------
@@ -209,7 +209,7 @@ function clearRuntime() {
   for (const pl of RT.planes) removePlane(pl);
   RT.planes = []; RT.persons = []; RT.todayFlights = [];
   People.fac.clear();
-  clearAmbient();
+  clearAmbient(); clearExtras(); if (typeof clearGuide === 'function') clearGuide();
   RT.fieldCache.clear(); RT.planePathCache.clear();
   RT.warnings = new Map(); RT.lastDay = null; RT.dirtyWalk = RT.dirtyAir = RT.dirtyBeauty = RT.dirtyCombo = RT.dirtyLinks = true;
   hideInfo(); setTool(null);
@@ -220,7 +220,7 @@ function startGame(slot, opt) {
   clearRuntime();
   if (opt) {
     newGameState(opt);
-    Cam.tx = 36; Cam.tz = 20; Cam.zoom = 1.5; Cam.rot = 0; Cam.yaw = Cam.yawT = Math.PI / 4;
+    Cam.tx = 36 + OX; Cam.tz = 20 + OY; Cam.zoom = 1.5; Cam.rot = 0; Cam.yaw = Cam.yawT = Math.PI / 4;
   } else if (!loadSlot(slot)) { toast('データがありません', 'bad'); showTitle(); return; }
   initWorldMeshes();
   setSeasonVisual(dateOf(G.day).season);
@@ -236,6 +236,27 @@ function startGame(slot, opt) {
   Sound.bgm('day');
 }
 
+// ---------- 夜をとばす ----------
+function canSkipNight() {
+  const [ws, we] = opsWindow(), m = G.min % 1440;
+  return !RT.planes.length && (m < ws - 60 || m > we + 20);
+}
+function skipNight(manual) {
+  if (!canSkipNight()) { if (manual) toast('飛行機が飛んでいるので、いまはとばせません', 'bad'); return; }
+  const [ws] = opsWindow();
+  const startDay = G.day;
+  let n = 0;
+  // 朝（始発の1時間前）まで一気に進める
+  while (n++ < 3000) {
+    simStep(1);
+    const m = G.min % 1440;
+    if (RT.planes.length) break;
+    if (G.day !== startDay || m < ws) { if (m >= ws - 60 && m < ws + 600) break; }
+  }
+  RT.persons = RT.persons.filter(p => p.kind !== 'visit' || p.state !== 'idle');
+  Sound.se('chime2');
+  toast(`夜をとばしました（${fmtTime(G.min)}）`, '', 'moon');
+}
 // ---------- メインループ ----------
 function loop(now) {
   requestAnimationFrame(loop);
@@ -248,7 +269,8 @@ function loop(now) {
   const hr = (G.min % 1440) / 60;
   const [ws, we] = opsWindow();
   const quiet = !RT.planes.length && RT.persons.filter(p => p.w > 0).length < 4;
-  if (!Game.demo && spd > 0 && Game.opts.nightSkip && quiet && (hr * 60 < ws - 70 || hr * 60 > we + 30)) spd = 14;
+  const nightNow = hr * 60 < ws - 60 || hr * 60 > we + 20;
+  if (!Game.demo && spd > 0 && Game.opts.nightSkip && quiet && nightNow) { skipNight(); spd = 0; }
   RT.effSpeed = spd;
   if (spd > 0) {
     let dt = dtReal / REAL_SEC_PER_GMIN * spd;
@@ -256,6 +278,7 @@ function loop(now) {
   }
   // 描画の準備
   keyPan(dtReal);
+  if (!Game.demo) { applyInertia(dtReal); updateFollow(); updateTouchConfirm(); updateGuide(); }
   if (Game.demo) { Cam.yawT += dtReal * 0.03; }
   updateCamera();
   const d = dateOf(G.day);
@@ -275,6 +298,7 @@ function loop(now) {
     UI.infoT -= dtReal; if (UI.infoT <= 0 && UI.sel) { UI.infoT = 0.5; renderInfo(); }
     if (UI.landLbl) updateLandLabels();
     Game.hintT -= dtReal; if (Game.hintT <= 0) { Game.hintT = 3; checkHints(); }
+    const ns = $('#bNight'); if (ns) ns.classList.toggle('hidden', !canSkipNight());
     if (UI.modalOpen === 'board') { Game.boardT = (Game.boardT || 0) - dtReal; if (Game.boardT <= 0) { Game.boardT = 2; const st = $('#mBody').scrollTop; openBoard(); $('#mBody').scrollTop = st; } }
   }
   // BGM

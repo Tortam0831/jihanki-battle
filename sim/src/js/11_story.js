@@ -90,6 +90,7 @@ const CHAPTERS = [
       { who: 'jii', t: 'ふぉっふぉっ。わしはソラジイ。むかしパイロットをしておった。空港づくりのことなら何でも聞くとよい。', e: 'h' },
       { who: 'jii', t: 'まずは【建設】ボタンから「短い滑走路」を建てるんじゃ。小さなプロペラ機なら、それで降りられる。' },
       { who: 'jii', t: '画面はドラッグで動かせるし、ホイールやピンチで近づける。Q・Eキーか右の矢印ボタンでぐるっと回せるぞ。' },
+      { who: 'hibari', t: 'わからなくなったら、左の目標にある【▶ やり方】を押してください！ 置く場所を青く光らせて教えます。【おまかせで置く】なら自動で建てますよ！', e: 'h' },
     ],
     end: [
       { who: 'tsubasa', t: 'ついた〜！ そよかぜエアのツバサです！ 一番乗りさせてもらいました！', e: 'h' },
@@ -253,8 +254,17 @@ const Story = {
     if (!ch) { box.classList.add('hidden'); return; }
     box.classList.remove('hidden');
     if (!this.minInit) { this.minInit = true; if (window.innerWidth < 600) box.classList.add('min'); }
-    const html = `<h4>${iconImg('mission', 's')}第${G.story.ch + 1}章 ${ch.title}</h4><div class="obs">` + ch.obj.map(o => { const ok = this.objDone(o); return `<div class="ob ${ok ? 'done' : ''}"><span class="cb"></span><span>${o.t}${o.p && !ok ? ` <span class="sub">${o.p()}</span>` : ''}</span></div>`; }).join('') + '</div>';
-    if (box.innerHTML !== html) box.innerHTML = html;
+    let curShown = false;
+    const html = `<h4>${iconImg('mission', 's')}第${G.story.ch + 1}章 ${ch.title}</h4><div class="obs">` + ch.obj.map((o, i) => {
+      const ok = this.objDone(o);
+      let cur = false, g = null;
+      if (!ok && !curShown) { curShown = true; cur = true; g = tutorialStep(G.story.ch, i); }
+      return `<div class="ob ${ok ? 'done' : ''} ${cur ? 'cur' : ''}"><span class="cb"></span><span>${o.t}${o.p && !ok ? ` <span class="sub">${o.p()}</span>` : ''}${g ? `<div class="gbtn"><button class="pbtn sm blue" data-g="show">▶ やり方</button>${g.kind === 'build' || g.kind === 'paint' ? '<button class="pbtn sm gold" data-g="auto">おまかせで置く</button>' : ''}</div>` : ''}</span></div>`;
+    }).join('') + '</div>';
+    if (box.innerHTML !== html) {
+      box.innerHTML = html;
+      box.querySelectorAll('[data-g]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); Sound.init(); const g = currentTutorialStep(); if (!g) return; if (b.dataset.g === 'show') showGuide(g); else autoGuide(g); }));
+    }
   },
   ending(after) {
     unlockAch('ending');
@@ -347,4 +357,111 @@ function initStoryEvents() {
     if (d.part === 0 && d.month % 3 === 0) toast(`${d.seasonName}になりました`, '', ['sakura', 'sun', 'tree', 'snow'][d.season]);
     if (G.weather !== 'sun' && G.weather !== 'cloud') toast(`今日の天気：${WEATHER[G.weather].name}`, G.weather === 'typhoon' ? 'bad' : '', WEATHER[G.weather].icon);
   });
+}
+
+// ============================================================
+//  わかりやすいチュートリアル（やり方・おまかせ）
+// ============================================================
+function tutorialStep(ch, i) {
+  if (ch !== 0) return ch === 1 ? tutorialStep1(i) : null;
+  const X = x => x + OX, Y = y => y + OY;
+  const anyKind = k => Object.values(G.blds).some(b => B[b.id].kind === k);
+  const termTiles = () => { let n = 0; for (let i2 = 0; i2 < W * H; i2++) if (G.floor[i2] === FLOOR.TERM) n++; return n; };
+  switch (i) {
+    case 0: return { kind: 'build', id: 'runway_s', x: X(27), y: Y(32), rot: 0, say: '滑走路は飛行機が降りたり飛び立ったりする道。青く光っている場所に置いてみよう！（Rキーや「回転」で向きを変えられます）' };
+    case 1: return { kind: 'build', id: 'tower', x: X(40), y: Y(27), rot: 0, say: '管制塔は飛行機に指示を出す場所。これがないと飛行機は来られないよ。' };
+    case 2:
+      if (!anyKind('stand')) return { kind: 'build', id: 'stand_s', x: X(30), y: Y(28), rot: 2, say: '駐機場は飛行機がとまって、お客さんが乗り降りする場所。' };
+      return { kind: 'paint', id: 'taxiway', x: X(27), y: Y(31), x1: X(38), y1: Y(31), say: '誘導路で滑走路と駐機場をつなごう。青い場所を、はしからはしまでドラッグしてぬってね。' };
+    case 3:
+      if (termTiles() < 20) return { kind: 'paint', id: 'tfloor', x: X(28), y: Y(18), x1: X(37), y1: Y(26), say: 'ターミナルの床をぬろう。左上から右下へ、四角くドラッグ！' };
+      if (!anyKind('checkin')) return { kind: 'build', id: 'checkin', x: X(29), y: Y(19), rot: 0, say: 'チェックインカウンター。お客さんが最初に寄るところ。' };
+      if (!anyKind('security')) return { kind: 'build', id: 'security', x: X(33), y: Y(20), rot: 0, say: '保安検査場。手荷物の検査をする場所。' };
+      return { kind: 'build', id: 'gate', x: X(30), y: Y(26), rot: 2, say: '搭乗口。駐機場の近く（7マス以内）に置くと、自動でつながるよ。' };
+    case 4: return { kind: 'build', id: 'gate', x: X(30), y: Y(26), rot: 2, say: '搭乗口を駐機場から7マス以内に置こう。' };
+    case 5: return { kind: 'paint', id: 'walk', x: X(34), y: Y(14), x1: X(35), y1: Y(17), say: 'バス停からターミナルまで歩道でつなごう。お客さんはここを歩いてくるよ。' };
+    case 6: return { kind: 'route', city: 'shimo', say: '下の【路線】ボタンから「下島」を選んで、そよかぜエアで就航しよう！' };
+    case 7: return { kind: 'wait', say: '飛行機が来るまで待とう。上の ▶▶ で時間を早くできるよ。' };
+  }
+  return null;
+}
+function tutorialStep1(i) {
+  if (i === 0) return { kind: 'build', id: 'toilet', near: 'term', say: 'トイレはターミナルの中に置こう。【建設→ターミナル】にあるよ。' };
+  if (i === 1) return { kind: 'build', id: 'cafe', near: 'term', say: '飲食店はお客さんの通り道（チェックインと搭乗口のあいだ）に置くとよく売れるよ。' };
+  if (i === 2) return { kind: 'route', city: 'kita', say: '【路線】で別の都市にも就航しよう。' };
+  return null;
+}
+function currentTutorialStep() {
+  const ch = CHAPTERS[G.story.ch]; if (!ch) return null;
+  for (let i = 0; i < ch.obj.length; i++) if (!Story.objDone(ch.obj[i])) return tutorialStep(G.story.ch, i);
+  return null;
+}
+// ターミナルの中の空いている場所をさがす
+function findTermSpot(id) {
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (G.floor[idx(x, y)] === FLOOR.TERM && canPlace(id, x, y, 0, { ignoreRank: true }).ok) return { x, y, rot: 0 };
+  return null;
+}
+const Guide = { mesh: null, label: null, step: null };
+function clearGuide() {
+  if (Guide.mesh) { R.scene.remove(Guide.mesh); Guide.mesh = null; }
+  if (Guide.label) { if (Guide.label.parentNode) Guide.label.parentNode.removeChild(Guide.label); Guide.label = null; }
+  Guide.step = null;
+}
+function guideRect(g) {
+  if (g.kind === 'paint') return { x: Math.min(g.x, g.x1), y: Math.min(g.y, g.y1), w: Math.abs(g.x1 - g.x) + 1, h: Math.abs(g.y1 - g.y) + 1 };
+  const [w, h] = dims(B[g.id], g.rot || 0); return { x: g.x, y: g.y, w, h };
+}
+function showGuide(g) {
+  closeModal(); clearGuide();
+  if (g.near === 'term') { const sp = findTermSpot(g.id); if (sp) Object.assign(g, sp); }
+  Dialog.show([{ who: 'hibari', t: g.say, e: 'h' }]);
+  if (g.kind === 'route') { openRoutes('new', g.city); return; }
+  if (g.kind === 'wait') { setSpeed(2); return; }
+  if (g.x == null) return;
+  const def = B[g.id];
+  UI.cat = def.cat; closeBuild();
+  setTool(def.paint ? { type: 'paint', id: g.id } : { type: 'build', id: g.id, rot: g.rot || 0 });
+  if (def.paint) UI.brush[g.id] = 1;
+  Guide.step = g;
+  const r = guideRect(g);
+  // 目印（青く光る枠）
+  const geo = new THREE.BoxGeometry(r.w, 0.25, r.h);
+  const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: '#40a0ff', transparent: true, opacity: 0.35, depthWrite: false }));
+  m.position.set(r.x + r.w / 2, 0.15, r.y + r.h / 2); m.renderOrder = 9;
+  const edge = new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: '#ffffff' }));
+  m.add(edge); R.scene.add(m); Guide.mesh = m;
+  Guide.label = document.createElement('div'); Guide.label.className = 'guideMark';
+  Guide.label.textContent = g.kind === 'paint' ? 'ここをドラッグ！' : 'ここに置こう！';
+  $('#labels').appendChild(Guide.label);
+  Cam.tx = r.x + r.w / 2; Cam.tz = r.y + r.h / 2; Cam.zoom = Math.max(Cam.zoom, 1.6);
+  renderBuildBar();
+  if (!def.paint) {
+    const [w, h] = dims(def, g.rot || 0);
+    UI.hoverTile = { x: g.x + Math.floor((w - 1) / 2), y: g.y + Math.floor((h - 1) / 2) };
+    updateGhost();
+  }
+}
+function autoGuide(g) {
+  if (g.near === 'term') { const sp = findTermSpot(g.id); if (!sp) { toast('ターミナルに空いている場所がありません', 'bad'); return; } Object.assign(g, sp); }
+  if (g.kind === 'route') { showGuide(g); return; }
+  if (g.kind === 'paint') {
+    const n = paintApply(g.id, g.x, g.y, g.x1, g.y1);
+    if (n > 0) { Sound.se('place'); toast('おまかせでぬりました', 'good', 'check'); } else if (n === 0) toast('もうぬってあります');
+  } else if (g.kind === 'build') {
+    const chk = canPlace(g.id, g.x, g.y, g.rot || 0);
+    if (!chk.ok) { toast('おまかせの場所に置けません：' + chk.reason, 'bad'); Sound.se('error'); return; }
+    const b = placeBuilding(g.id, g.x, g.y, g.rot || 0);
+    if (b) { Sound.se('place'); puff(b); toast(`${B[g.id].name} をおまかせで置きました`, 'good', 'check'); Cam.tx = b.x + 1; Cam.tz = b.y + 1; }
+  }
+  clearGuide(); setTool(null);
+}
+function updateGuide() {
+  if (!Guide.mesh) return;
+  const g = Guide.step;
+  Guide.mesh.material.opacity = 0.25 + Math.sin(RT.time * 5) * 0.12;
+  const r = guideRect(g), s = worldToScreen(r.x + r.w / 2, 1.2, r.y + r.h / 2);
+  Guide.label.style.left = s.x + 'px'; Guide.label.style.top = s.y + 'px';
+  // 終わったら消す
+  const cur = currentTutorialStep();
+  if (!cur || cur.id !== g.id || cur.kind !== g.kind) clearGuide();
 }

@@ -1,7 +1,7 @@
 // ============================================================
 //  画面（HUD・建設・情報・各ウィンドウ・入力）
 // ============================================================
-const UI = { cat: 'air', tool: null, ghost: null, rectMesh: null, hoverTile: null, infoT: 0, hudT: 0, popT: {}, photo: false, lastMoney: null, touch: false, newIds: {} };
+const UI = { brush: { taxiway: 2, road: 2, walk: 1, tfloor: 1 }, undo: [], cat: 'air', tool: null, ghost: null, rectMesh: null, hoverTile: null, infoT: 0, hudT: 0, popT: {}, photo: false, lastMoney: null, touch: false, newIds: {} };
 const TOOLBAR = [
   { id: 'build', icon: 'hangar', name: '建設' },
   { id: 'demolish', icon: 'dozer', name: '撤去' },
@@ -21,11 +21,12 @@ function initUI() {
   $('#bRotL').innerHTML = iconImg('rotate'); $('#bRotR').innerHTML = `<span style="transform:scaleX(-1);display:inline-flex">${iconImg('rotate')}</span>`;
   $('#bPhoto').innerHTML = iconImg('camera');
   $('#bRotL').onclick = () => rotateCam(-1); $('#bRotR').onclick = () => rotateCam(1);
-  $('#bZoomIn').onclick = () => { Cam.zoom = clamp(Cam.zoom * 1.25, 0.55, 4.5); };
-  $('#bZoomOut').onclick = () => { Cam.zoom = clamp(Cam.zoom / 1.25, 0.55, 4.5); };
+  $('#bZoomIn').onclick = () => zoomAt(R.w / 2, R.h / 2, 1.25);
+  $('#bZoomOut').onclick = () => zoomAt(R.w / 2, R.h / 2, 1 / 1.25);
   $('#bPhoto').onclick = () => togglePhoto();
   $('#spd').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; Sound.init(); setSpeed(+b.dataset.s); });
   $('#moneyIcon').src = iconURL('money');
+  $('#bNight').onclick = () => { Sound.init(); skipNight(true); };
   $('#mClose').onclick = () => closeModal();
   $('#modal').addEventListener('pointerdown', e => { if (e.target.id === 'modal') closeModal(); });
   $('#mission').addEventListener('click', () => { $('#mission').classList.toggle('min'); });
@@ -197,7 +198,7 @@ function setTool(t) {
   if (World.gridMesh) { World.gridMesh.visible = !!t && t.type !== 'land'; World.gridMesh.material.uniforms.op.value = 0.13; }
   $('#tb_demolish').classList.toggle('on', !!t && t.type === 'demolish');
   $('#tb_land').classList.toggle('on', !!t && t.type === 'land');
-  $('#labels').innerHTML = ''; UI.landLbl = null;
+  $$('#labels .lbl').forEach(e => e.parentNode && e.parentNode.removeChild(e)); UI.landLbl = null;
   if (t && (t.type === 'build' || t.type === 'move')) makeGhost();
   if (t && t.type === 'land') updateLandLabels(true);
   renderBuildBar();
@@ -223,7 +224,8 @@ function renderBuildBar() {
       <button class="pbtn sm" id="bbRot">${iconImg('rotate', 's')}回転</button>${UI.touch ? '<button class="pbtn sm green" id="bbOk">建てる</button>' : ''}<button class="pbtn sm red" id="bbX">やめる</button>`;
   } else if (t.type === 'paint') {
     const d = B[t.id];
-    h = `${iconImg(d.icon)}<div class="msg"><b>${d.name}</b> <span class="sub">${fmtYen(d.cost)}/マス</span><div class="sub" id="bbMsg">ドラッグで四角くぬれます</div></div><button class="pbtn sm red" id="bbX">やめる</button>`;
+    const bw = UI.brush[t.id] || 1;
+    h = `${iconImg(d.icon)}<div class="msg"><b>${d.name}</b> <span class="sub">${fmtYen(d.cost)}/マス</span><div class="sub" id="bbMsg">ドラッグでぬる（線のように引くと太さ${bw}マス）</div></div><span class="sub">太さ</span><div class="seg" id="bbBrush" style="flex-wrap:nowrap">${[1, 2, 3].map(n => `<button data-b="${n}" class="${n === bw ? 'on' : ''}" style="min-width:34px;padding:4px">${n}</button>`).join('')}</div>${UI.undo.length ? '<button class="pbtn sm" id="bbUndo">↶ 戻す</button>' : ''}<button class="pbtn sm red" id="bbX">やめる</button>`;
   } else if (t.type === 'demolish') {
     h = `${iconImg('dozer')}<div class="msg"><b>撤去</b><div class="sub" id="bbMsg">建物をタップ／ドラッグで床をはがす（半額もどる）</div></div><button class="pbtn sm red" id="bbX">やめる</button>`;
   } else if (t.type === 'land') {
@@ -233,6 +235,8 @@ function renderBuildBar() {
   const x = $('#bbX'); if (x) x.onclick = () => { cancelTool(); };
   const r = $('#bbRot'); if (r) r.onclick = () => rotateTool();
   const ok = $('#bbOk'); if (ok) ok.onclick = () => { if (UI.hoverTile) tryPlace(UI.hoverTile.x, UI.hoverTile.y); };
+  const br = $('#bbBrush'); if (br) br.onclick = e => { const b = e.target.closest('button'); if (!b) return; UI.brush[t.id] = +b.dataset.b; Sound.se('tab'); renderBuildBar(); };
+  const ud = $('#bbUndo'); if (ud) ud.onclick = () => doUndo();
 }
 function cancelTool() {
   if (UI.tool && UI.tool.type === 'move' && UI.tool.orig) {
@@ -282,6 +286,7 @@ function tryPlace(tx, ty) {
   }
   const b = placeBuilding(t.id, x, y, t.rot);
   if (b) {
+    pushUndo({ type: 'build', uid: b.uid, cost: G.free ? 0 : chk.cost });
     Sound.se('place');
     puff(b);
     if (def.unique || def.kind === 'runway') setTool(null);
@@ -297,7 +302,20 @@ function puff(b) {
 }
 // 四角選択（床ぬり・撤去）
 function clearRect() { if (UI.rectMesh) { R.scene.remove(UI.rectMesh); UI.rectMesh.geometry.dispose(); UI.rectMesh = null; } }
+// 線のようにドラッグしたときは、筆の太さぶん広げる
+function brushRect(r) {
+  const b = (UI.tool && UI.tool.type === 'paint') ? (UI.brush[UI.tool.id] || 1) : 1;
+  let { x0, y0, x1, y1 } = r;
+  const wx = Math.abs(x1 - x0) + 1, wy = Math.abs(y1 - y0) + 1;
+  if (b > 1) {
+    if (wx === 1) { x1 = x0 + b - 1; }
+    if (wy === 1) { y1 = y0 + b - 1; }
+    if (wx === 1 && x1 < x0) [x0, x1] = [x1, x0];
+  }
+  return { x0, y0, x1, y1 };
+}
 function showRect(x0, y0, x1, y1, col) {
+  if (UI.tool && UI.tool.type === 'paint') { const q = brushRect({ x0, y0, x1, y1 }); x0 = q.x0; y0 = q.y0; x1 = q.x1; y1 = q.y1; }
   clearRect();
   const P = [];
   const xa = Math.min(x0, x1), xb = Math.max(x0, x1), ya = Math.min(y0, y1), yb = Math.max(y0, y1);
@@ -334,9 +352,9 @@ function initInput() {
     if (Inp.ptrs.size === 2) {
       const [a, b] = [...Inp.ptrs.values()];
       Inp.pinch = Math.hypot(a.x - b.x, a.y - b.y); Inp.mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-      Inp.rect = null; clearRect(); Inp.moved = true;
+      Inp.rect = null; clearRect(); Inp.moved = true; Inp.ang = Math.atan2(b.y - a.y, b.x - a.x); Inp.twist = 0;
     } else if (Inp.ptrs.size === 1) {
-      Inp.moved = false; Inp.down = { x: e.clientX, y: e.clientY, btn: e.button };
+      Inp.moved = false; Inp.down = { x: e.clientX, y: e.clientY, btn: e.button }; Inp.vel = null;
       const t = UI.tool;
       if (t && (t.type === 'paint' || t.type === 'demolish') && e.button === 0) {
         const tl = tileAtScreen(e.clientX, e.clientY);
@@ -357,9 +375,13 @@ function initInput() {
     if (Inp.ptrs.size === 2) {
       const [a, b] = [...Inp.ptrs.values()];
       const d = Math.hypot(a.x - b.x, a.y - b.y), mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-      if (Inp.pinch > 0) Cam.zoom = clamp(Cam.zoom * d / Inp.pinch, 0.55, 4.5);
+      if (Inp.pinch > 0) zoomAt(mid.x, mid.y, d / Inp.pinch);
       panCam(mid.x - Inp.mid.x, mid.y - Inp.mid.y);
-      Inp.pinch = d; Inp.mid = mid;
+      // 2本指をひねると90度回転
+      const ang = Math.atan2(b.y - a.y, b.x - a.x);
+      if (Inp.ang != null) { Inp.twist = (Inp.twist || 0) + angDiff(Inp.ang, ang); if (Math.abs(Inp.twist) > 0.7) { rotateCam(Inp.twist > 0 ? -1 : 1); Inp.twist = 0; } }
+      Inp.ang = ang;
+      Inp.pinch = d; Inp.mid = mid; UI.follow = null;
       return;
     }
     const t = UI.tool;
@@ -370,17 +392,20 @@ function initInput() {
     }
     if (t && (t.type === 'build' || t.type === 'move') && e.pointerType === 'touch' && Inp.moved) { hover(e.clientX, e.clientY); return; }
     if (e.pointerType === 'mouse' && p.btn === 0 && t && (t.type === 'build' || t.type === 'move')) { hover(e.clientX, e.clientY); }
-    if (!(t && (t.type === 'build' || t.type === 'move') && e.pointerType === 'touch')) { if (Inp.moved) panCam(dx, dy); }
+    if (!(t && (t.type === 'build' || t.type === 'move') && e.pointerType === 'touch')) {
+      if (Inp.moved) { panCam(dx, dy); UI.follow = null; const now = performance.now(), dtp = Math.max(1, now - (Inp.lastMove || now - 16)) / 1000; Inp.lastMove = now; Inp.vel = { x: lerp((Inp.vel || { x: 0 }).x, dx / dtp, 0.4), y: lerp((Inp.vel || { y: 0 }).y, dy / dtp, 0.4) }; }
+    }
   });
   const up = e => {
     const p = Inp.ptrs.get(e.pointerId);
     Inp.ptrs.delete(e.pointerId);
     if (!p) return;
-    if (Inp.ptrs.size > 0) { Inp.pinch = 0; const q = [...Inp.ptrs.values()][0]; Inp.mid = { x: q.x, y: q.y }; return; }
+    if (Inp.ptrs.size > 0) { Inp.pinch = 0; Inp.ang = null; Inp.twist = 0; Inp.vel = null; const q = [...Inp.ptrs.values()][0]; Inp.mid = { x: q.x, y: q.y }; return; }
+    if (performance.now() - (Inp.lastMove || 0) > 80) Inp.vel = null;
     const t = UI.tool;
     if (Inp.rect) {
       const r = Inp.rect; Inp.rect = null; clearRect();
-      if (t.type === 'paint') { const n = paintApply(t.id, r.x0, r.y0, r.x1, r.y1); if (n > 0) Sound.se('place'); }
+      if (t.type === 'paint') { const q = brushRect(r); const n = paintApply(t.id, q.x0, q.y0, q.x1, q.y1); if (n > 0) { Sound.se('place'); pushUndo({ type: 'paint', tiles: UI.lastPaint, cost: UI.lastPaintCost }); } }
       else if (t.type === 'demolish') {
         if (!Inp.moved || (r.x0 === r.x1 && r.y0 === r.y1)) { tapDemolish(r.x0, r.y0); }
         else { const n = clearFloor(r.x0, r.y0, r.x1, r.y1); if (n) Sound.se('demolish'); }
@@ -393,11 +418,12 @@ function initInput() {
   };
   cv.addEventListener('pointerup', up);
   cv.addEventListener('pointercancel', e => { Inp.ptrs.delete(e.pointerId); Inp.rect = null; clearRect(); });
-  cv.addEventListener('wheel', e => { e.preventDefault(); Cam.zoom = clamp(Cam.zoom * (e.deltaY < 0 ? 1.12 : 1 / 1.12), 0.55, 4.5); }, { passive: false });
+  cv.addEventListener('wheel', e => { e.preventDefault(); zoomAt(e.clientX, e.clientY, e.deltaY < 0 ? 1.15 : 1 / 1.15); }, { passive: false });
   window.addEventListener('keydown', e => {
     if (e.target && e.target.tagName === 'INPUT') return;
     Inp.keys[e.key.toLowerCase()] = true;
     const k = e.key.toLowerCase();
+    if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); doUndo(); return; }
     if (k === 'q') rotateCam(-1);
     if (k === 'e') rotateCam(1);
     if (k === 'r') rotateTool();
@@ -406,8 +432,8 @@ function initInput() {
     if (k === '1') setSpeed(1); if (k === '2') setSpeed(2); if (k === '3') setSpeed(4);
     if (k === 'b') toolbarAction('build');
     if (k === 'delete' || k === 'x') toolbarAction('demolish');
-    if (k === '+' || k === '=') Cam.zoom = clamp(Cam.zoom * 1.2, 0.55, 4.5);
-    if (k === '-') Cam.zoom = clamp(Cam.zoom / 1.2, 0.55, 4.5);
+    if (k === '+' || k === '=') Cam.zoom = clamp(Cam.zoom * 1.2, 0.4, 5);
+    if (k === '-') Cam.zoom = clamp(Cam.zoom / 1.2, 0.4, 5);
   });
   window.addEventListener('keyup', e => { Inp.keys[e.key.toLowerCase()] = false; });
   window.addEventListener('blur', () => { Inp.keys = {}; });
@@ -585,8 +611,9 @@ function renderInfo() {
     if (!fl.cargo) rows.push(['到着した人', fl.paxArr + '人'], ['乗る予定', fl.paxDep + '人'], ['搭乗済み', Math.round(fl.boarded) + '人']);
     else rows.push(['貨物', P.cargo + 'トン']);
     h += rows.map(([k, v]) => `<div class="row"><b>${k}</b><span>${v}</span></div>`).join('');
-    h += `<div class="sub" style="margin-top:6px">${P.desc}</div>`;
+    h += `<div class="sub" style="margin-top:6px">${P.desc}</div><div class="btns"><button class="pbtn sm blue" id="iFollow">${UI.follow === pl ? '追いかけるのをやめる' : '📷 カメラで追いかける'}</button></div>`;
     box.innerHTML = h;
+    $('#iFollow').onclick = () => { UI.follow = UI.follow === pl ? null : pl; if (UI.follow) Cam.zoom = Math.max(Cam.zoom, 1.8); renderInfo(); };
   }
   const x = $('#infoX'); if (x) x.onclick = () => hideInfo();
 }
@@ -899,7 +926,7 @@ function openMenu() {
     <div class="sub">ドットの大きさ</div><div class="seg" id="sQ">${[['low', '大きい（軽い）'], ['mid', 'ふつう'], ['high', '小さい（きれい）']].map(([v, n]) => `<button data-v="${v}" class="${R.opts.quality === v ? 'on' : ''}">${n}</button>`).join('')}</div>
     <div class="sub" style="margin-top:6px">ジオラマぼかし</div><div class="seg" id="sT">${[[0, 'なし'], [0.5, '弱'], [0.8, 'ふつう'], [1.2, '強']].map(([v, n]) => `<button data-v="${v}" class="${R.opts.tilt === v ? 'on' : ''}">${n}</button>`).join('')}</div>
     <div class="sub" style="margin-top:6px">ふちどり線</div><div class="seg" id="sO"><button data-v="1" class="${R.opts.outline ? 'on' : ''}">あり</button><button data-v="0" class="${R.opts.outline ? '' : 'on'}">なし</button></div>
-    <div class="sub" style="margin-top:6px">夜（飛行機のない時間）を早送り</div><div class="seg" id="sN"><button data-v="1" class="${o.nightSkip ? 'on' : ''}">する</button><button data-v="0" class="${o.nightSkip ? '' : 'on'}">しない</button></div>
+    <div class="sub" style="margin-top:6px">夜（飛行機のない時間）は自動でとばす</div><div class="seg" id="sN"><button data-v="1" class="${o.nightSkip ? 'on' : ''}">する</button><button data-v="0" class="${o.nightSkip ? '' : 'on'}">しない</button></div>
     <div class="sec">${iconImg('save', 's')}セーブ</div>
     <div class="sub">自動で毎日セーブされます（スロット${Game.slot + 1}）。</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="pbtn sm blue" id="mSave">${iconImg('save', 's')}いまセーブ</button><button class="pbtn sm" id="mExport">引きつぎコードを作る</button><button class="pbtn sm" id="mImport">引きつぎコードを入力</button>${Cloud.available() ? '<button class="pbtn sm" id="mCloud">クラウドに保存</button>' : ''}</div>
@@ -927,4 +954,61 @@ function togglePhoto() {
   ['#topbar', '#toolbar', '#mission', '#toasts', '#buildPanel', '#buildBar', '#info', '#labels', '#popups'].forEach(s => $(s).style.visibility = UI.photo ? 'hidden' : '');
   $('#side').querySelectorAll('button').forEach(b => { if (b.id !== 'bPhoto') b.style.visibility = UI.photo ? 'hidden' : ''; });
   if (UI.photo) { Sound.se('shutter'); toast('写真モード：もう一度カメラボタンでもどる'); $('#toasts').style.visibility = ''; setTimeout(() => { if (UI.photo) $('#toasts').style.visibility = 'hidden'; }, 2500); }
+}
+
+// ---------- 元に戻す ----------
+function pushUndo(a) { UI.undo.push(a); if (UI.undo.length > 30) UI.undo.shift(); renderBuildBar(); }
+function doUndo() {
+  const a = UI.undo.pop();
+  if (!a) { toast('戻せる操作がありません'); return; }
+  if (a.type === 'build') {
+    const b = G.blds[a.uid];
+    if (!b || b.busy) { toast('その建物はもう戻せません', 'bad'); return; }
+    removeBuilding(a.uid, { noRefund: true }); if (!G.free) G.money += a.cost;
+  } else if (a.type === 'paint') {
+    for (const [i, prev] of a.tiles) { if (G.occ[i]) continue; G.floor[i] = prev; markChunk(i % W, Math.floor(i / W)); }
+    worldChanged(null); World.dirtyWalls = true; if (!G.free) G.money += a.cost;
+  }
+  Sound.se('close'); toast('ひとつ前の操作を元に戻しました（お金ももどりました）', 'good', 'rotate');
+  renderBuildBar();
+}
+
+// カーソル（指）の下の地面が動かないようにズーム
+function zoomAt(sx, sy, k) {
+  const before = screenToGround(sx, sy, 0);
+  Cam.zoom = clamp(Cam.zoom * k, 0.4, 5);
+  updateCamera(true);
+  const after = screenToGround(sx, sy, 0);
+  if (before && after) { Cam.tx += before.x - after.x; Cam.tz += before.z - after.z; clampCam(); }
+  UI.follow = null;
+}
+// 慣性つきスクロール
+function applyInertia(dtReal) {
+  if (Inp.ptrs.size) return;
+  const v = Inp.vel; if (!v) return;
+  if (Math.hypot(v.x, v.y) < 20) { Inp.vel = null; return; }
+  panCam(v.x * dtReal, v.y * dtReal);
+  const d = Math.pow(0.04, dtReal); v.x *= d; v.y *= d;
+}
+// タッチで建てるときの「建てる／回転／やめる」ボタン（ゴーストの近くに出す）
+function updateTouchConfirm() {
+  let el = $('#tConfirm');
+  const show = UI.touch && UI.tool && (UI.tool.type === 'build' || UI.tool.type === 'move') && UI.ghost && UI.ghost.visible;
+  if (!show) { if (el) el.classList.add('hidden'); return; }
+  if (!el) {
+    el = document.createElement('div'); el.id = 'tConfirm'; el.className = 'px';
+    el.innerHTML = '<button class="pbtn sm green" data-a="ok">✓ 建てる</button><button class="pbtn sm" data-a="rot">⟳</button><button class="pbtn sm red" data-a="x">✕</button>';
+    el.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; const a = b.dataset.a; if (a === 'ok' && UI.hoverTile) tryPlace(UI.hoverTile.x, UI.hoverTile.y); if (a === 'rot') rotateTool(); if (a === 'x') cancelTool(); });
+    $('#hud').appendChild(el);
+  }
+  el.classList.remove('hidden');
+  const p = UI.ghost.position, s = worldToScreen(p.x, p.y + 1.6, p.z);
+  el.style.left = clamp(s.x, 110, R.w - 110) + 'px'; el.style.top = clamp(s.y - 30, 70, R.h - 140) + 'px';
+  el.querySelector('[data-a="ok"]').disabled = !UI.ghostOk;
+}
+// 飛行機を追いかけるカメラ
+function updateFollow() {
+  const f = UI.follow; if (!f) return;
+  if (f.gone) { UI.follow = null; toast('飛行機が見えなくなりました'); return; }
+  Cam.tx += (f.x - Cam.tx) * 0.08; Cam.tz += (f.z - Cam.tz) * 0.08;
 }

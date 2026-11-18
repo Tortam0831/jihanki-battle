@@ -20,7 +20,7 @@ function serialize() {
   g.floor = rle(G.floor); g.trees = rle(G.trees); g.sectors = Array.from(G.sectors);
   g.blds = Object.values(G.blds).map(b => BLD_KEYS.map(k => b[k] == null ? null : b[k]));
   g.cam = { tx: Cam.tx, tz: Cam.tz, zoom: Cam.zoom, rot: Cam.rot };
-  g.saved = Date.now();
+  g.saved = Date.now(); g.mapW = W; g.mapH = H;
   g.stat = { today: G.stat.today, buildCost: G.stat.buildCost };
   return JSON.stringify(g);
 }
@@ -32,13 +32,29 @@ function deserialize(json) {
   // 地形は種から作り直す
   const keep = { floor: g.floor, trees: g.trees, sectors: g.sectors, blds: g.blds };
   genMap(seed);
-  G.floor = unrle(keep.floor, Uint8Array, W * H);
-  G.trees = unrle(keep.trees, Uint8Array, W * H);
-  G.sectors = Uint8Array.from(keep.sectors);
+  const oldMap = !g.mapW;   // 72x48 の古いセーブ
+  if (oldMap) {
+    const W0 = 72, H0 = 48, old = genTerrain(seed, W0, H0);
+    const f0 = unrle(keep.floor, Uint8Array, W0 * H0), t0 = unrle(keep.trees, Uint8Array, W0 * H0);
+    G.floor = new Uint8Array(W * H);
+    for (let y = 0; y < H0; y++) for (let x = 0; x < W0; x++) {
+      const i0 = y * W0 + x, i = idx(x + OX, y + OY);
+      if (old.ter[i0] !== TER.WATER || f0[i0]) { G.ter[i] = old.ter[i0] === TER.WATER ? TER.GRASS : old.ter[i0]; G.trees[i] = t0[i0]; }
+      G.floor[i] = f0[i0];
+    }
+    const s0 = keep.sectors; G.sectors = new Uint8Array(SECW * SECH);
+    for (let sy = 0; sy < 4; sy++) for (let sx = 0; sx < 6; sx++) if (s0[sy * 6 + sx]) G.sectors[(sy + 1) * SECW + sx + 1] = 1;
+    if (g.cam) { g.cam.tx += OX; g.cam.tz += OY; }
+  } else {
+    G.floor = unrle(keep.floor, Uint8Array, W * H);
+    G.trees = unrle(keep.trees, Uint8Array, W * H);
+    G.sectors = Uint8Array.from(keep.sectors);
+  }
   G.occ = new Int32Array(W * H);
   G.blds = {};
   for (const arr of keep.blds) {
     const b = {}; BLD_KEYS.forEach((k, i) => { if (arr[i] != null) b[k] = arr[i]; });
+    if (oldMap) { b.x += OX; b.y += OY; }
     const def = B[b.id]; if (!def) continue;
     const [w, h] = dims(def, b.rot);
     for (let y = b.y; y < b.y + h; y++) for (let x = b.x; x < b.x + w; x++) G.occ[idx(x, y)] = b.uid;
@@ -52,6 +68,7 @@ function deserialize(json) {
   G.stat.today = Object.assign(newStatDay(), G.stat.today);
   if (g.cam) { Cam.tx = g.cam.tx; Cam.tz = g.cam.tz; Cam.zoom = g.cam.zoom; Cam.rot = g.cam.rot || 0; Cam.yaw = Cam.yawT = Math.PI / 4 + Cam.rot * Math.PI / 2; }
   G.flags.event = G.flags.event || null;
+  clearAirsideTrees();
   return G;
 }
 function saveGame(slot) {

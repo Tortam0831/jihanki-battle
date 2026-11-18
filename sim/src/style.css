@@ -199,3 +199,9 @@ input[type=text]{font-family:inherit;font-size:16px;padding:8px;border:3px solid
   .spd button{width:28px}
   #tbDate .d{font-size:11px}
 }
+#tConfirm{position:absolute;transform:translate(-50%,-100%);display:flex;gap:6px;padding:6px;z-index:6}
+#tConfirm .pbtn{min-height:44px;font-size:15px}
+#bNight{white-space:nowrap}
+.guideMark{position:absolute;transform:translate(-50%,-100%);pointer-events:none;background:#3a7bd5;color:#fff;border:3px solid var(--ink);border-radius:6px;padding:3px 8px;font-size:13px;white-space:nowrap;animation:bob .8s infinite}
+#mission .ob.cur{background:#fff2b0;border-radius:4px;padding:2px 3px;margin:0 -3px}
+#mission .gbtn{margin:4px 0 2px;display:flex;gap:6px;flex-wrap:wrap}

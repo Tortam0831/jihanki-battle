@@ -91,7 +91,7 @@ function servicePoint(b, k, slot) {
     return { x: bx + lat[0] * o, z: bz + lat[1] * o };
   }
   const kk = k + 1;
-  return { x: bx + fx * (0.12 + kk * 0.3) + lat[0] * ((kk % 2) * 0.12 - 0.06), z: bz + fy * (0.12 + kk * 0.3) + lat[1] * ((kk % 2) * 0.12 - 0.06) };
+  return { x: bx + fx * (0.12 + kk * 0.36) + lat[0] * ((kk % 2) * 0.16 - 0.08), z: bz + fy * (0.12 + kk * 0.36) + lat[1] * ((kk % 2) * 0.16 - 0.08) };
 }
 
 // ---------- 生成 ----------
@@ -603,6 +603,7 @@ function updatePeople(dt) {
     if (fac.queue.length) fac.queue = fac.queue.filter(q => !q.gone && q.state === 'queue');
   }
   for (const p of arr) updatePerson(p, dt);
+  separatePeople(dt);
   // 消えた人を削除
   let j = 0;
   for (let i = 0; i < arr.length; i++) if (!arr[i].gone) arr[j++] = arr[i];
@@ -653,4 +654,41 @@ function renderPeople(dtReal) {
   People.frameAttr.needsUpdate = true; People.flipAttr.needsUpdate = true; People.bFrame.needsUpdate = true;
   // 夜は少し暗く
   const t = inst.material.uniforms.tint.value; const k = lerp(1, 0.78, RT.nightF); t.setRGB(k, k * 0.98, k * 0.95);
+}
+
+// 人どうしが重ならないように、近すぎる人をそっと押しはなす
+const SEP_STATES = { walk: 1, gatewait: 1, idle: 1, follow: 0.5, wave: 1, wander: 1, think: 1, boarding: 0.3 };
+const _bucket = new Map();
+function separatePeople(dt) {
+  _bucket.clear();
+  for (const p of RT.persons) {
+    if (p.hidden || p.gone || !SEP_STATES[p.state]) continue;
+    const k = (Math.floor(p.x * 2) << 10) | Math.floor(p.z * 2);
+    let l = _bucket.get(k); if (!l) _bucket.set(k, l = []); l.push(p);
+  }
+  const R0 = 0.3, k = Math.min(1, dt * 3);
+  for (const [key, l] of _bucket) {
+    const bx = key >> 10, bz = key & 1023;
+    for (let ox = 0; ox <= 1; ox++) for (let oz = -1; oz <= 1; oz++) {
+      if (ox === 0 && oz < 0) continue;
+      const o = ox === 0 && oz === 0 ? l : _bucket.get(((bx + ox) << 10) | (bz + oz)); if (!o) continue;
+      for (let i = 0; i < l.length; i++) for (let j = (o === l ? i + 1 : 0); j < o.length; j++) {
+        const a = l[i], b = o[j];
+        let dx = b.x - a.x, dz = b.z - a.z, d = Math.hypot(dx, dz);
+        if (d >= R0) continue;
+        if (d < 0.001) { dx = Math.random() - 0.5; dz = Math.random() - 0.5; d = Math.hypot(dx, dz); }
+        const push = (R0 - d) * 0.5 * k, ux = dx / d, uz = dz / d;
+        const wa = SEP_STATES[a.state], wb = SEP_STATES[b.state];
+        tryNudge(a, -ux * push * wa, -uz * push * wa); tryNudge(b, ux * push * wb, uz * push * wb);
+      }
+    }
+  }
+}
+function tryNudge(p, dx, dz) {
+  const nx = p.x + dx, nz = p.z + dz, tx = Math.floor(nx), tz = Math.floor(nz);
+  if (!inMap(tx, tz)) return;
+  const i = idx(tx, tz);
+  if (!WALKABLE[i] && i !== p.tile) return;
+  p.x = nx; p.z = nz;
+  if (p.state === 'gatewait' || p.state === 'idle') { p.nx += dx; p.nz += dz; }
 }

@@ -208,6 +208,12 @@ input[type=text]{font-family:inherit;font-size:16px;padding:8px;border:3px solid
   .spd button{width:28px}
   #tbDate .d{font-size:11px}
 }
+#tConfirm{position:absolute;transform:translate(-50%,-100%);display:flex;gap:6px;padding:6px;z-index:6}
+#tConfirm .pbtn{min-height:44px;font-size:15px}
+#bNight{white-space:nowrap}
+.guideMark{position:absolute;transform:translate(-50%,-100%);pointer-events:none;background:#3a7bd5;color:#fff;border:3px solid var(--ink);border-radius:6px;padding:3px 8px;font-size:13px;white-space:nowrap;animation:bob .8s infinite}
+#mission .ob.cur{background:#fff2b0;border-radius:4px;padding:2px 3px;margin:0 -3px}
+#mission .gbtn{margin:4px 0 2px;display:flex;gap:6px;flex-wrap:wrap}
 
 </style>
 </head>
@@ -218,7 +224,7 @@ input[type=text]{font-family:inherit;font-size:16px;padding:8px;border:3px solid
   <div id="popups"></div>
   <div id="topbar">
     <div id="tbName" class="tb px"><div><div class="nm" id="apName"></div><div class="rk"><span class="rankb" id="rankB">Lv1</span> <span id="rankN"></span></div></div><div class="stars" id="stars"></div></div>
-    <div id="tbDate" class="tb px"><img class="pxi" id="wxIcon" alt=""><div><div class="d" id="dateTxt"></div><div class="t" id="clock">07:00</div></div><div class="spd" id="spd"><button data-s="0">II</button><button data-s="1" class="on">▶</button><button data-s="2">▶▶</button><button data-s="4">▶▶▶</button></div></div>
+    <div id="tbDate" class="tb px"><img class="pxi" id="wxIcon" alt=""><div><div class="d" id="dateTxt"></div><div class="t" id="clock">07:00</div></div><button class="pbtn sm hidden" id="bNight" title="朝までスキップ">🌙→☀ 朝まで</button><div class="spd" id="spd"><button data-s="0">II</button><button data-s="1" class="on">▶</button><button data-s="2">▶▶</button><button data-s="4">▶▶▶</button></div></div>
     <div id="tbMoney" class="tb px"><img class="pxi" id="moneyIcon" alt=""><div class="m" id="money">¥0</div></div>
   </div>
   <div id="mission" class="px hidden"></div>
@@ -253,7 +259,8 @@ input[type=text]{font-family:inherit;font-size:16px;padding:8px;border:3px solid
 // ============================================================
 //  そらのみなと ～ドット空港経営記～   core utilities
 // ============================================================
-const W = 72, H = 48, SEC = 12, SECW = W / SEC, SECH = H / SEC; // 6 x 4 sectors
+const W = 108, H = 72, SEC = 12, SECW = W / SEC, SECH = H / SEC; // 9 x 6 区画
+const OX = 12, OY = 12;   // 初期レイアウトのずらし（旧72x48マップとの互換）
 const MIN_PER_DAY = 1440, DAYS_PER_MONTH = 3, DAYS_PER_YEAR = 36;
 const REAL_SEC_PER_GMIN = 0.4;           // 1倍速で 1ゲーム分 = 0.4秒
 const VERSION = '1.0';
@@ -1568,7 +1575,6 @@ const RANKS = [
   { name: 'あこがれの空港', pts: 160000 },
   { name: '伝説のそらのみなと', pts: 250000 },
 ];
-const LAND_COST = [0, 0, 0, 0, 800000, 1500000, 2500000, 4000000, 6000000, 9000000, 13000000, 18000000, 24000000, 30000000, 38000000, 46000000, 55000000, 65000000, 75000000, 90000000, 100000000, 120000000, 140000000, 160000000];
 
 // ============================================================
 //  開発（研究）
@@ -2341,7 +2347,7 @@ function updateCamera(force) {
 function rotateCam(d) { Cam.rot = (Cam.rot + d + 4) % 4; Cam.yawT += d * Math.PI / 2; Sound.se('tab'); }
 function clampCam() {
   Cam.tx = clamp(Cam.tx, -4, W + 4); Cam.tz = clamp(Cam.tz, -4, H + 4);
-  Cam.zoom = clamp(Cam.zoom, 0.55, 4.5);
+  Cam.zoom = clamp(Cam.zoom, 0.4, 5);
 }
 function panCam(dxPix, dyPix) {
   // 画面のピクセル移動 → 地面の移動
@@ -3406,10 +3412,9 @@ function frontDir(rot) { return DIRS4[rot % 4]; }
 function bCenter(b) { const [w, h] = dims(B[b.id], b.rot); return { x: b.x + w / 2, z: b.y + h / 2 }; }
 
 // ---------- マップ生成 ----------
-function genMap(seed) {
+function genTerrain(seed, w, h) {
   const rng = mulberry32(seed || 777);
-  G.ter = new Uint8Array(W * H); G.floor = new Uint8Array(W * H); G.trees = new Uint8Array(W * H);
-  G.occ = new Int32Array(W * H); G.sectors = new Uint8Array(SECW * SECH);
+  const ter = new Uint8Array(w * h), trees = new Uint8Array(w * h);
   const noise = (x, y, s) => {
     let v = 0, a = 1, f = 1 / 8, t = 0;
     for (let o = 0; o < 3; o++) {
@@ -3420,34 +3425,53 @@ function genMap(seed) {
     return v / t;
   };
   const s = Math.floor(rng() * 1000);
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const d = Math.min(x, y, W - 1 - x, (H - 1 - y) * 0.7);
+  const sx0 = w === W ? 36 : 24, sy0 = w === W ? 24 : 12, sw = w === W ? 36 : 24;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const d = Math.min(x, y, w - 1 - x, (h - 1 - y) * 0.7);
     const n = noise(x, y, s) * 4.2;
-    const i = idx(x, y);
-    if (d + n < 3.2) G.ter[i] = TER.WATER;
-    else if (d + n < 4.6) G.ter[i] = TER.SAND;
-    else G.ter[i] = TER.GRASS;
-    // 木
-    if (G.ter[i] === TER.GRASS) {
+    const i = y * w + x;
+    if (d + n < 3.2) ter[i] = TER.WATER;
+    else if (d + n < 4.6) ter[i] = TER.SAND;
+    else ter[i] = TER.GRASS;
+    if (ter[i] === TER.GRASS) {
       const tn = noise(x + 100, y + 50, s + 9);
-      const inStart = x >= 24 && x < 48 && y >= 12 && y < 36;
-      if (tn > (inStart ? 0.66 : 0.55) && rng() < 0.75) G.trees[i] = rng() < 0.25 ? 2 : rng() < 0.15 ? 3 : 1;
+      const inStart = x >= sx0 && x < sx0 + sw && y >= sy0 && y < sy0 + 24;
+      if (tn > (inStart ? 0.72 : 0.55) && rng() < 0.75) trees[i] = rng() < 0.25 ? 2 : rng() < 0.15 ? 3 : 1;
     }
   }
-  // 開始の土地
-  for (const [sx, sy] of [[2, 1], [3, 1], [2, 2], [3, 2]]) G.sectors[sy * SECW + sx] = 1;
+  return { ter, trees };
+}
+function genMap(seed) {
+  const g = genTerrain(seed, W, H);
+  G.ter = g.ter; G.trees = g.trees; G.floor = new Uint8Array(W * H);
+  G.occ = new Int32Array(W * H); G.sectors = new Uint8Array(SECW * SECH);
+  // 開始の土地（3x2区画）
+  for (const [sx, sy] of [[3, 2], [4, 2], [5, 2], [3, 3], [4, 3], [5, 3]]) G.sectors[sy * SECW + sx] = 1;
   // 橋と道路（北から）
-  const rx = 35;
-  for (let y = 0; y <= 11; y++) { G.floor[idx(rx, y)] = FLOOR.ROAD; G.floor[idx(rx + 1, y)] = FLOOR.ROAD; G.trees[idx(rx, y)] = 0; G.trees[idx(rx + 1, y)] = 0; G.trees[idx(rx - 1, y)] = 0; G.trees[idx(rx + 2, y)] = 0; }
+  const rx = 35 + OX;
+  for (let y = 0; y <= 11 + OY; y++) { for (const dx of [-1, 0, 1, 2]) G.trees[idx(rx + dx, y)] = 0; G.floor[idx(rx, y)] = FLOOR.ROAD; G.floor[idx(rx + 1, y)] = FLOOR.ROAD; if (G.ter[idx(rx, y)] === TER.SAND) { G.ter[idx(rx, y)] = TER.GRASS; G.ter[idx(rx + 1, y)] = TER.GRASS; } }
   // 開始エリアの木を少しへらす
-  for (let y = 12; y < 20; y++) for (let x = 28; x < 44; x++) G.trees[idx(x, y)] = 0;
+  for (let y = 12 + OY; y < 20 + OY; y++) for (let x = 28 + OX; x < 44 + OX; x++) G.trees[idx(x, y)] = 0;
 }
 function setupStart() {
   G.blds = {}; G.nextUid = 1;
   // 初期のバス停と歩道
-  for (let x = 31; x <= 40; x++) { G.floor[idx(x, 13)] = FLOOR.WALK; G.trees[idx(x, 13)] = 0; G.trees[idx(x, 12)] = 0; }
-  G.floor[idx(35, 12)] = FLOOR.ROAD; G.floor[idx(36, 12)] = FLOOR.ROAD;
-  placeBuilding('busstop', 33, 12, 0, { free: true, silent: true, fixed: true });
+  for (let x = 31 + OX; x <= 40 + OX; x++) { G.floor[idx(x, 13 + OY)] = FLOOR.WALK; G.trees[idx(x, 13 + OY)] = 0; G.trees[idx(x, 12 + OY)] = 0; }
+  G.floor[idx(35 + OX, 12 + OY)] = FLOOR.ROAD; G.floor[idx(36 + OX, 12 + OY)] = FLOOR.ROAD;
+  placeBuilding('busstop', 33 + OX, 12 + OY, 0, { free: true, silent: true, fixed: true });
+}
+// 飛行機の翼が当たらないよう、まわりの木を切る
+function clearTreesAround(x0, y0, w, h, m) {
+  let n = 0;
+  for (let y = y0 - m; y < y0 + h + m; y++) for (let x = x0 - m; x < x0 + w + m; x++) {
+    if (!inMap(x, y)) continue; const i = idx(x, y);
+    if (G.trees[i]) { G.trees[i] = 0; markChunk(x, y); n++; }
+  }
+  return n;
+}
+function clearAirsideTrees() {
+  for (const b of Object.values(G.blds)) { const d = B[b.id]; if (d.kind === 'runway' || d.kind === 'stand') { const [w, h] = dims(d, b.rot); clearTreesAround(b.x, b.y, w, h, d.kind === 'runway' ? 4 : 3); } }
+  for (let i = 0; i < W * H; i++) if (G.floor[i] === FLOOR.TAXI) clearTreesAround(i % W, Math.floor(i / W), 1, 1, 2);
 }
 
 // ---------- 置けるか判定 ----------
@@ -3500,6 +3524,7 @@ function placeBuilding(id, x, y, rot, opt) {
     markChunk(xx, yy);
   }
   G.blds[uid] = b;
+  if (def.kind === 'runway' || def.kind === 'stand') clearTreesAround(x, y, w, h, def.kind === 'runway' ? 4 : 3);
   if (!opt.free && !opt.move && !G.free) { G.money -= chk.cost; G.stat.buildCost += chk.cost; }
   spawnBuildingMesh(b);
   worldChanged(def);
@@ -3574,7 +3599,8 @@ function paintApply(id, x0, y0, x1, y1) {
   if (!tiles.length) return 0;
   if (G.money < cost && !G.free) { toast('お金が足りません', 'bad'); Sound.se('error'); return -1; }
   if (!G.free) { G.money -= cost; G.stat.buildCost += cost; }
-  for (const i of tiles) { G.floor[i] = def.paint; G.trees[i] = 0; markChunk(i % W, Math.floor(i / W)); }
+  if (typeof UI !== 'undefined') { UI.lastPaint = tiles.map(i => [i, G.floor[i]]); UI.lastPaintCost = G.free ? 0 : cost; }
+  for (const i of tiles) { G.floor[i] = def.paint; G.trees[i] = 0; markChunk(i % W, Math.floor(i / W)); if (def.paint === FLOOR.TAXI) clearTreesAround(i % W, Math.floor(i / W), 1, 1, 2); }
   worldChanged(def);
   World.dirtyWalls = true;
   Bus.emit('painted', id, tiles.length);
@@ -3597,12 +3623,12 @@ function clearFloor(x0, y0, x1, y1) {
   if (n) { G.money += refund; worldChanged(null); World.dirtyWalls = true; }
   return n;
 }
-function isFixedRoad(x, y) { return y <= 12 && (x === 35 || x === 36) && G.floor[idx(x, y)] === FLOOR.ROAD; }
+function isFixedRoad(x, y) { return y <= 12 + OY && (x === 35 + OX || x === 36 + OX) && G.floor[idx(x, y)] === FLOOR.ROAD; }
 
 // ---------- 土地 ----------
 function sectorPrice() {
   let n = 0; for (const v of G.sectors) n += v;
-  return LAND_COST[Math.min(n, LAND_COST.length - 1)] || 100000000;
+  return n <= 6 ? 0 : Math.round(500000 * Math.pow(n - 6, 1.65) / 10000) * 10000;
 }
 function canBuySector(sx, sy) {
   if (G.sectors[sy * SECW + sx]) return false;
@@ -4206,7 +4232,7 @@ function servicePoint(b, k, slot) {
     return { x: bx + lat[0] * o, z: bz + lat[1] * o };
   }
   const kk = k + 1;
-  return { x: bx + fx * (0.12 + kk * 0.3) + lat[0] * ((kk % 2) * 0.12 - 0.06), z: bz + fy * (0.12 + kk * 0.3) + lat[1] * ((kk % 2) * 0.12 - 0.06) };
+  return { x: bx + fx * (0.12 + kk * 0.36) + lat[0] * ((kk % 2) * 0.16 - 0.08), z: bz + fy * (0.12 + kk * 0.36) + lat[1] * ((kk % 2) * 0.16 - 0.08) };
 }
 
 // ---------- 生成 ----------
@@ -4718,6 +4744,7 @@ function updatePeople(dt) {
     if (fac.queue.length) fac.queue = fac.queue.filter(q => !q.gone && q.state === 'queue');
   }
   for (const p of arr) updatePerson(p, dt);
+  separatePeople(dt);
   // 消えた人を削除
   let j = 0;
   for (let i = 0; i < arr.length; i++) if (!arr[i].gone) arr[j++] = arr[i];
@@ -4768,6 +4795,43 @@ function renderPeople(dtReal) {
   People.frameAttr.needsUpdate = true; People.flipAttr.needsUpdate = true; People.bFrame.needsUpdate = true;
   // 夜は少し暗く
   const t = inst.material.uniforms.tint.value; const k = lerp(1, 0.78, RT.nightF); t.setRGB(k, k * 0.98, k * 0.95);
+}
+
+// 人どうしが重ならないように、近すぎる人をそっと押しはなす
+const SEP_STATES = { walk: 1, gatewait: 1, idle: 1, follow: 0.5, wave: 1, wander: 1, think: 1, boarding: 0.3 };
+const _bucket = new Map();
+function separatePeople(dt) {
+  _bucket.clear();
+  for (const p of RT.persons) {
+    if (p.hidden || p.gone || !SEP_STATES[p.state]) continue;
+    const k = (Math.floor(p.x * 2) << 10) | Math.floor(p.z * 2);
+    let l = _bucket.get(k); if (!l) _bucket.set(k, l = []); l.push(p);
+  }
+  const R0 = 0.3, k = Math.min(1, dt * 3);
+  for (const [key, l] of _bucket) {
+    const bx = key >> 10, bz = key & 1023;
+    for (let ox = 0; ox <= 1; ox++) for (let oz = -1; oz <= 1; oz++) {
+      if (ox === 0 && oz < 0) continue;
+      const o = ox === 0 && oz === 0 ? l : _bucket.get(((bx + ox) << 10) | (bz + oz)); if (!o) continue;
+      for (let i = 0; i < l.length; i++) for (let j = (o === l ? i + 1 : 0); j < o.length; j++) {
+        const a = l[i], b = o[j];
+        let dx = b.x - a.x, dz = b.z - a.z, d = Math.hypot(dx, dz);
+        if (d >= R0) continue;
+        if (d < 0.001) { dx = Math.random() - 0.5; dz = Math.random() - 0.5; d = Math.hypot(dx, dz); }
+        const push = (R0 - d) * 0.5 * k, ux = dx / d, uz = dz / d;
+        const wa = SEP_STATES[a.state], wb = SEP_STATES[b.state];
+        tryNudge(a, -ux * push * wa, -uz * push * wa); tryNudge(b, ux * push * wb, uz * push * wb);
+      }
+    }
+  }
+}
+function tryNudge(p, dx, dz) {
+  const nx = p.x + dx, nz = p.z + dz, tx = Math.floor(nx), tz = Math.floor(nz);
+  if (!inMap(tx, tz)) return;
+  const i = idx(tx, tz);
+  if (!WALKABLE[i] && i !== p.tile) return;
+  p.x = nx; p.z = nz;
+  if (p.state === 'gatewait' || p.state === 'idle') { p.nx += dx; p.nz += dz; }
 }
 
 // ============================================================
@@ -5239,7 +5303,21 @@ function onRunway(pl, r) {
   return pl.x > r.x - 0.2 && pl.x < r.x + w + 0.2 && pl.z > r.y - 0.2 && pl.z < r.y + h + 0.2;
 }
 // タイルの中心をつないだ経路から、ほぼ一直線の点をはぶく
+// 太い誘導路では真ん中を走る
+function centerOnTaxi(pts) {
+  const T = pts.map(p => [Math.floor(p.x), Math.floor(p.z)]);
+  const isT = (x, y) => inMap(x, y) && G.floor[idx(x, y)] === FLOOR.TAXI;
+  const side = (x, y, dx, dy) => { let c = 0; for (let k = 1; k <= 2; k++) { if (isT(x + dx * k, y + dy * k)) c++; else break; } return c; };
+  for (let i = 0; i < pts.length; i++) {
+    const [x, y] = T[i]; if (!isT(x, y)) continue;
+    const a = T[Math.max(0, i - 1)], b = T[Math.min(pts.length - 1, i + 1)];
+    const mx = Math.sign(b[0] - a[0]), my = Math.sign(b[1] - a[1]);
+    if (my !== 0) pts[i].x += (side(x, y, 1, 0) - side(x, y, -1, 0)) * 0.5;
+    if (mx !== 0) pts[i].z += (side(x, y, 0, 1) - side(x, y, 0, -1)) * 0.5;
+  }
+}
 function smoothPath(pts, pl, keep) {
+  centerOnTaxi(pts);
   if (pts.length < 3) return pts;
   const out = [pts[0]];
   for (let i = 1; i < pts.length - 1; i++) {
@@ -5869,6 +5947,7 @@ function airlineAvailable(id) {
   return { ok: true };
 }
 function routeCheck(airlineId, cityId, wantType) {
+  if (RT.dirtyLinks) relinkGates();
   const al = AIRLINES[airlineId], city = CITIES[cityId];
   const a = airlineAvailable(airlineId); if (!a.ok) return a;
   if (city.rank > G.rank && !G.free) return { ok: false, why: `ランク${city.rank}で就航できます` };
@@ -5961,7 +6040,7 @@ function simStep(dt) {
 // ============================================================
 //  画面（HUD・建設・情報・各ウィンドウ・入力）
 // ============================================================
-const UI = { cat: 'air', tool: null, ghost: null, rectMesh: null, hoverTile: null, infoT: 0, hudT: 0, popT: {}, photo: false, lastMoney: null, touch: false, newIds: {} };
+const UI = { brush: { taxiway: 2, road: 2, walk: 1, tfloor: 1 }, undo: [], cat: 'air', tool: null, ghost: null, rectMesh: null, hoverTile: null, infoT: 0, hudT: 0, popT: {}, photo: false, lastMoney: null, touch: false, newIds: {} };
 const TOOLBAR = [
   { id: 'build', icon: 'hangar', name: '建設' },
   { id: 'demolish', icon: 'dozer', name: '撤去' },
@@ -5981,11 +6060,12 @@ function initUI() {
   $('#bRotL').innerHTML = iconImg('rotate'); $('#bRotR').innerHTML = `<span style="transform:scaleX(-1);display:inline-flex">${iconImg('rotate')}</span>`;
   $('#bPhoto').innerHTML = iconImg('camera');
   $('#bRotL').onclick = () => rotateCam(-1); $('#bRotR').onclick = () => rotateCam(1);
-  $('#bZoomIn').onclick = () => { Cam.zoom = clamp(Cam.zoom * 1.25, 0.55, 4.5); };
-  $('#bZoomOut').onclick = () => { Cam.zoom = clamp(Cam.zoom / 1.25, 0.55, 4.5); };
+  $('#bZoomIn').onclick = () => zoomAt(R.w / 2, R.h / 2, 1.25);
+  $('#bZoomOut').onclick = () => zoomAt(R.w / 2, R.h / 2, 1 / 1.25);
   $('#bPhoto').onclick = () => togglePhoto();
   $('#spd').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; Sound.init(); setSpeed(+b.dataset.s); });
   $('#moneyIcon').src = iconURL('money');
+  $('#bNight').onclick = () => { Sound.init(); skipNight(true); };
   $('#mClose').onclick = () => closeModal();
   $('#modal').addEventListener('pointerdown', e => { if (e.target.id === 'modal') closeModal(); });
   $('#mission').addEventListener('click', () => { $('#mission').classList.toggle('min'); });
@@ -6157,7 +6237,7 @@ function setTool(t) {
   if (World.gridMesh) { World.gridMesh.visible = !!t && t.type !== 'land'; World.gridMesh.material.uniforms.op.value = 0.13; }
   $('#tb_demolish').classList.toggle('on', !!t && t.type === 'demolish');
   $('#tb_land').classList.toggle('on', !!t && t.type === 'land');
-  $('#labels').innerHTML = ''; UI.landLbl = null;
+  $$('#labels .lbl').forEach(e => e.parentNode && e.parentNode.removeChild(e)); UI.landLbl = null;
   if (t && (t.type === 'build' || t.type === 'move')) makeGhost();
   if (t && t.type === 'land') updateLandLabels(true);
   renderBuildBar();
@@ -6183,7 +6263,8 @@ function renderBuildBar() {
       <button class="pbtn sm" id="bbRot">${iconImg('rotate', 's')}回転</button>${UI.touch ? '<button class="pbtn sm green" id="bbOk">建てる</button>' : ''}<button class="pbtn sm red" id="bbX">やめる</button>`;
   } else if (t.type === 'paint') {
     const d = B[t.id];
-    h = `${iconImg(d.icon)}<div class="msg"><b>${d.name}</b> <span class="sub">${fmtYen(d.cost)}/マス</span><div class="sub" id="bbMsg">ドラッグで四角くぬれます</div></div><button class="pbtn sm red" id="bbX">やめる</button>`;
+    const bw = UI.brush[t.id] || 1;
+    h = `${iconImg(d.icon)}<div class="msg"><b>${d.name}</b> <span class="sub">${fmtYen(d.cost)}/マス</span><div class="sub" id="bbMsg">ドラッグでぬる（線のように引くと太さ${bw}マス）</div></div><span class="sub">太さ</span><div class="seg" id="bbBrush" style="flex-wrap:nowrap">${[1, 2, 3].map(n => `<button data-b="${n}" class="${n === bw ? 'on' : ''}" style="min-width:34px;padding:4px">${n}</button>`).join('')}</div>${UI.undo.length ? '<button class="pbtn sm" id="bbUndo">↶ 戻す</button>' : ''}<button class="pbtn sm red" id="bbX">やめる</button>`;
   } else if (t.type === 'demolish') {
     h = `${iconImg('dozer')}<div class="msg"><b>撤去</b><div class="sub" id="bbMsg">建物をタップ／ドラッグで床をはがす（半額もどる）</div></div><button class="pbtn sm red" id="bbX">やめる</button>`;
   } else if (t.type === 'land') {
@@ -6193,6 +6274,8 @@ function renderBuildBar() {
   const x = $('#bbX'); if (x) x.onclick = () => { cancelTool(); };
   const r = $('#bbRot'); if (r) r.onclick = () => rotateTool();
   const ok = $('#bbOk'); if (ok) ok.onclick = () => { if (UI.hoverTile) tryPlace(UI.hoverTile.x, UI.hoverTile.y); };
+  const br = $('#bbBrush'); if (br) br.onclick = e => { const b = e.target.closest('button'); if (!b) return; UI.brush[t.id] = +b.dataset.b; Sound.se('tab'); renderBuildBar(); };
+  const ud = $('#bbUndo'); if (ud) ud.onclick = () => doUndo();
 }
 function cancelTool() {
   if (UI.tool && UI.tool.type === 'move' && UI.tool.orig) {
@@ -6242,6 +6325,7 @@ function tryPlace(tx, ty) {
   }
   const b = placeBuilding(t.id, x, y, t.rot);
   if (b) {
+    pushUndo({ type: 'build', uid: b.uid, cost: G.free ? 0 : chk.cost });
     Sound.se('place');
     puff(b);
     if (def.unique || def.kind === 'runway') setTool(null);
@@ -6257,7 +6341,20 @@ function puff(b) {
 }
 // 四角選択（床ぬり・撤去）
 function clearRect() { if (UI.rectMesh) { R.scene.remove(UI.rectMesh); UI.rectMesh.geometry.dispose(); UI.rectMesh = null; } }
+// 線のようにドラッグしたときは、筆の太さぶん広げる
+function brushRect(r) {
+  const b = (UI.tool && UI.tool.type === 'paint') ? (UI.brush[UI.tool.id] || 1) : 1;
+  let { x0, y0, x1, y1 } = r;
+  const wx = Math.abs(x1 - x0) + 1, wy = Math.abs(y1 - y0) + 1;
+  if (b > 1) {
+    if (wx === 1) { x1 = x0 + b - 1; }
+    if (wy === 1) { y1 = y0 + b - 1; }
+    if (wx === 1 && x1 < x0) [x0, x1] = [x1, x0];
+  }
+  return { x0, y0, x1, y1 };
+}
 function showRect(x0, y0, x1, y1, col) {
+  if (UI.tool && UI.tool.type === 'paint') { const q = brushRect({ x0, y0, x1, y1 }); x0 = q.x0; y0 = q.y0; x1 = q.x1; y1 = q.y1; }
   clearRect();
   const P = [];
   const xa = Math.min(x0, x1), xb = Math.max(x0, x1), ya = Math.min(y0, y1), yb = Math.max(y0, y1);
@@ -6294,9 +6391,9 @@ function initInput() {
     if (Inp.ptrs.size === 2) {
       const [a, b] = [...Inp.ptrs.values()];
       Inp.pinch = Math.hypot(a.x - b.x, a.y - b.y); Inp.mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-      Inp.rect = null; clearRect(); Inp.moved = true;
+      Inp.rect = null; clearRect(); Inp.moved = true; Inp.ang = Math.atan2(b.y - a.y, b.x - a.x); Inp.twist = 0;
     } else if (Inp.ptrs.size === 1) {
-      Inp.moved = false; Inp.down = { x: e.clientX, y: e.clientY, btn: e.button };
+      Inp.moved = false; Inp.down = { x: e.clientX, y: e.clientY, btn: e.button }; Inp.vel = null;
       const t = UI.tool;
       if (t && (t.type === 'paint' || t.type === 'demolish') && e.button === 0) {
         const tl = tileAtScreen(e.clientX, e.clientY);
@@ -6317,9 +6414,13 @@ function initInput() {
     if (Inp.ptrs.size === 2) {
       const [a, b] = [...Inp.ptrs.values()];
       const d = Math.hypot(a.x - b.x, a.y - b.y), mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-      if (Inp.pinch > 0) Cam.zoom = clamp(Cam.zoom * d / Inp.pinch, 0.55, 4.5);
+      if (Inp.pinch > 0) zoomAt(mid.x, mid.y, d / Inp.pinch);
       panCam(mid.x - Inp.mid.x, mid.y - Inp.mid.y);
-      Inp.pinch = d; Inp.mid = mid;
+      // 2本指をひねると90度回転
+      const ang = Math.atan2(b.y - a.y, b.x - a.x);
+      if (Inp.ang != null) { Inp.twist = (Inp.twist || 0) + angDiff(Inp.ang, ang); if (Math.abs(Inp.twist) > 0.7) { rotateCam(Inp.twist > 0 ? -1 : 1); Inp.twist = 0; } }
+      Inp.ang = ang;
+      Inp.pinch = d; Inp.mid = mid; UI.follow = null;
       return;
     }
     const t = UI.tool;
@@ -6330,17 +6431,20 @@ function initInput() {
     }
     if (t && (t.type === 'build' || t.type === 'move') && e.pointerType === 'touch' && Inp.moved) { hover(e.clientX, e.clientY); return; }
     if (e.pointerType === 'mouse' && p.btn === 0 && t && (t.type === 'build' || t.type === 'move')) { hover(e.clientX, e.clientY); }
-    if (!(t && (t.type === 'build' || t.type === 'move') && e.pointerType === 'touch')) { if (Inp.moved) panCam(dx, dy); }
+    if (!(t && (t.type === 'build' || t.type === 'move') && e.pointerType === 'touch')) {
+      if (Inp.moved) { panCam(dx, dy); UI.follow = null; const now = performance.now(), dtp = Math.max(1, now - (Inp.lastMove || now - 16)) / 1000; Inp.lastMove = now; Inp.vel = { x: lerp((Inp.vel || { x: 0 }).x, dx / dtp, 0.4), y: lerp((Inp.vel || { y: 0 }).y, dy / dtp, 0.4) }; }
+    }
   });
   const up = e => {
     const p = Inp.ptrs.get(e.pointerId);
     Inp.ptrs.delete(e.pointerId);
     if (!p) return;
-    if (Inp.ptrs.size > 0) { Inp.pinch = 0; const q = [...Inp.ptrs.values()][0]; Inp.mid = { x: q.x, y: q.y }; return; }
+    if (Inp.ptrs.size > 0) { Inp.pinch = 0; Inp.ang = null; Inp.twist = 0; Inp.vel = null; const q = [...Inp.ptrs.values()][0]; Inp.mid = { x: q.x, y: q.y }; return; }
+    if (performance.now() - (Inp.lastMove || 0) > 80) Inp.vel = null;
     const t = UI.tool;
     if (Inp.rect) {
       const r = Inp.rect; Inp.rect = null; clearRect();
-      if (t.type === 'paint') { const n = paintApply(t.id, r.x0, r.y0, r.x1, r.y1); if (n > 0) Sound.se('place'); }
+      if (t.type === 'paint') { const q = brushRect(r); const n = paintApply(t.id, q.x0, q.y0, q.x1, q.y1); if (n > 0) { Sound.se('place'); pushUndo({ type: 'paint', tiles: UI.lastPaint, cost: UI.lastPaintCost }); } }
       else if (t.type === 'demolish') {
         if (!Inp.moved || (r.x0 === r.x1 && r.y0 === r.y1)) { tapDemolish(r.x0, r.y0); }
         else { const n = clearFloor(r.x0, r.y0, r.x1, r.y1); if (n) Sound.se('demolish'); }
@@ -6353,11 +6457,12 @@ function initInput() {
   };
   cv.addEventListener('pointerup', up);
   cv.addEventListener('pointercancel', e => { Inp.ptrs.delete(e.pointerId); Inp.rect = null; clearRect(); });
-  cv.addEventListener('wheel', e => { e.preventDefault(); Cam.zoom = clamp(Cam.zoom * (e.deltaY < 0 ? 1.12 : 1 / 1.12), 0.55, 4.5); }, { passive: false });
+  cv.addEventListener('wheel', e => { e.preventDefault(); zoomAt(e.clientX, e.clientY, e.deltaY < 0 ? 1.15 : 1 / 1.15); }, { passive: false });
   window.addEventListener('keydown', e => {
     if (e.target && e.target.tagName === 'INPUT') return;
     Inp.keys[e.key.toLowerCase()] = true;
     const k = e.key.toLowerCase();
+    if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); doUndo(); return; }
     if (k === 'q') rotateCam(-1);
     if (k === 'e') rotateCam(1);
     if (k === 'r') rotateTool();
@@ -6366,8 +6471,8 @@ function initInput() {
     if (k === '1') setSpeed(1); if (k === '2') setSpeed(2); if (k === '3') setSpeed(4);
     if (k === 'b') toolbarAction('build');
     if (k === 'delete' || k === 'x') toolbarAction('demolish');
-    if (k === '+' || k === '=') Cam.zoom = clamp(Cam.zoom * 1.2, 0.55, 4.5);
-    if (k === '-') Cam.zoom = clamp(Cam.zoom / 1.2, 0.55, 4.5);
+    if (k === '+' || k === '=') Cam.zoom = clamp(Cam.zoom * 1.2, 0.4, 5);
+    if (k === '-') Cam.zoom = clamp(Cam.zoom / 1.2, 0.4, 5);
   });
   window.addEventListener('keyup', e => { Inp.keys[e.key.toLowerCase()] = false; });
   window.addEventListener('blur', () => { Inp.keys = {}; });
@@ -6545,8 +6650,9 @@ function renderInfo() {
     if (!fl.cargo) rows.push(['到着した人', fl.paxArr + '人'], ['乗る予定', fl.paxDep + '人'], ['搭乗済み', Math.round(fl.boarded) + '人']);
     else rows.push(['貨物', P.cargo + 'トン']);
     h += rows.map(([k, v]) => `<div class="row"><b>${k}</b><span>${v}</span></div>`).join('');
-    h += `<div class="sub" style="margin-top:6px">${P.desc}</div>`;
+    h += `<div class="sub" style="margin-top:6px">${P.desc}</div><div class="btns"><button class="pbtn sm blue" id="iFollow">${UI.follow === pl ? '追いかけるのをやめる' : '📷 カメラで追いかける'}</button></div>`;
     box.innerHTML = h;
+    $('#iFollow').onclick = () => { UI.follow = UI.follow === pl ? null : pl; if (UI.follow) Cam.zoom = Math.max(Cam.zoom, 1.8); renderInfo(); };
   }
   const x = $('#infoX'); if (x) x.onclick = () => hideInfo();
 }
@@ -6859,7 +6965,7 @@ function openMenu() {
     <div class="sub">ドットの大きさ</div><div class="seg" id="sQ">${[['low', '大きい（軽い）'], ['mid', 'ふつう'], ['high', '小さい（きれい）']].map(([v, n]) => `<button data-v="${v}" class="${R.opts.quality === v ? 'on' : ''}">${n}</button>`).join('')}</div>
     <div class="sub" style="margin-top:6px">ジオラマぼかし</div><div class="seg" id="sT">${[[0, 'なし'], [0.5, '弱'], [0.8, 'ふつう'], [1.2, '強']].map(([v, n]) => `<button data-v="${v}" class="${R.opts.tilt === v ? 'on' : ''}">${n}</button>`).join('')}</div>
     <div class="sub" style="margin-top:6px">ふちどり線</div><div class="seg" id="sO"><button data-v="1" class="${R.opts.outline ? 'on' : ''}">あり</button><button data-v="0" class="${R.opts.outline ? '' : 'on'}">なし</button></div>
-    <div class="sub" style="margin-top:6px">夜（飛行機のない時間）を早送り</div><div class="seg" id="sN"><button data-v="1" class="${o.nightSkip ? 'on' : ''}">する</button><button data-v="0" class="${o.nightSkip ? '' : 'on'}">しない</button></div>
+    <div class="sub" style="margin-top:6px">夜（飛行機のない時間）は自動でとばす</div><div class="seg" id="sN"><button data-v="1" class="${o.nightSkip ? 'on' : ''}">する</button><button data-v="0" class="${o.nightSkip ? '' : 'on'}">しない</button></div>
     <div class="sec">${iconImg('save', 's')}セーブ</div>
     <div class="sub">自動で毎日セーブされます（スロット${Game.slot + 1}）。</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="pbtn sm blue" id="mSave">${iconImg('save', 's')}いまセーブ</button><button class="pbtn sm" id="mExport">引きつぎコードを作る</button><button class="pbtn sm" id="mImport">引きつぎコードを入力</button>${Cloud.available() ? '<button class="pbtn sm" id="mCloud">クラウドに保存</button>' : ''}</div>
@@ -6887,6 +6993,63 @@ function togglePhoto() {
   ['#topbar', '#toolbar', '#mission', '#toasts', '#buildPanel', '#buildBar', '#info', '#labels', '#popups'].forEach(s => $(s).style.visibility = UI.photo ? 'hidden' : '');
   $('#side').querySelectorAll('button').forEach(b => { if (b.id !== 'bPhoto') b.style.visibility = UI.photo ? 'hidden' : ''; });
   if (UI.photo) { Sound.se('shutter'); toast('写真モード：もう一度カメラボタンでもどる'); $('#toasts').style.visibility = ''; setTimeout(() => { if (UI.photo) $('#toasts').style.visibility = 'hidden'; }, 2500); }
+}
+
+// ---------- 元に戻す ----------
+function pushUndo(a) { UI.undo.push(a); if (UI.undo.length > 30) UI.undo.shift(); renderBuildBar(); }
+function doUndo() {
+  const a = UI.undo.pop();
+  if (!a) { toast('戻せる操作がありません'); return; }
+  if (a.type === 'build') {
+    const b = G.blds[a.uid];
+    if (!b || b.busy) { toast('その建物はもう戻せません', 'bad'); return; }
+    removeBuilding(a.uid, { noRefund: true }); if (!G.free) G.money += a.cost;
+  } else if (a.type === 'paint') {
+    for (const [i, prev] of a.tiles) { if (G.occ[i]) continue; G.floor[i] = prev; markChunk(i % W, Math.floor(i / W)); }
+    worldChanged(null); World.dirtyWalls = true; if (!G.free) G.money += a.cost;
+  }
+  Sound.se('close'); toast('ひとつ前の操作を元に戻しました（お金ももどりました）', 'good', 'rotate');
+  renderBuildBar();
+}
+
+// カーソル（指）の下の地面が動かないようにズーム
+function zoomAt(sx, sy, k) {
+  const before = screenToGround(sx, sy, 0);
+  Cam.zoom = clamp(Cam.zoom * k, 0.4, 5);
+  updateCamera(true);
+  const after = screenToGround(sx, sy, 0);
+  if (before && after) { Cam.tx += before.x - after.x; Cam.tz += before.z - after.z; clampCam(); }
+  UI.follow = null;
+}
+// 慣性つきスクロール
+function applyInertia(dtReal) {
+  if (Inp.ptrs.size) return;
+  const v = Inp.vel; if (!v) return;
+  if (Math.hypot(v.x, v.y) < 20) { Inp.vel = null; return; }
+  panCam(v.x * dtReal, v.y * dtReal);
+  const d = Math.pow(0.04, dtReal); v.x *= d; v.y *= d;
+}
+// タッチで建てるときの「建てる／回転／やめる」ボタン（ゴーストの近くに出す）
+function updateTouchConfirm() {
+  let el = $('#tConfirm');
+  const show = UI.touch && UI.tool && (UI.tool.type === 'build' || UI.tool.type === 'move') && UI.ghost && UI.ghost.visible;
+  if (!show) { if (el) el.classList.add('hidden'); return; }
+  if (!el) {
+    el = document.createElement('div'); el.id = 'tConfirm'; el.className = 'px';
+    el.innerHTML = '<button class="pbtn sm green" data-a="ok">✓ 建てる</button><button class="pbtn sm" data-a="rot">⟳</button><button class="pbtn sm red" data-a="x">✕</button>';
+    el.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; const a = b.dataset.a; if (a === 'ok' && UI.hoverTile) tryPlace(UI.hoverTile.x, UI.hoverTile.y); if (a === 'rot') rotateTool(); if (a === 'x') cancelTool(); });
+    $('#hud').appendChild(el);
+  }
+  el.classList.remove('hidden');
+  const p = UI.ghost.position, s = worldToScreen(p.x, p.y + 1.6, p.z);
+  el.style.left = clamp(s.x, 110, R.w - 110) + 'px'; el.style.top = clamp(s.y - 30, 70, R.h - 140) + 'px';
+  el.querySelector('[data-a="ok"]').disabled = !UI.ghostOk;
+}
+// 飛行機を追いかけるカメラ
+function updateFollow() {
+  const f = UI.follow; if (!f) return;
+  if (f.gone) { UI.follow = null; toast('飛行機が見えなくなりました'); return; }
+  Cam.tx += (f.x - Cam.tx) * 0.08; Cam.tz += (f.z - Cam.tz) * 0.08;
 }
 
 // ============================================================
@@ -6981,6 +7144,7 @@ const CHAPTERS = [
       { who: 'jii', t: 'ふぉっふぉっ。わしはソラジイ。むかしパイロットをしておった。空港づくりのことなら何でも聞くとよい。', e: 'h' },
       { who: 'jii', t: 'まずは【建設】ボタンから「短い滑走路」を建てるんじゃ。小さなプロペラ機なら、それで降りられる。' },
       { who: 'jii', t: '画面はドラッグで動かせるし、ホイールやピンチで近づける。Q・Eキーか右の矢印ボタンでぐるっと回せるぞ。' },
+      { who: 'hibari', t: 'わからなくなったら、左の目標にある【▶ やり方】を押してください！ 置く場所を青く光らせて教えます。【おまかせで置く】なら自動で建てますよ！', e: 'h' },
     ],
     end: [
       { who: 'tsubasa', t: 'ついた〜！ そよかぜエアのツバサです！ 一番乗りさせてもらいました！', e: 'h' },
@@ -7144,8 +7308,17 @@ const Story = {
     if (!ch) { box.classList.add('hidden'); return; }
     box.classList.remove('hidden');
     if (!this.minInit) { this.minInit = true; if (window.innerWidth < 600) box.classList.add('min'); }
-    const html = `<h4>${iconImg('mission', 's')}第${G.story.ch + 1}章 ${ch.title}</h4><div class="obs">` + ch.obj.map(o => { const ok = this.objDone(o); return `<div class="ob ${ok ? 'done' : ''}"><span class="cb"></span><span>${o.t}${o.p && !ok ? ` <span class="sub">${o.p()}</span>` : ''}</span></div>`; }).join('') + '</div>';
-    if (box.innerHTML !== html) box.innerHTML = html;
+    let curShown = false;
+    const html = `<h4>${iconImg('mission', 's')}第${G.story.ch + 1}章 ${ch.title}</h4><div class="obs">` + ch.obj.map((o, i) => {
+      const ok = this.objDone(o);
+      let cur = false, g = null;
+      if (!ok && !curShown) { curShown = true; cur = true; g = tutorialStep(G.story.ch, i); }
+      return `<div class="ob ${ok ? 'done' : ''} ${cur ? 'cur' : ''}"><span class="cb"></span><span>${o.t}${o.p && !ok ? ` <span class="sub">${o.p()}</span>` : ''}${g ? `<div class="gbtn"><button class="pbtn sm blue" data-g="show">▶ やり方</button>${g.kind === 'build' || g.kind === 'paint' ? '<button class="pbtn sm gold" data-g="auto">おまかせで置く</button>' : ''}</div>` : ''}</span></div>`;
+    }).join('') + '</div>';
+    if (box.innerHTML !== html) {
+      box.innerHTML = html;
+      box.querySelectorAll('[data-g]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); Sound.init(); const g = currentTutorialStep(); if (!g) return; if (b.dataset.g === 'show') showGuide(g); else autoGuide(g); }));
+    }
   },
   ending(after) {
     unlockAch('ending');
@@ -7241,6 +7414,113 @@ function initStoryEvents() {
 }
 
 // ============================================================
+//  わかりやすいチュートリアル（やり方・おまかせ）
+// ============================================================
+function tutorialStep(ch, i) {
+  if (ch !== 0) return ch === 1 ? tutorialStep1(i) : null;
+  const X = x => x + OX, Y = y => y + OY;
+  const anyKind = k => Object.values(G.blds).some(b => B[b.id].kind === k);
+  const termTiles = () => { let n = 0; for (let i2 = 0; i2 < W * H; i2++) if (G.floor[i2] === FLOOR.TERM) n++; return n; };
+  switch (i) {
+    case 0: return { kind: 'build', id: 'runway_s', x: X(27), y: Y(32), rot: 0, say: '滑走路は飛行機が降りたり飛び立ったりする道。青く光っている場所に置いてみよう！（Rキーや「回転」で向きを変えられます）' };
+    case 1: return { kind: 'build', id: 'tower', x: X(40), y: Y(27), rot: 0, say: '管制塔は飛行機に指示を出す場所。これがないと飛行機は来られないよ。' };
+    case 2:
+      if (!anyKind('stand')) return { kind: 'build', id: 'stand_s', x: X(30), y: Y(28), rot: 2, say: '駐機場は飛行機がとまって、お客さんが乗り降りする場所。' };
+      return { kind: 'paint', id: 'taxiway', x: X(27), y: Y(31), x1: X(38), y1: Y(31), say: '誘導路で滑走路と駐機場をつなごう。青い場所を、はしからはしまでドラッグしてぬってね。' };
+    case 3:
+      if (termTiles() < 20) return { kind: 'paint', id: 'tfloor', x: X(28), y: Y(18), x1: X(37), y1: Y(26), say: 'ターミナルの床をぬろう。左上から右下へ、四角くドラッグ！' };
+      if (!anyKind('checkin')) return { kind: 'build', id: 'checkin', x: X(29), y: Y(19), rot: 0, say: 'チェックインカウンター。お客さんが最初に寄るところ。' };
+      if (!anyKind('security')) return { kind: 'build', id: 'security', x: X(33), y: Y(20), rot: 0, say: '保安検査場。手荷物の検査をする場所。' };
+      return { kind: 'build', id: 'gate', x: X(30), y: Y(26), rot: 2, say: '搭乗口。駐機場の近く（7マス以内）に置くと、自動でつながるよ。' };
+    case 4: return { kind: 'build', id: 'gate', x: X(30), y: Y(26), rot: 2, say: '搭乗口を駐機場から7マス以内に置こう。' };
+    case 5: return { kind: 'paint', id: 'walk', x: X(34), y: Y(14), x1: X(35), y1: Y(17), say: 'バス停からターミナルまで歩道でつなごう。お客さんはここを歩いてくるよ。' };
+    case 6: return { kind: 'route', city: 'shimo', say: '下の【路線】ボタンから「下島」を選んで、そよかぜエアで就航しよう！' };
+    case 7: return { kind: 'wait', say: '飛行機が来るまで待とう。上の ▶▶ で時間を早くできるよ。' };
+  }
+  return null;
+}
+function tutorialStep1(i) {
+  if (i === 0) return { kind: 'build', id: 'toilet', near: 'term', say: 'トイレはターミナルの中に置こう。【建設→ターミナル】にあるよ。' };
+  if (i === 1) return { kind: 'build', id: 'cafe', near: 'term', say: '飲食店はお客さんの通り道（チェックインと搭乗口のあいだ）に置くとよく売れるよ。' };
+  if (i === 2) return { kind: 'route', city: 'kita', say: '【路線】で別の都市にも就航しよう。' };
+  return null;
+}
+function currentTutorialStep() {
+  const ch = CHAPTERS[G.story.ch]; if (!ch) return null;
+  for (let i = 0; i < ch.obj.length; i++) if (!Story.objDone(ch.obj[i])) return tutorialStep(G.story.ch, i);
+  return null;
+}
+// ターミナルの中の空いている場所をさがす
+function findTermSpot(id) {
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (G.floor[idx(x, y)] === FLOOR.TERM && canPlace(id, x, y, 0, { ignoreRank: true }).ok) return { x, y, rot: 0 };
+  return null;
+}
+const Guide = { mesh: null, label: null, step: null };
+function clearGuide() {
+  if (Guide.mesh) { R.scene.remove(Guide.mesh); Guide.mesh = null; }
+  if (Guide.label) { if (Guide.label.parentNode) Guide.label.parentNode.removeChild(Guide.label); Guide.label = null; }
+  Guide.step = null;
+}
+function guideRect(g) {
+  if (g.kind === 'paint') return { x: Math.min(g.x, g.x1), y: Math.min(g.y, g.y1), w: Math.abs(g.x1 - g.x) + 1, h: Math.abs(g.y1 - g.y) + 1 };
+  const [w, h] = dims(B[g.id], g.rot || 0); return { x: g.x, y: g.y, w, h };
+}
+function showGuide(g) {
+  closeModal(); clearGuide();
+  if (g.near === 'term') { const sp = findTermSpot(g.id); if (sp) Object.assign(g, sp); }
+  Dialog.show([{ who: 'hibari', t: g.say, e: 'h' }]);
+  if (g.kind === 'route') { openRoutes('new', g.city); return; }
+  if (g.kind === 'wait') { setSpeed(2); return; }
+  if (g.x == null) return;
+  const def = B[g.id];
+  UI.cat = def.cat; closeBuild();
+  setTool(def.paint ? { type: 'paint', id: g.id } : { type: 'build', id: g.id, rot: g.rot || 0 });
+  if (def.paint) UI.brush[g.id] = 1;
+  Guide.step = g;
+  const r = guideRect(g);
+  // 目印（青く光る枠）
+  const geo = new THREE.BoxGeometry(r.w, 0.25, r.h);
+  const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: '#40a0ff', transparent: true, opacity: 0.35, depthWrite: false }));
+  m.position.set(r.x + r.w / 2, 0.15, r.y + r.h / 2); m.renderOrder = 9;
+  const edge = new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: '#ffffff' }));
+  m.add(edge); R.scene.add(m); Guide.mesh = m;
+  Guide.label = document.createElement('div'); Guide.label.className = 'guideMark';
+  Guide.label.textContent = g.kind === 'paint' ? 'ここをドラッグ！' : 'ここに置こう！';
+  $('#labels').appendChild(Guide.label);
+  Cam.tx = r.x + r.w / 2; Cam.tz = r.y + r.h / 2; Cam.zoom = Math.max(Cam.zoom, 1.6);
+  renderBuildBar();
+  if (!def.paint) {
+    const [w, h] = dims(def, g.rot || 0);
+    UI.hoverTile = { x: g.x + Math.floor((w - 1) / 2), y: g.y + Math.floor((h - 1) / 2) };
+    updateGhost();
+  }
+}
+function autoGuide(g) {
+  if (g.near === 'term') { const sp = findTermSpot(g.id); if (!sp) { toast('ターミナルに空いている場所がありません', 'bad'); return; } Object.assign(g, sp); }
+  if (g.kind === 'route') { showGuide(g); return; }
+  if (g.kind === 'paint') {
+    const n = paintApply(g.id, g.x, g.y, g.x1, g.y1);
+    if (n > 0) { Sound.se('place'); toast('おまかせでぬりました', 'good', 'check'); } else if (n === 0) toast('もうぬってあります');
+  } else if (g.kind === 'build') {
+    const chk = canPlace(g.id, g.x, g.y, g.rot || 0);
+    if (!chk.ok) { toast('おまかせの場所に置けません：' + chk.reason, 'bad'); Sound.se('error'); return; }
+    const b = placeBuilding(g.id, g.x, g.y, g.rot || 0);
+    if (b) { Sound.se('place'); puff(b); toast(`${B[g.id].name} をおまかせで置きました`, 'good', 'check'); Cam.tx = b.x + 1; Cam.tz = b.y + 1; }
+  }
+  clearGuide(); setTool(null);
+}
+function updateGuide() {
+  if (!Guide.mesh) return;
+  const g = Guide.step;
+  Guide.mesh.material.opacity = 0.25 + Math.sin(RT.time * 5) * 0.12;
+  const r = guideRect(g), s = worldToScreen(r.x + r.w / 2, 1.2, r.y + r.h / 2);
+  Guide.label.style.left = s.x + 'px'; Guide.label.style.top = s.y + 'px';
+  // 終わったら消す
+  const cur = currentTutorialStep();
+  if (!cur || cur.id !== g.id || cur.kind !== g.kind) clearGuide();
+}
+
+// ============================================================
 //  セーブ・ロード
 // ============================================================
 const SAVE_KEY = 'soranominato_v1_slot', OPT_KEY = 'soranominato_v1_opts';
@@ -7262,7 +7542,7 @@ function serialize() {
   g.floor = rle(G.floor); g.trees = rle(G.trees); g.sectors = Array.from(G.sectors);
   g.blds = Object.values(G.blds).map(b => BLD_KEYS.map(k => b[k] == null ? null : b[k]));
   g.cam = { tx: Cam.tx, tz: Cam.tz, zoom: Cam.zoom, rot: Cam.rot };
-  g.saved = Date.now();
+  g.saved = Date.now(); g.mapW = W; g.mapH = H;
   g.stat = { today: G.stat.today, buildCost: G.stat.buildCost };
   return JSON.stringify(g);
 }
@@ -7274,13 +7554,29 @@ function deserialize(json) {
   // 地形は種から作り直す
   const keep = { floor: g.floor, trees: g.trees, sectors: g.sectors, blds: g.blds };
   genMap(seed);
-  G.floor = unrle(keep.floor, Uint8Array, W * H);
-  G.trees = unrle(keep.trees, Uint8Array, W * H);
-  G.sectors = Uint8Array.from(keep.sectors);
+  const oldMap = !g.mapW;   // 72x48 の古いセーブ
+  if (oldMap) {
+    const W0 = 72, H0 = 48, old = genTerrain(seed, W0, H0);
+    const f0 = unrle(keep.floor, Uint8Array, W0 * H0), t0 = unrle(keep.trees, Uint8Array, W0 * H0);
+    G.floor = new Uint8Array(W * H);
+    for (let y = 0; y < H0; y++) for (let x = 0; x < W0; x++) {
+      const i0 = y * W0 + x, i = idx(x + OX, y + OY);
+      if (old.ter[i0] !== TER.WATER || f0[i0]) { G.ter[i] = old.ter[i0] === TER.WATER ? TER.GRASS : old.ter[i0]; G.trees[i] = t0[i0]; }
+      G.floor[i] = f0[i0];
+    }
+    const s0 = keep.sectors; G.sectors = new Uint8Array(SECW * SECH);
+    for (let sy = 0; sy < 4; sy++) for (let sx = 0; sx < 6; sx++) if (s0[sy * 6 + sx]) G.sectors[(sy + 1) * SECW + sx + 1] = 1;
+    if (g.cam) { g.cam.tx += OX; g.cam.tz += OY; }
+  } else {
+    G.floor = unrle(keep.floor, Uint8Array, W * H);
+    G.trees = unrle(keep.trees, Uint8Array, W * H);
+    G.sectors = Uint8Array.from(keep.sectors);
+  }
   G.occ = new Int32Array(W * H);
   G.blds = {};
   for (const arr of keep.blds) {
     const b = {}; BLD_KEYS.forEach((k, i) => { if (arr[i] != null) b[k] = arr[i]; });
+    if (oldMap) { b.x += OX; b.y += OY; }
     const def = B[b.id]; if (!def) continue;
     const [w, h] = dims(def, b.rot);
     for (let y = b.y; y < b.y + h; y++) for (let x = b.x; x < b.x + w; x++) G.occ[idx(x, y)] = b.uid;
@@ -7294,6 +7590,7 @@ function deserialize(json) {
   G.stat.today = Object.assign(newStatDay(), G.stat.today);
   if (g.cam) { Cam.tx = g.cam.tx; Cam.tz = g.cam.tz; Cam.zoom = g.cam.zoom; Cam.rot = g.cam.rot || 0; Cam.yaw = Cam.yawT = Math.PI / 4 + Cam.rot * Math.PI / 2; }
   G.flags.event = G.flags.event || null;
+  clearAirsideTrees();
   return G;
 }
 function saveGame(slot) {
@@ -7690,6 +7987,16 @@ function updateExtras(dt, dtReal) {
   updateSalute(dtReal); updateBirds(dtReal); updateWindsocks(); updateBusArrivals(dt); updateSpotters();
 }
 
+function clearExtras() {
+  for (const s of Salute.list) for (const t of s.trucks) R.scene.remove(t.m);
+  Salute.list = [];
+  for (const f of Birds.flocks) R.scene.remove(f.g);
+  Birds.flocks = [];
+  for (const a of BusArr.list) R.scene.remove(a.m);
+  BusArr.list = [];
+  if (FX.life) FX.life.fill(0);
+}
+
 // ============================================================
 //  起動・タイトル・メインループ
 // ============================================================
@@ -7774,8 +8081,8 @@ function startAirshow() {
 
 // ---------- タイトル用のデモ空港 ----------
 function buildDemo() {
-  const P = (id, x, y, rot) => placeBuilding(id, x, y, rot || 0, { free: true, silent: true, ignoreRank: true });
-  const paint = (id, x0, y0, x1, y1) => { G.free = true; paintApply(id, x0, y0, x1, y1); };
+  const P = (id, x, y, rot) => placeBuilding(id, x + OX, y + OY, rot || 0, { free: true, silent: true, ignoreRank: true });
+  const paint = (id, x0, y0, x1, y1) => { G.free = true; paintApply(id, x0 + OX, y0 + OY, x1 + OX, y1 + OY); };
   paint('walk', 34, 14, 35, 15);
   paint('tfloor', 27, 16, 42, 23);
   paint('taxiway', 26, 29, 43, 29); paint('taxiway', 26, 30, 26, 30); paint('taxiway', 43, 30, 43, 30);
@@ -7797,10 +8104,10 @@ function buildDemo() {
   G.routes = [];
   for (const [al, c] of [['soyokaze', 'shimo'], ['haruka', 'tokyo'], ['mermaid', 'naha'], ['haruka', 'osaka']]) {
     const t = bestPlaneFor(al, c);
-    if (t) G.routes.push({ id: al + '-' + c, airline: al, city: c, type: t, freq: 3, active: true, opened: 0, flights: 0, pax: 0, seats: 0, ontime: 0 });
+    if (t) G.routes.push({ id: al + '-' + c, airline: al, city: c, type: t, freq: 3, active: true, opened: 0, flights: 0, pax: 0, seats: 0, ontime: 0, saluted: true });
   }
   G.min = 8 * 60 + 30; G.day = 0; G.rating = 4;
-  Cam.tx = 35; Cam.tz = 24; Cam.zoom = 1.25;
+  Cam.tx = 35 + OX; Cam.tz = 24 + OY; Cam.zoom = 1.25;
 }
 
 // ---------- 起動 ----------
@@ -7901,7 +8208,7 @@ function clearRuntime() {
   for (const pl of RT.planes) removePlane(pl);
   RT.planes = []; RT.persons = []; RT.todayFlights = [];
   People.fac.clear();
-  clearAmbient();
+  clearAmbient(); clearExtras(); if (typeof clearGuide === 'function') clearGuide();
   RT.fieldCache.clear(); RT.planePathCache.clear();
   RT.warnings = new Map(); RT.lastDay = null; RT.dirtyWalk = RT.dirtyAir = RT.dirtyBeauty = RT.dirtyCombo = RT.dirtyLinks = true;
   hideInfo(); setTool(null);
@@ -7912,7 +8219,7 @@ function startGame(slot, opt) {
   clearRuntime();
   if (opt) {
     newGameState(opt);
-    Cam.tx = 36; Cam.tz = 20; Cam.zoom = 1.5; Cam.rot = 0; Cam.yaw = Cam.yawT = Math.PI / 4;
+    Cam.tx = 36 + OX; Cam.tz = 20 + OY; Cam.zoom = 1.5; Cam.rot = 0; Cam.yaw = Cam.yawT = Math.PI / 4;
   } else if (!loadSlot(slot)) { toast('データがありません', 'bad'); showTitle(); return; }
   initWorldMeshes();
   setSeasonVisual(dateOf(G.day).season);
@@ -7928,6 +8235,27 @@ function startGame(slot, opt) {
   Sound.bgm('day');
 }
 
+// ---------- 夜をとばす ----------
+function canSkipNight() {
+  const [ws, we] = opsWindow(), m = G.min % 1440;
+  return !RT.planes.length && (m < ws - 60 || m > we + 20);
+}
+function skipNight(manual) {
+  if (!canSkipNight()) { if (manual) toast('飛行機が飛んでいるので、いまはとばせません', 'bad'); return; }
+  const [ws] = opsWindow();
+  const startDay = G.day;
+  let n = 0;
+  // 朝（始発の1時間前）まで一気に進める
+  while (n++ < 3000) {
+    simStep(1);
+    const m = G.min % 1440;
+    if (RT.planes.length) break;
+    if (G.day !== startDay || m < ws) { if (m >= ws - 60 && m < ws + 600) break; }
+  }
+  RT.persons = RT.persons.filter(p => p.kind !== 'visit' || p.state !== 'idle');
+  Sound.se('chime2');
+  toast(`夜をとばしました（${fmtTime(G.min)}）`, '', 'moon');
+}
 // ---------- メインループ ----------
 function loop(now) {
   requestAnimationFrame(loop);
@@ -7940,7 +8268,8 @@ function loop(now) {
   const hr = (G.min % 1440) / 60;
   const [ws, we] = opsWindow();
   const quiet = !RT.planes.length && RT.persons.filter(p => p.w > 0).length < 4;
-  if (!Game.demo && spd > 0 && Game.opts.nightSkip && quiet && (hr * 60 < ws - 70 || hr * 60 > we + 30)) spd = 14;
+  const nightNow = hr * 60 < ws - 60 || hr * 60 > we + 20;
+  if (!Game.demo && spd > 0 && Game.opts.nightSkip && quiet && nightNow) { skipNight(); spd = 0; }
   RT.effSpeed = spd;
   if (spd > 0) {
     let dt = dtReal / REAL_SEC_PER_GMIN * spd;
@@ -7948,6 +8277,7 @@ function loop(now) {
   }
   // 描画の準備
   keyPan(dtReal);
+  if (!Game.demo) { applyInertia(dtReal); updateFollow(); updateTouchConfirm(); updateGuide(); }
   if (Game.demo) { Cam.yawT += dtReal * 0.03; }
   updateCamera();
   const d = dateOf(G.day);
@@ -7967,6 +8297,7 @@ function loop(now) {
     UI.infoT -= dtReal; if (UI.infoT <= 0 && UI.sel) { UI.infoT = 0.5; renderInfo(); }
     if (UI.landLbl) updateLandLabels();
     Game.hintT -= dtReal; if (Game.hintT <= 0) { Game.hintT = 3; checkHints(); }
+    const ns = $('#bNight'); if (ns) ns.classList.toggle('hidden', !canSkipNight());
     if (UI.modalOpen === 'board') { Game.boardT = (Game.boardT || 0) - dtReal; if (Game.boardT <= 0) { Game.boardT = 2; const st = $('#mBody').scrollTop; openBoard(); $('#mBody').scrollTop = st; } }
   }
   // BGM

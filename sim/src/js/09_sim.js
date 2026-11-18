@@ -305,6 +305,7 @@ function airlineAvailable(id) {
   return { ok: true };
 }
 function routeCheck(airlineId, cityId, wantType) {
+  if (RT.dirtyLinks) relinkGates();
   const al = AIRLINES[airlineId], city = CITIES[cityId];
   const a = airlineAvailable(airlineId); if (!a.ok) return a;
   if (city.rank > G.rank && !G.free) return { ok: false, why: `ランク${city.rank}で就航できます` };

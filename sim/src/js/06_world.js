@@ -17,10 +17,9 @@ function frontDir(rot) { return DIRS4[rot % 4]; }
 function bCenter(b) { const [w, h] = dims(B[b.id], b.rot); return { x: b.x + w / 2, z: b.y + h / 2 }; }
 
 // ---------- マップ生成 ----------
-function genMap(seed) {
+function genTerrain(seed, w, h) {
   const rng = mulberry32(seed || 777);
-  G.ter = new Uint8Array(W * H); G.floor = new Uint8Array(W * H); G.trees = new Uint8Array(W * H);
-  G.occ = new Int32Array(W * H); G.sectors = new Uint8Array(SECW * SECH);
+  const ter = new Uint8Array(w * h), trees = new Uint8Array(w * h);
   const noise = (x, y, s) => {
     let v = 0, a = 1, f = 1 / 8, t = 0;
     for (let o = 0; o < 3; o++) {
@@ -31,34 +30,53 @@ function genMap(seed) {
     return v / t;
   };
   const s = Math.floor(rng() * 1000);
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const d = Math.min(x, y, W - 1 - x, (H - 1 - y) * 0.7);
+  const sx0 = w === W ? 36 : 24, sy0 = w === W ? 24 : 12, sw = w === W ? 36 : 24;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const d = Math.min(x, y, w - 1 - x, (h - 1 - y) * 0.7);
     const n = noise(x, y, s) * 4.2;
-    const i = idx(x, y);
-    if (d + n < 3.2) G.ter[i] = TER.WATER;
-    else if (d + n < 4.6) G.ter[i] = TER.SAND;
-    else G.ter[i] = TER.GRASS;
-    // 木
-    if (G.ter[i] === TER.GRASS) {
+    const i = y * w + x;
+    if (d + n < 3.2) ter[i] = TER.WATER;
+    else if (d + n < 4.6) ter[i] = TER.SAND;
+    else ter[i] = TER.GRASS;
+    if (ter[i] === TER.GRASS) {
       const tn = noise(x + 100, y + 50, s + 9);
-      const inStart = x >= 24 && x < 48 && y >= 12 && y < 36;
-      if (tn > (inStart ? 0.66 : 0.55) && rng() < 0.75) G.trees[i] = rng() < 0.25 ? 2 : rng() < 0.15 ? 3 : 1;
+      const inStart = x >= sx0 && x < sx0 + sw && y >= sy0 && y < sy0 + 24;
+      if (tn > (inStart ? 0.72 : 0.55) && rng() < 0.75) trees[i] = rng() < 0.25 ? 2 : rng() < 0.15 ? 3 : 1;
     }
   }
-  // 開始の土地
-  for (const [sx, sy] of [[2, 1], [3, 1], [2, 2], [3, 2]]) G.sectors[sy * SECW + sx] = 1;
+  return { ter, trees };
+}
+function genMap(seed) {
+  const g = genTerrain(seed, W, H);
+  G.ter = g.ter; G.trees = g.trees; G.floor = new Uint8Array(W * H);
+  G.occ = new Int32Array(W * H); G.sectors = new Uint8Array(SECW * SECH);
+  // 開始の土地（3x2区画）
+  for (const [sx, sy] of [[3, 2], [4, 2], [5, 2], [3, 3], [4, 3], [5, 3]]) G.sectors[sy * SECW + sx] = 1;
   // 橋と道路（北から）
-  const rx = 35;
-  for (let y = 0; y <= 11; y++) { G.floor[idx(rx, y)] = FLOOR.ROAD; G.floor[idx(rx + 1, y)] = FLOOR.ROAD; G.trees[idx(rx, y)] = 0; G.trees[idx(rx + 1, y)] = 0; G.trees[idx(rx - 1, y)] = 0; G.trees[idx(rx + 2, y)] = 0; }
+  const rx = 35 + OX;
+  for (let y = 0; y <= 11 + OY; y++) { for (const dx of [-1, 0, 1, 2]) G.trees[idx(rx + dx, y)] = 0; G.floor[idx(rx, y)] = FLOOR.ROAD; G.floor[idx(rx + 1, y)] = FLOOR.ROAD; if (G.ter[idx(rx, y)] === TER.SAND) { G.ter[idx(rx, y)] = TER.GRASS; G.ter[idx(rx + 1, y)] = TER.GRASS; } }
   // 開始エリアの木を少しへらす
-  for (let y = 12; y < 20; y++) for (let x = 28; x < 44; x++) G.trees[idx(x, y)] = 0;
+  for (let y = 12 + OY; y < 20 + OY; y++) for (let x = 28 + OX; x < 44 + OX; x++) G.trees[idx(x, y)] = 0;
 }
 function setupStart() {
   G.blds = {}; G.nextUid = 1;
   // 初期のバス停と歩道
-  for (let x = 31; x <= 40; x++) { G.floor[idx(x, 13)] = FLOOR.WALK; G.trees[idx(x, 13)] = 0; G.trees[idx(x, 12)] = 0; }
-  G.floor[idx(35, 12)] = FLOOR.ROAD; G.floor[idx(36, 12)] = FLOOR.ROAD;
-  placeBuilding('busstop', 33, 12, 0, { free: true, silent: true, fixed: true });
+  for (let x = 31 + OX; x <= 40 + OX; x++) { G.floor[idx(x, 13 + OY)] = FLOOR.WALK; G.trees[idx(x, 13 + OY)] = 0; G.trees[idx(x, 12 + OY)] = 0; }
+  G.floor[idx(35 + OX, 12 + OY)] = FLOOR.ROAD; G.floor[idx(36 + OX, 12 + OY)] = FLOOR.ROAD;
+  placeBuilding('busstop', 33 + OX, 12 + OY, 0, { free: true, silent: true, fixed: true });
+}
+// 飛行機の翼が当たらないよう、まわりの木を切る
+function clearTreesAround(x0, y0, w, h, m) {
+  let n = 0;
+  for (let y = y0 - m; y < y0 + h + m; y++) for (let x = x0 - m; x < x0 + w + m; x++) {
+    if (!inMap(x, y)) continue; const i = idx(x, y);
+    if (G.trees[i]) { G.trees[i] = 0; markChunk(x, y); n++; }
+  }
+  return n;
+}
+function clearAirsideTrees() {
+  for (const b of Object.values(G.blds)) { const d = B[b.id]; if (d.kind === 'runway' || d.kind === 'stand') { const [w, h] = dims(d, b.rot); clearTreesAround(b.x, b.y, w, h, d.kind === 'runway' ? 4 : 3); } }
+  for (let i = 0; i < W * H; i++) if (G.floor[i] === FLOOR.TAXI) clearTreesAround(i % W, Math.floor(i / W), 1, 1, 2);
 }
 
 // ---------- 置けるか判定 ----------
@@ -111,6 +129,7 @@ function placeBuilding(id, x, y, rot, opt) {
     markChunk(xx, yy);
   }
   G.blds[uid] = b;
+  if (def.kind === 'runway' || def.kind === 'stand') clearTreesAround(x, y, w, h, def.kind === 'runway' ? 4 : 3);
   if (!opt.free && !opt.move && !G.free) { G.money -= chk.cost; G.stat.buildCost += chk.cost; }
   spawnBuildingMesh(b);
   worldChanged(def);
@@ -185,7 +204,8 @@ function paintApply(id, x0, y0, x1, y1) {
   if (!tiles.length) return 0;
   if (G.money < cost && !G.free) { toast('お金が足りません', 'bad'); Sound.se('error'); return -1; }
   if (!G.free) { G.money -= cost; G.stat.buildCost += cost; }
-  for (const i of tiles) { G.floor[i] = def.paint; G.trees[i] = 0; markChunk(i % W, Math.floor(i / W)); }
+  if (typeof UI !== 'undefined') { UI.lastPaint = tiles.map(i => [i, G.floor[i]]); UI.lastPaintCost = G.free ? 0 : cost; }
+  for (const i of tiles) { G.floor[i] = def.paint; G.trees[i] = 0; markChunk(i % W, Math.floor(i / W)); if (def.paint === FLOOR.TAXI) clearTreesAround(i % W, Math.floor(i / W), 1, 1, 2); }
   worldChanged(def);
   World.dirtyWalls = true;
   Bus.emit('painted', id, tiles.length);
@@ -208,12 +228,12 @@ function clearFloor(x0, y0, x1, y1) {
   if (n) { G.money += refund; worldChanged(null); World.dirtyWalls = true; }
   return n;
 }
-function isFixedRoad(x, y) { return y <= 12 && (x === 35 || x === 36) && G.floor[idx(x, y)] === FLOOR.ROAD; }
+function isFixedRoad(x, y) { return y <= 12 + OY && (x === 35 + OX || x === 36 + OX) && G.floor[idx(x, y)] === FLOOR.ROAD; }
 
 // ---------- 土地 ----------
 function sectorPrice() {
   let n = 0; for (const v of G.sectors) n += v;
-  return LAND_COST[Math.min(n, LAND_COST.length - 1)] || 100000000;
+  return n <= 6 ? 0 : Math.round(500000 * Math.pow(n - 6, 1.65) / 10000) * 10000;
 }
 function canBuySector(sx, sy) {
   if (G.sectors[sy * SECW + sx]) return false;
