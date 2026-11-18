@@ -10,7 +10,7 @@ function turnTime(type) {
   let t = PLANES[type].turn;
   if (hasKind('fuel')) t *= 0.8;
   if (G.weather === 'snow' && !hasKind('snow')) t *= 1.5;
-  return t;
+  return t * Extra.turnMul();
 }
 function hasKind(k) { for (const b of Object.values(G.blds)) if (B[b.id].kind === k) return true; return false; }
 function countKind(k) { let n = 0; for (const b of Object.values(G.blds)) if (B[b.id].kind === k) n++; return n; }
@@ -36,7 +36,7 @@ function makeSchedule(dayStartMin, fromMin) {
   out.sort((a, b) => a.arrT - b.arrT);
   // 滑走路の数に合わせて到着の間隔をあける
   const nrw = Math.max(1, countKind('runway'));
-  const gap = (G.research.aitower ? 10 : 14) / nrw;
+  const gap = (G.research.aitower ? 10 : 14) * Extra.gapMul() / nrw;
   // 駐機場の数にも合わせる（発着枠の調整）
   const stands = Object.values(G.blds).filter(b => B[b.id].kind === 'stand').map(b => ({ cls: B[b.id].cls, gate: !!b.gate, freeAt: -1e9 }));
   let last = -1e9;
@@ -92,6 +92,7 @@ function loadFactor(r) {
   if (G.flags.event === 'festival' || G.flags.event === 'airshow') lf *= 1.1;
   lf *= 1 + (G.feeLevel - 1) * -0.35;
   lf *= 1 + ((G.airlines[r.airline] || {}).rel || 0) / 400;
+  { const evd = eventDef(); if (evd && evd.demand) lf *= evd.demand; }
   return clamp(lf, 0.15, 1);
 }
 
@@ -286,6 +287,7 @@ function updatePlane(pl, dt) {
           const remain = Math.max(4, pl.ax.len - (pl.td && Math.abs(along)) - 5);
           pl.decel = (pl.spd * pl.spd - V_TAXI * V_TAXI) / (2 * Math.min(remain, Math.max(5, pl.ax.len * 0.55)));
           Sound.se('land'); if (P.eng !== 'prop') setTimeout(() => Sound.se('jet'), 300);
+          Bus.emit('touchdown', pl);
           fl.status = 'landed'; fl.landT = G.min;
           onLanded(fl);
         }
@@ -305,7 +307,7 @@ function updatePlane(pl, dt) {
         const fogBlock = G.weather === 'fog' && !hasKind('ils');
         if (!fogBlock && (pl.cleared || pickStand(pl)) && !landingClose(r, pl)) { setApproachPath(pl, r); pl.phase = 'base'; }
       }
-      if (pl.holdT > 100) { // ダイバート
+      if (pl.holdT > Extra.holdLimit()) { // ダイバート
         removePlane(pl); fl.status = 'cancel'; fl.why = '着陸できず他の空港へ';
         G.stat.today.divert++;
         const a = G.airlines[fl.airline]; if (a) a.rel = clamp(a.rel - 3, 0, 100);
@@ -339,6 +341,7 @@ function updatePlane(pl, dt) {
         pl.path = smoothPath(path ? path.map(tilePt) : [], pl);
         pl.path.push({ x: sc.x, z: sc.z });
         pl.pi = 0; pl.state = 'taxi_in'; pl.leaveRw = true;
+        Bus.emit('taxiIn', pl);
       }
       break;
     }
@@ -377,6 +380,7 @@ function updatePlane(pl, dt) {
     case 'parked': break;
     case 'pushback': {
       // トーイングカーで後ろに押し出し、誘導路の向きへ回す
+      if (updateDeice(pl, dt)) break;
       pl.pbT += dt;
       const back = pl.pbDist || 1.5;
       if (pl.pbDone < back) {
@@ -432,6 +436,7 @@ function updatePlane(pl, dt) {
       const st = pl.spd * dt;
       pl.x += Math.sin(pl.hdg) * st; pl.z += Math.cos(pl.hdg) * st;
       pl.y += st * Math.tan(pl.pitch) * 0.85; pl.pitch = lerp(pl.pitch, 0.13, 0.05);
+      contrail(pl);
       if (pl.y > 22 || pl.x < -60 || pl.x > W + 60 || pl.z < -60 || pl.z > H + 60) removePlane(pl);
       break;
     }
@@ -451,7 +456,7 @@ function updatePlane(pl, dt) {
   if (u.beacon) u.beacon.visible = pl.engines && (tt % 1.0) < 0.12;
   const inAirOrRw = pl.state === 'approach' || pl.state === 'hold' || pl.state === 'roll' || pl.state === 'takeoff' || pl.state === 'climb' || pl.state === 'align';
   if (u.strobe) u.strobe.visible = inAirOrRw && ((tt % 1.2) < 0.05 || ((tt % 1.2) > 0.15 && (tt % 1.2) < 0.2));
-  if (u.land) u.land.visible = (pl.state === 'approach' && pl.phase === 'final') || pl.state === 'roll' || pl.state === 'takeoff' || (pl.state === 'climb' && pl.y < 6);
+  if (u.land) u.land.visible = (pl.state === 'approach' && pl.phase === 'final') || pl.state === 'roll' || pl.state === 'takeoff' || (pl.state === 'climb' && pl.y < 6) || (RT.nightF > 0.5 && (pl.state === 'taxi_in' || pl.state === 'taxi_out' || pl.state === 'align'));
   // プロペラ
   for (const c of u.props || []) c.rotation.z += pl.engines ? 0.9 : (c.userData.spin = Math.max(0, (c.userData.spin || 0.9) * 0.96));
   // 地上車両・搭乗橋
@@ -545,7 +550,8 @@ function onLanded(fl) {
   const P = PLANES[fl.type];
   let fee = P.fee * G.feeLevel;
   earn(fee, 'landing');
-  if (fl.cargo) earn(P.cargo * 9000 * rnd(0.8, 1.2), 'cargo');
+  Extra.onLanded(fl);
+  if (fl.cargo) earn(P.cargo * 9000 * rnd(0.8, 1.2) * Extra.cargoMul(), 'cargo');
   else earn(fl.paxArr * REGION_PFC[CITIES[fl.city].region] * G.feeLevel, 'pfc');
   if (hasKind('fuel')) earn(P.fee * 0.15, 'fuel');
   G.stat.today.flights++;
@@ -573,7 +579,7 @@ function pushback(fl) {
   if (!fl.cargo) {
     earn(fl.boarded * REGION_PFC[CITIES[fl.city].region] * G.feeLevel, 'pfc');
     G.stat.today.paxDep += fl.boarded; G.totalPax += fl.boarded;
-  } else earn(PLANES[fl.type].cargo * 7000 * rnd(0.8, 1.2), 'cargo');
+  } else earn(PLANES[fl.type].cargo * 7000 * rnd(0.8, 1.2) * Extra.cargoMul(), 'cargo');
   const route = G.routes.find(r => r.id === fl.rid);
   if (route) { route.flights = (route.flights || 0) + 1; route.pax = (route.pax || 0) + fl.boarded + fl.paxArr; route.seats = (route.seats || 0) + PLANES[fl.type].seats * 2; if (fl.delay <= 15) route.ontime = (route.ontime || 0) + 1; }
   // 車両片づけ（搭乗橋を外す）
@@ -607,6 +613,7 @@ function pushback(fl) {
     pl.pbTurn = pl.hdg + clamp(dd, -Math.PI / 2, Math.PI / 2);
   }
   pl.tug = vehicleMesh('tug'); pl.tug.scale.setScalar(0.7); R.scene.add(pl.tug);
+  startDeice(pl);
   pl.state = 'pushback'; pl.pbT = 0; pl.spd = 0;
   if (stand) stand.busy = 0;
   Bus.emit('departed', fl);

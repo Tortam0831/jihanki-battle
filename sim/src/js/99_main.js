@@ -13,7 +13,7 @@ function initFX() {
   FX.pts = new THREE.Points(geo, new THREE.PointsMaterial({ size: 3, sizeAttenuation: false, vertexColors: true, transparent: true, depthWrite: false, fog: false }));
   FX.pts.frustumCulled = false; FX.pts.renderOrder = 10;
   R.scene.add(FX.pts);
-  FX.life = new Float32Array(FX.max); FX.vel = new Float32Array(FX.max * 3);
+  FX.life = new Float32Array(FX.max); FX.vel = new Float32Array(FX.max * 3); FX.gr = new Float32Array(FX.max);
   Bus.on('fireworks', () => { FX.fwT = 22; });
   Bus.on('airshow', () => startAirshow());
 }
@@ -29,8 +29,9 @@ function burst(x, y, z, color, n, spd, life, grav) {
     FX.vel[i * 3] = Math.sin(ph) * Math.cos(th) * s; FX.vel[i * 3 + 1] = Math.cos(ph) * s; FX.vel[i * 3 + 2] = Math.sin(ph) * Math.sin(th) * s;
     col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
     FX.life[i] = life * (0.7 + Math.random() * 0.5);
-    FX.vel.grav = grav;
+    FX.gr[i] = grav == null ? 3 : grav;
   }
+  FX.pts.geometry.attributes.color.needsUpdate = true;
 }
 function updateFX(dt) {
   if (!FX.pts) return;
@@ -49,7 +50,7 @@ function updateFX(dt) {
     if (FX.life[i] <= 0) continue;
     any = true;
     FX.life[i] -= dt;
-    FX.vel[i * 3 + 1] -= 3 * dt;
+    FX.vel[i * 3 + 1] -= FX.gr[i] * dt;
     FX.vel[i * 3] *= 0.985; FX.vel[i * 3 + 2] *= 0.985;
     pos[i * 3] += FX.vel[i * 3] * dt; pos[i * 3 + 1] += FX.vel[i * 3 + 1] * dt; pos[i * 3 + 2] += FX.vel[i * 3 + 2] * dt;
     if (FX.life[i] <= 0) pos[i * 3 + 1] = -100;
@@ -265,6 +266,7 @@ function loop(now) {
   updateAmbient(spd > 0 ? dtReal / REAL_SEC_PER_GMIN * Math.min(spd, 4) : 0, dtReal);
   renderPeople(dtReal);
   updateFX(dtReal);
+  if (!Game.demo || true) updateExtras(spd > 0 ? dtReal / REAL_SEC_PER_GMIN * Math.min(spd, 4) : 0, dtReal);
   if (Cam.shake > 0) Cam.shake = Math.max(0, Cam.shake - dtReal);
   renderFrame();
   // UI

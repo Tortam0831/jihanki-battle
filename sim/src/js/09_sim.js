@@ -48,7 +48,7 @@ function dailyUpkeep() {
   let k = 1;
   if (G.research.eco) k -= 0.15;
   if (G.research.ecoplus) k -= 0.15;
-  up *= k * 2;
+  up *= k * 2 * Extra.upkeepMul();
   // 人件費（乗客の数に応じて）
   const t = G.stat.today; up += (t.paxArr + t.paxDep) * 70;
   const solars = Object.values(G.blds).filter(b => b.id === 'solar').length;
@@ -86,6 +86,7 @@ function closeDay() {
   updateRating();
   for (const b of Object.values(G.blds)) { b.salesYest = b.salesToday || 0; b.salesToday = 0; b.ckToday = 0; }
   RT.lastDay = G.hist[G.hist.length - 1];
+  Extra.daily();
   Bus.emit('dayClosed', RT.lastDay);
 }
 function updateRating() {
@@ -99,6 +100,7 @@ function updateRating() {
   if (last && last.flights > 0) { const otp = (last.ontime + 1) / (last.ontime + last.late + 1); r += (otp - 0.8) * 0.8; }
   if (last && last.cancel > 0) r -= Math.min(0.6, last.cancel * 0.1);
   if (G.research.mascot) r += 0.1;
+  r += Extra.ratingAdd();
   G.rating = clamp(Math.round(r * 10) / 10, 0.5, 5);
 }
 function startDay(day) {
@@ -114,7 +116,7 @@ function startDay(day) {
   // 雪だるまは春にとける
   if (d.season !== 3) for (const b of Object.values(G.blds)) if (b.id === 'snowman') removeBuilding(b.uid, { noRefund: true });
   // イベント
-  G.flags.event = null; G.flags.schoolTrip = false;
+  G.flags.event = null; G.flags.schoolTrip = false; G.flags.athlete = G.flags.idol = G.flags.diplomat = G.flags.bizBoost = G.flags.clean = G.flags.birds = false;
   rollEvent(day);
   RT.todayFlights = makeSchedule(day * 1440);
   RT.visitorsToday = 0;
@@ -151,7 +153,7 @@ const RANDOM_EVENTS = [
 ];
 function rollEvent(day) {
   const d = dateOf(day);
-  for (const ev of EVENTS) if (ev.when(d)) { G.flags.event = ev.id; G.flags.eventDef = ev.id; announceEvent(ev); if (ev.id === 'airshow') unlockAch('airshow'); return; }
+  for (const ev of EVENTS) if (ev.when(d)) { G.flags.event = ev.id; G.flags.eventDef = ev.id; if (ev.apply) ev.apply(); announceEvent(ev); if (ev.id === 'airshow') unlockAch('airshow'); return; }
   if (day < 3) return;
   for (const ev of RANDOM_EVENTS) {
     if (ev.minRank && G.rank < ev.minRank) continue;
@@ -171,8 +173,9 @@ function visitorRate() {
     if (b.id === 'aquarium' || b.id === 'planetarium') v += 1.5;
     if (b.id === 'statue' || b.id === 'shrine' || b.id === 'clocktower') v += 0.6;
   }
+  for (const b of Object.values(G.blds)) { if (b.id === 'outlet') v += 4; if (b.id === 'museum') v += 3; if (b.id === 'ferris') v += 2.5; }
   const ev = eventDef(); if (ev && ev.visitors) v *= ev.visitors;
-  v *= 0.6 + G.rating / 6;
+  v *= (0.6 + G.rating / 6) * Extra.visitorMul();
   return v;
 }
 function hourlyTick(hour) {
@@ -234,6 +237,7 @@ function checkAchievements() {
   const nrs = Object.keys(G.research).length;
   if (nrs >= 15) unlockAch('research'); if (nrs >= RESEARCH.length) unlockAch('research_all');
   if (G.rank >= 10) unlockAch('rank10');
+  extraAchievements();
 }
 
 // ---------- 開発（研究） ----------

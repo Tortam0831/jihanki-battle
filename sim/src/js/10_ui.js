@@ -565,7 +565,7 @@ function renderInfo() {
     if (p.gone) { hideInfo(); return; }
     const pd = PAX[p.type] || { name: p.kind === 'mascot' ? 'ソラまる' : p.type === 'pilot' ? 'パイロット' : p.type === 'ca' ? '客室乗務員' : 'スタッフ', desc: '' };
     const fl = p.fl;
-    const kindName = { dep: '出発', arr: '到着', visit: '見学', crew: '乗務員', mascot: 'マスコット', missed: '乗りおくれ…' }[p.kind] || '';
+    const kindName = { dep: '出発', arr: '到着', visit: '見学', crew: '乗務員', mascot: 'マスコット', missed: '乗りおくれ…', follow: '家族といっしょ', wave: '地上スタッフ' }[p.kind] || '';
     const sprite = spriteURL(p.v);
     h += `<h3><img src="${sprite}" style="width:32px;height:40px;image-rendering:pixelated">${p.kind === 'mascot' ? 'ソラまる' : pd.name} <span class="tag">${kindName}</span></h3><div class="sub">${esc(pd.desc || '')}</div>`;
     if (p.w > 0) h += `<div class="row"><b>きもち</b><span style="flex:1;max-width:150px"><div class="bar"><i style="width:${p.mood}%;background:${p.mood > 65 ? 'var(--good)' : p.mood > 40 ? 'var(--gold)' : 'var(--bad)'}"></i></div></span></div>`;
@@ -573,6 +573,7 @@ function renderInfo() {
     if (p.needs && p.needs.length) h += `<div class="row"><b>したいこと</b><span>${p.needs.map(n => iconImg({ food: 'food', shop: 'shopping', toilet: 'toilet', rest: 'zzz', fun: 'note' }[n], 's')).join('')}</span></div>`;
     if (p.spent) h += `<div class="row"><b>使ったお金</b><span>${fmtYen(p.spent)}</span></div>`;
     h += `<div class="row"><b>いま</b><span>${personDoing(p)}</span></div>`;
+    if (p.w > 0 || p.kind === 'follow') h += `<div class="combo">💬 「${esc(personVoice(p))}」</div>`;
     if (p.w > 1.05) h += `<div class="sub">※この人は約${p.w.toFixed(1)}人ぶんのお客さんを表しています</div>`;
     box.innerHTML = h;
   } else if (s.type === 'plane') {
@@ -596,6 +597,9 @@ function personDoing(p) {
   if (p.state === 'gatewait') return '搭乗口で待っている';
   if (p.state === 'boarding') return '飛行機に乗るところ';
   if (p.state === 'wander') return 'おさんぽ中';
+  if (p.state === 'follow') return 'おうちの人についていく';
+  if (p.state === 'wave') return '飛行機に手をふってお見送り';
+  if (p.state === 'idle') return p.lookedFids ? '発着案内板を見ている' : 'ひと休み';
   return 'かんがえ中';
 }
 function spriteURL(v) {

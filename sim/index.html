@@ -705,6 +705,36 @@ const ICONS = {
   mascot: [
     '....kkkk....', '..kkwwwwkk..', '.kwwwwwwwwk.', 'kbwkwwwwkwbk', 'kbwwwyywwwbk', 'kbbwwwwwwbbk',
     '.kbwwwwwwbk.', '..kkwwwwkk..', '...kk..kk...'],
+  pizza: [
+    '.....kk.....', '....koyk....', '...koyrok...', '...kyyyyk...', '..koryyyok..', '..kyyyroyk..', '.koyyyyyyok.', '.kyroyyyrok.', 'knnnnnnnnnnk', 'kkkkkkkkkkkk'],
+  icecream: [
+    '....kkkk....', '...kppppk...', '..kpwpppxk..', '..kppppppk..', '..kkkkkkkk..', '...keeeek...', '...kenenk...', '....keek....', '....kenk....', '.....kk.....'],
+  onigiri: [
+    '.....kk.....', '....kwwk....', '...kwwwwk...', '..kwwwwwwk..', '.kwwwwwwwwk.', '.kwwkkkkwwk.', 'kwwkGGGGkwwk', 'kwwkGGGGkwwk', 'kkkkkkkkkkkk'],
+  donut: [
+    '...kkkkkk...', '..kppxppxk..', '.kpxppppppk.', '.kppkkkkppk.', '.kpxk..kpxk.', '.kppkkkkppk.', '.keppxppppk.', '..keeeeeek..', '...kkkkkk...'],
+  cosme: [
+    '....kk......', '...kxxk.....', '...kxxk.....', '..kkkkkk....', '..kYYYYk....', '..kddddk....', '..kddddk....', '..kddddk....', '..kkkkkk....'],
+  watch: [
+    '...kkkkk....', '...kdddk....', '..kkkkkkk...', '.kwwwkwwwk..', '.kwwwkwwwk..', '.kwwwkkwwk..', '.kwwwwwwwk..', '..kkkkkkk...', '...kdddk....', '...kkkkk....'],
+  ball: [
+    '...kkkkkk...', '..kwwkkwwk..', '.kwwkwwkwwk.', '.kkwwwwwwkk.', '.kwwkkkkwwk.', '.kwkwwwwkwk.', '.kkwwwwwwkk.', '..kwwkkwwk..', '...kkkkkk...'],
+  ferris: [
+    '...kkkkkk...', '..kr....bk..', '.k..k..k..k.', 'ky...kk...gk', 'k...kddk...k', 'kp...kk...ok', '.k..k..k..k.', '..kc.kk.yk..', '...kkddkk...', '..kkkkkkkk..'],
+  leaf: [
+    '.....r......', '...r.r.r....', '....rrr.....', '.rrrrorrrr..', '..rrooorr...', '...rrorr....', '..r..o..r...', '.....o......', '.....N......'],
+  mail: [
+    'kkkkkkkkkkkk', 'krwwwwwwwwrk', 'kwrwwwwwwrwk', 'kwwrwwwwrwwk', 'kwwwrkkrwwwk', 'kwwwwkkwwwwk', 'kwwwwwwwwwwk', 'kkkkkkkkkkkk'],
+  suitcase: [
+    '....kkkk....', '....k..k....', '..kkkkkkkk..', '..kbbbbbbk..', '..kbybbybk..', '..kbybbybk..', '..kbybbybk..', '..kbbbbbbk..', '..kkkkkkkk..', '...k....k...'],
+  balloon: [
+    '...kkk......', '..krrrk.kk..', '.krwrrrkbbk.', '.krrrrrkbwbk', '..krrrk.kbbk', '...kkk...kk.', '....k...k...', '....k..k....', '.....kk.....', '.....k......'],
+  bamboo: [
+    '.g..kGk..g..', 'gg..kGk..gg.', '.g..kgk..g..', '....kGk.....', '..g.kGk.g...', '.gg.kgk.gg..', '..g.kGk.g...', '....kGk.....', '...kkkkk....'],
+  lantern: [
+    '....kkkk....', '...kddddk...', '..kkkkkkkk..', '...kdyydk...', '...kdyydk...', '..kkkkkkkk..', '....kddk....', '...kddddk...', '..kkkkkkkk..'],
+  stroller: [
+    '..kkkkk.....', '.kpppppk....', 'kppppppk....', 'kkkkkkkkkkk.', '.kppppppk.k.', '..kkkkkkk.k.', '..k.....k...', '.kdk...kdk..', '..k.....k...'],
 };
 
 function iconRows(name) {
@@ -940,6 +970,16 @@ const PAX_LOOKS = {
   ca:       { hair: ['bun'], top: ['#3a5aa0', '#c03040', '#3a8a6a'], bottom: ['#2a3050'], skirt: 1, acc: ['suitcase'], scarf: true },
   staff:    { hair: ['cap'], hairc: ['#2a1e1a'], top: ['#f39a3c'], bottom: ['#4a4a58'], acc: ['none'] },
   student_trip: { hair: ['short', 'long'], top: ['#2a2a40'], bottom: ['#2a2a40'], skirt: 0.5, acc: ['backpack'], cap2: '#ffd84a' },
+  surfer:   { hair: ['short', 'long'], hairc: ['#d8b060', '#a06a3a', '#2a1e1a'], skin: [1, 2, 3], top: ['#3fc9b8', '#ffd84a', '#ff7090', '#ffffff'], bottom: ['#4a8fe0', '#f39a3c'], acc: ['board'] },
+  hiker:    { hair: ['cap', 'short'], top: ['#e5484d', '#f39a3c', '#4cb85c'], bottom: ['#5a4a3a', '#4a4a58'], acc: ['bigpack'] },
+  athlete:  { hair: ['short', 'cap'], top: ['#2f4f9a', '#c03040'], bottom: ['#ffffff', '#2f4f9a'], acc: ['bag'], stripes: true },
+  idol:     { hair: ['long', 'pony'], hairc: ['#f59ac0', '#c9a0ff', '#2a1e1a', '#e8d080'], top: ['#ff80c0', '#ffffff', '#c9a0ff'], bottom: ['#ff80c0', '#ffffff'], skirt: 1, acc: ['bag'], glasses: 'sun' },
+  abroad:   { hair: ['short', 'long', 'pony'], hairc: ['#2a1e1a', '#4a3020', '#d8b060'], skin: [0, 1, 2, 3], top: ['#4a8fe0', '#e8c890', '#ffffff', '#4cb85c'], bottom: ['#3a4a7a', '#4a4a58'], acc: ['backpack', 'suitcase'] },
+  diplomat: { hair: ['short', 'bald'], hairc: ['#b0b0b8', '#2a1e1a'], top: ['#1a1a22', '#2a2a40'], bottom: ['#1a1a22'], acc: ['briefcase'], tie: true },
+  photog:   { hair: ['cap', 'short'], top: ['#6a7a5a', '#4a4a58', '#a0683c'], bottom: ['#3a4a7a', '#5a4a3a'], acc: ['camera'], glasses: 'normal' },
+  babyc:    { hair: ['long', 'short', 'bun'], top: ['#f59ac0', '#8fdcf4', '#ffffff', '#ffd84a'], bottom: ['#3a4a7a', '#e8c890'], skirt: 0.4, acc: ['stroller'] },
+  petowner: { hair: ['short', 'long', 'pony'], top: CLOTH, bottom: ['#3a4a7a', '#4a4a58', '#e8c890'], acc: ['dog'] },
+  astronaut:{ hair: ['short'], top: ['#f4f2ee'], bottom: ['#f4f2ee'], acc: ['bag'], stripes: true },
 };
 
 function drawPerson(ctx, ox, oy, L, back, frame) {
@@ -1020,6 +1060,9 @@ function drawPerson(ctx, ox, oy, L, back, frame) {
   if (L.acc === 'suitcase') { R(12, legY + 1, 3, legH - 1, L.case); R(13, legY - 1, 1, 2, '#2a2028'); P(12, 19, '#2a2028'); P(14, 19, '#2a2028'); }
   if (L.acc === 'briefcase') { R(12, torsoY + torsoH, 3, 3, '#5a3a24'); P(13, torsoY + torsoH - 1, '#2a2028'); }
   if (L.acc === 'bag') { R(back ? 2 : 12, torsoY + 2, 2, 3, L.case); P(back ? 3 : 12, torsoY, '#2a2028'); P(back ? 3 : 12, torsoY + 1, '#2a2028'); }
+  if (L.acc === 'board') { R(13, top + 1, 2, 17 - top, '#3fc9b8'); R(13, top + 1, 2, 1, '#ffffff'); R(13, top + 8, 2, 1, '#ffffff'); }
+  if (L.acc === 'dog') { R(11, 16, 4, 2, '#c8905a'); R(14, 15, 2, 2, '#c8905a'); P(15, 15, '#2a2028'); P(11, 18, '#7a5434'); P(14, 18, '#7a5434'); P(10, 15, '#c8905a'); }
+  if (L.acc === 'stroller') { R(11, 14, 5, 3, '#f59ac0'); R(11, 13, 2, 1, '#f59ac0'); P(11, 18, '#2a2028'); P(15, 18, '#2a2028'); R(11, 17, 5, 1, '#8a8a9a'); P(10, 12, '#8a8a9a'); }
   if (L.acc === 'cane') { R(12, torsoY + torsoH - 1, 1, 19 - (torsoY + torsoH) + 2, '#7a5434'); }
 }
 function shade(hex, f) {
@@ -1044,7 +1087,7 @@ function outlineCanvas(ctx, x0, y0, w, h, col) {
 // 人物アトラス生成：type → [variant番号...]
 const SPR = { atlas: null, variants: {}, count: 0, mascot: -1 };
 function makePersonAtlas() {
-  const c = document.createElement('canvas'); c.width = 512; c.height = 512;
+  const c = document.createElement('canvas'); c.width = 512; c.height = 1024;
   const ctx = c.getContext('2d');
   const rng = mulberry32(12345);
   const rp = a => a[Math.floor(rng() * a.length)];
@@ -1635,6 +1678,265 @@ const WEATHER = {
   fog: { name: '霧', icon: 'fog' },
   typhoon: { name: '台風', icon: 'anger' },
 };
+
+// ============================================================
+//  追加データ（建物53・機材8・航空会社8・都市30・お客さん10・開発15・組み合わせ20・実績30・つぶやき14）
+// ============================================================
+
+// ---------- 建物：飲食 14 ----------
+const MORE_FOODS = [
+  ['takoyaki', 'たこ焼き屋', 2, 1, 160000, 600, 4, 5, 2, 'dumpling', ['food']],
+  ['okonomi', 'お好み焼き', 2, 2, 260000, 1100, 6, 15, 3, 'food', ['food']],
+  ['tonkatsu', 'とんかつ屋', 2, 2, 280000, 1400, 6, 16, 3, 'fork', ['food']],
+  ['gyudon', '牛丼屋', 2, 2, 220000, 600, 8, 8, 2, 'soba', ['food']],
+  ['yakiniku', '焼肉店', 3, 2, 650000, 3200, 8, 28, 5, 'steak', ['food']],
+  ['pizza', 'ピザ屋', 2, 2, 300000, 1200, 6, 14, 3, 'pizza', ['food']],
+  ['pasta', 'パスタ屋', 2, 2, 320000, 1300, 6, 15, 4, 'fork', ['food']],
+  ['crepe', 'クレープ屋', 2, 1, 180000, 600, 3, 5, 2, 'cake', ['food', 'fun']],
+  ['matcha', '抹茶カフェ', 2, 2, 260000, 900, 6, 14, 3, 'cafe', ['food', 'rest']],
+  ['juice', 'ジューススタンド', 1, 1, 90000, 450, 2, 3, 1, 'cafe', ['food']],
+  ['donut', 'ドーナツ屋', 2, 2, 230000, 500, 6, 8, 2, 'donut', ['food']],
+  ['unagi', 'うなぎ屋', 3, 2, 700000, 4200, 8, 25, 6, 'bento', ['food']],
+  ['icecream', 'アイスクリーム屋', 2, 1, 170000, 450, 3, 4, 2, 'icecream', ['food', 'fun']],
+  ['onigiri', 'おにぎり屋', 2, 1, 120000, 400, 3, 3, 1, 'onigiri', ['food']],
+];
+for (const [id, name, w, h, cost, price, cap, svc, rank, icon, needs] of MORE_FOODS)
+  defB(id, { cat: 'food', name, kind: 'svc', need: needs[0], need2: needs[1], zone: 'term', w, h, cost, price, cap, svc, rank, icon, upkeep: Math.round(cost * 0.006 / 100) * 100, inside: true, desc: `売上：1人 約${fmtNum(price)}円` });
+
+// ---------- 建物：ショップ 12 ----------
+const MORE_SHOPS = [
+  ['cosme', 'コスメショップ', 2, 2, 400000, 3500, 5, 'cosme'],
+  ['watchshop', '時計店', 2, 2, 900000, 9000, 6, 'watch'],
+  ['luggageshop', '旅行かばん店', 2, 2, 350000, 2800, 4, 'suitcase'],
+  ['sports', 'スポーツ用品店', 3, 2, 420000, 2400, 4, 'ball'],
+  ['camerashop', 'カメラ店', 2, 2, 500000, 4500, 5, 'camera'],
+  ['localgoods', '地元の特産品店', 2, 2, 230000, 1600, 2, 'gift'],
+  ['sakeshop', '地酒の店', 2, 2, 300000, 2600, 3, 'beer'],
+  ['teashop', 'お茶屋', 2, 1, 180000, 1200, 2, 'cafe'],
+  ['charashop', 'キャラクターショップ', 2, 2, 380000, 2000, 4, 'mascot'],
+  ['stationery', '文房具店', 2, 1, 160000, 800, 2, 'book'],
+  ['eyewear', 'メガネ・サングラス店', 2, 1, 280000, 3800, 5, 'binocular'],
+  ['jewelry', 'ジュエリーショップ', 2, 2, 2400000, 15000, 8, 'star'],
+];
+for (const [id, name, w, h, cost, price, rank, icon] of MORE_SHOPS)
+  defB(id, { cat: 'shop', name, kind: 'svc', need: 'shop', zone: 'term', w, h, cost, price, cap: w * h, svc: 6, rank, icon, upkeep: Math.round(cost * 0.006 / 100) * 100, inside: true, rich: id === 'jewelry' || id === 'watchshop', desc: `売上：1人 約${fmtNum(price)}円` });
+
+// ---------- 建物：サービス 8 ----------
+defB('kidsroom', { cat: 'svc', name: 'キッズルーム', kind: 'svc', need: 'fun', zone: 'term', w: 3, h: 2, cap: 10, svc: 15, price: 0, cost: 300000, upkeep: 1200, rank: 2, likes: ['kid', 'family', 'babyc'], icon: 'balloon', desc: '子どもが遊べる無料のスペース。家族づれの満足度アップ。' });
+defB('prayer', { cat: 'svc', name: '礼拝室', kind: 'aura', zone: 'term', w: 2, h: 1, cost: 120000, upkeep: 300, rank: 4, aura: 4, likes: ['foreign', 'abroad', 'diplomat'], icon: 'heart', desc: 'しずかにお祈りできる部屋。海外のお客さんが安心。' });
+defB('shower', { cat: 'svc', name: 'シャワールーム', kind: 'svc', need: 'rest', zone: 'term', w: 2, h: 2, cap: 4, svc: 12, price: 1200, cost: 400000, upkeep: 1500, rank: 5, inside: true, likes: ['biz', 'backpack', 'hiker', 'athlete'], icon: 'onsen', desc: '長旅のあとにさっぱり。' });
+defB('library', { cat: 'svc', name: '図書コーナー', kind: 'svc', need: 'rest', need2: 'fun', zone: 'term', w: 3, h: 2, cap: 10, svc: 20, price: 0, cost: 250000, upkeep: 800, rank: 3, beauty: 2, likes: ['elder', 'student', 'abroad'], icon: 'book', desc: '静かに本が読める。無料。' });
+defB('vr', { cat: 'svc', name: 'VRフライト体験', kind: 'svc', need: 'fun', zone: 'term', w: 2, h: 2, cap: 4, svc: 10, price: 1500, cost: 800000, upkeep: 3000, rank: 6, inside: true, likes: ['kid', 'maniac', 'student'], icon: 'game', desc: '操縦席からの景色をVRで体験。' });
+defB('photostudio', { cat: 'svc', name: '記念写真スタジオ', kind: 'svc', need: 'fun', zone: 'term', w: 2, h: 2, cap: 3, svc: 8, price: 1000, cost: 300000, upkeep: 1000, rank: 3, inside: true, likes: ['couple', 'family', 'tourist', 'idol'], icon: 'camera', desc: '飛行機と一緒に記念撮影。' });
+defB('luggage', { cat: 'svc', name: '手荷物預かり所', kind: 'svc', need: 'shop', zone: 'term', w: 2, h: 1, cap: 3, svc: 3, price: 700, cost: 150000, upkeep: 600, rank: 2, likes: ['tourist', 'backpack', 'hiker', 'surfer'], icon: 'suitcase', desc: '大きな荷物を預けられる。' });
+defB('postoffice', { cat: 'svc', name: '郵便局', kind: 'svc', need: 'shop', zone: 'term', w: 2, h: 1, cap: 2, svc: 4, price: 500, cost: 200000, upkeep: 700, rank: 3, icon: 'mail', desc: 'おみやげを家に送れる。おみやげ屋の近くだと便利。' });
+
+// ---------- 建物：空側 4 ----------
+defB('deicer', { cat: 'air', name: '除氷施設', kind: 'deice', zone: 'air', w: 3, h: 2, cost: 900000, upkeep: 3000, rank: 3, unique: true, icon: 'snow', desc: '雪の日、出発前の除氷（じょひょう）作業が早く終わる。' });
+defB('cateringfac', { cat: 'air', name: '機内食工場', kind: 'catering', zone: 'air', w: 4, h: 3, cost: 2200000, upkeep: 6000, rank: 4, unique: true, icon: 'bento', desc: '旅客機1便ごとに機内食の売上が入る。' });
+defB('gsebase', { cat: 'air', name: '地上支援車両基地', kind: 'gse', zone: 'air', w: 4, h: 3, cost: 1600000, upkeep: 5000, rank: 4, unique: true, icon: 'cargo', desc: 'トーイングカーや給油車の基地。折り返し時間が10%短くなる。' });
+defB('training', { cat: 'air', name: 'パイロット訓練センター', kind: 'training', zone: 'air', w: 3, h: 3, cost: 3000000, upkeep: 7000, rank: 5, unique: true, icon: 'plane2', desc: '開発ポイントが毎日たまる。航空会社の好感度も上がりやすい。' });
+
+// ---------- 建物：陸側 5 ----------
+defB('busterminal', { cat: 'land', name: 'バスターミナル', kind: 'access', zone: 'land', w: 4, h: 2, cost: 900000, upkeep: 2500, access: 120, rank: 3, icon: 'bus', desc: '高速バスが何台も来る大きな入口。' });
+defB('monorail', { cat: 'land', name: 'モノレール駅', kind: 'access', zone: 'land', w: 5, h: 3, cost: 8000000, upkeep: 12000, access: 300, rank: 6, unique: true, icon: 'train', desc: '高架を走るモノレールの駅。とてもたくさんの人が来られる。' });
+defB('outlet', { cat: 'land', name: 'アウトレットモール', kind: 'svc', need: 'shop', zone: 'land', w: 5, h: 4, cap: 30, svc: 30, price: 4000, cost: 6000000, upkeep: 12000, rank: 6, visitor: true, likes: ['tourist', 'couple', 'foreign'], icon: 'shopping', desc: '空港のとなりのショッピングモール。見学客もたくさん来る。' });
+defB('museum', { cat: 'land', name: '航空博物館', kind: 'svc', need: 'fun', zone: 'land', w: 5, h: 3, cap: 30, svc: 30, price: 800, cost: 4000000, upkeep: 8000, rank: 5, visitor: true, beauty: 4, likes: ['maniac', 'kid', 'elder', 'photog'], icon: 'plane2', desc: '昔の飛行機がならぶ博物館。マニアや家族づれに大人気。' });
+defB('ferris', { cat: 'land', name: '観覧車', kind: 'svc', need: 'fun', zone: 'land', w: 3, h: 3, cap: 16, svc: 15, price: 700, cost: 3000000, upkeep: 6000, rank: 5, visitor: true, beauty: 8, likes: ['couple', 'family', 'kid'], icon: 'ferris', desc: '空港を見下ろす観覧車。夜はライトアップ。' });
+
+// ---------- 建物：かざり 10 ----------
+defB('maple', { cat: 'deco', name: 'もみじ', kind: 'decor', zone: 'land', cost: 18000, beauty: 2.5, seasonBoost: 2, icon: 'leaf', desc: '秋にまっかに色づく。秋は美しさ2倍。' });
+defB('ginkgo', { cat: 'deco', name: 'イチョウ', kind: 'decor', zone: 'land', cost: 15000, beauty: 2, seasonBoost: 2, icon: 'tree', desc: '秋に黄色く色づく。' });
+defB('bamboo', { cat: 'deco', name: '竹やぶ', kind: 'decor', zone: 'any', cost: 12000, beauty: 2, icon: 'bamboo', desc: '和の雰囲気。ターミナルの中にも置ける。' });
+defB('hedge', { cat: 'deco', name: '生け垣', kind: 'decor', zone: 'land', w: 2, h: 1, cost: 8000, beauty: 1.5, icon: 'bush', desc: '道ぞいに置くときれい。' });
+defB('gardenrock', { cat: 'deco', name: '庭石', kind: 'decor', zone: 'any', cost: 30000, beauty: 2, icon: 'pond', desc: '日本庭園の石。' });
+defB('stonelantern', { cat: 'deco', name: '石灯籠', kind: 'decor', zone: 'any', cost: 60000, beauty: 3, lamp: true, rank: 2, icon: 'lantern', desc: '夜にあかりがともる。' });
+defB('xmastree', { cat: 'deco', name: 'クリスマスツリー', kind: 'decor', zone: 'any', cost: 120000, beauty: 4, seasonBoost: 3, lamp: true, rank: 2, icon: 'pine', desc: '冬は美しさ2倍。夜にキラキラ光る。' });
+defB('koinobori', { cat: 'deco', name: 'こいのぼり', kind: 'decor', zone: 'land', cost: 50000, beauty: 3, seasonBoost: 0, icon: 'flag', desc: '春は美しさ2倍。風に泳ぐ。' });
+defB('sunflower', { cat: 'deco', name: 'ひまわり畑', kind: 'decor', zone: 'land', w: 2, h: 2, cost: 40000, beauty: 4, seasonBoost: 1, icon: 'sun', desc: '夏は美しさ2倍。' });
+defB('rocketstatue', { cat: 'deco', name: 'ロケットの像', kind: 'decor', zone: 'any', w: 2, h: 2, cost: 900000, beauty: 12, rank: 8, icon: 'rocket', desc: '宇宙港のシンボル。' });
+for (const id of Object.keys(B)) if (!BUILD_ORDER.includes(id)) BUILD_ORDER.push(id);
+
+// ---------- 機材 8（実在機・メーカー名は変えてある） ----------
+Object.assign(PLANES, {
+  atr42:  { name: 'ATR 42-600', maker: 'ATR', cls: 1, seats: 48, lenM: 22.7, spanM: 24.6, dia: 2.6, eng: 'prop', engines: 2, wing: 'high', tail: 'T', gear: 'retract', tip: 'none', vapp: 105, turn: 25, fee: 55000, rank: 2, desc: 'ATR 72を短くした小型版。離島の短い滑走路でも活躍。' },
+  crj9:   { name: 'ボンバルディア CRJ900', maker: 'ボンバルディア', cls: 2, seats: 86, lenM: 36.2, spanM: 24.9, dia: 2.7, eng: 'rear', engines: 2, wing: 'low', tail: 'T', gear: 'retract', tip: 'blended', vapp: 140, turn: 35, fee: 115000, rank: 3, desc: 'エンジンが胴体の後ろについたリージョナルジェット。細長い胴体。' },
+  e175:   { name: 'エンブラエル E175', maker: 'エンブラエル', cls: 2, seats: 76, lenM: 31.7, spanM: 26.0, dia: 3.0, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'blended', vapp: 128, turn: 35, fee: 105000, rank: 3, desc: 'E190より少し小さいリージョナルジェット。' },
+  a220:   { name: 'エアブロー A220-300', maker: 'エアブロー', cls: 2, seats: 140, lenM: 38.7, spanM: 35.1, dia: 3.7, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'none', vapp: 134, turn: 38, fee: 170000, rank: 4, desc: '大きな窓と静かなキャビンが自慢の新しい小型機。' },
+  max8:   { name: 'ボーリング 737 MAX 8', maker: 'ボーリング', cls: 2, seats: 178, lenM: 39.5, spanM: 35.9, dia: 3.76, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'split', vapp: 142, turn: 40, fee: 215000, rank: 5, desc: '737の新しい型。上下に分かれた翼端（スプリットシミター）が目印。' },
+  a330:   { name: 'エアブロー A330-300', maker: 'エアブロー', cls: 3, seats: 300, lenM: 63.7, spanM: 60.3, dia: 5.64, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'fence', vapp: 137, turn: 60, fee: 470000, rank: 6, wide: true, desc: 'アジア路線でよく見かける双発ワイドボディ機。' },
+  b78x:   { name: 'ボーリング 787-10', maker: 'ボーリング', cls: 3, seats: 330, lenM: 68.3, spanM: 60.1, dia: 5.77, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'raked', vapp: 147, turn: 65, fee: 520000, rank: 7, wide: true, desc: '787シリーズでいちばん長い型。' },
+  a35k:   { name: 'エアブロー A350-1000', maker: 'エアブロー', cls: 3, seats: 370, lenM: 73.8, spanM: 64.8, dia: 5.96, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'curved', vapp: 145, turn: 70, fee: 620000, rank: 8, wide: true, bigEng: true, desc: 'A350の長胴型。主脚のタイヤが6つ。' },
+});
+for (const P of Object.values(PLANES)) { P.len = P.lenM / TILE_M; P.span = P.spanM / TILE_M; }
+
+// ---------- 都市 30 ----------
+Object.assign(CITIES, {
+  asahikawa: { name: '旭川', region: 'dom', demand: 2, rank: 2 },
+  obihiro:   { name: '帯広', region: 'dom', demand: 2, rank: 2 },
+  wakkanai:  { name: '稚内', region: 'dom', demand: 1, rank: 2, island: true },
+  akita:     { name: '秋田', region: 'dom', demand: 2, rank: 2 },
+  yamagata:  { name: '山形', region: 'dom', demand: 2, rank: 2 },
+  toyama:    { name: '富山', region: 'dom', demand: 2, rank: 3 },
+  komatsu:   { name: '小松', region: 'dom', demand: 3, rank: 3 },
+  shizuoka:  { name: '静岡', region: 'dom', demand: 2, rank: 3 },
+  shirahama: { name: '南紀白浜', region: 'dom', demand: 2, rank: 3, resort: true },
+  izumo:     { name: '出雲', region: 'dom', demand: 2, rank: 3 },
+  okayama:   { name: '岡山', region: 'dom', demand: 3, rank: 3 },
+  takamatsu: { name: '高松', region: 'dom', demand: 3, rank: 3 },
+  tokushima: { name: '徳島', region: 'dom', demand: 2, rank: 2 },
+  nagasaki:  { name: '長崎', region: 'dom', demand: 3, rank: 3 },
+  kumamoto:  { name: '熊本', region: 'dom', demand: 3, rank: 3 },
+  miyazaki:  { name: '宮崎', region: 'dom', demand: 3, rank: 3, resort: true },
+  yakushima: { name: '屋久島', region: 'dom', demand: 2, rank: 2, island: true, resort: true },
+  goto:      { name: '五島', region: 'dom', demand: 1, rank: 1, island: true },
+  busan:     { name: '釜山', region: 'asia', demand: 4, rank: 4 },
+  kaohsiung: { name: '高雄', region: 'asia', demand: 3, rank: 4 },
+  beijing:   { name: '北京', region: 'asia', demand: 5, rank: 6 },
+  cebu:      { name: 'セブ', region: 'asia', demand: 3, rank: 5, resort: true },
+  danang:    { name: 'ダナン', region: 'asia', demand: 3, rank: 5, resort: true },
+  kualalumpur:{ name: 'クアラルンプール', region: 'asia', demand: 4, rank: 6 },
+  jakarta:   { name: 'ジャカルタ', region: 'asia', demand: 4, rank: 6 },
+  delhi:     { name: 'デリー', region: 'asia', demand: 4, rank: 7 },
+  sanfran:   { name: 'サンフランシスコ', region: 'long', demand: 4, rank: 7 },
+  seattle:   { name: 'シアトル', region: 'long', demand: 3, rank: 7 },
+  frankfurt: { name: 'フランクフルト', region: 'long', demand: 4, rank: 8 },
+  rome:      { name: 'ローマ', region: 'long', demand: 4, rank: 8 },
+});
+// 既存の航空会社にも新しい都市と機材を
+AIRLINES.soyokaze.cities.push('goto', 'yakushima', 'tokushima', 'akita', 'yamagata'); AIRLINES.soyokaze.fleet.unshift('atr42');
+AIRLINES.haruka.cities.push('komatsu', 'okayama', 'nagasaki', 'kumamoto', 'miyazaki', 'takamatsu'); AIRLINES.haruka.fleet.push('max8');
+AIRLINES.north.cities.push('asahikawa', 'obihiro', 'wakkanai'); AIRLINES.north.fleet.push('crj9');
+AIRLINES.penguin.cities.push('busan', 'kaohsiung', 'cebu'); AIRLINES.penguin.fleet.push('max8');
+AIRLINES.sakura.cities.push('busan', 'kaohsiung', 'beijing', 'kualalumpur', 'jakarta', 'delhi'); AIRLINES.sakura.fleet.push('a330', 'b78x');
+AIRLINES.eagle.cities.push('sanfran', 'seattle');
+AIRLINES.aurora.cities.push('frankfurt', 'rome');
+
+// ---------- 航空会社 8（すべて架空） ----------
+Object.assign(AIRLINES, {
+  hokkai:  { name: 'ほっかいエア', code: 'HK', body: '#ffffff', tail: '#3a9ad8', accent: '#ffffff', fleet: ['atr42', 'q400', 'e175'], rank: 2, cities: ['sapporo', 'asahikawa', 'obihiro', 'wakkanai', 'hakodate', 'kushiro', 'sendai'], desc: '北海道の空をつなぐ地域航空会社。' },
+  kusunoki:{ name: 'くすのきエア', code: 'KS', body: '#ffffff', tail: '#2e7d4a', accent: '#f39a3c', fleet: ['atr42', 'a220', 'max8'], rank: 3, cities: ['fukuoka', 'nagasaki', 'kumamoto', 'miyazaki', 'kagoshima', 'goto', 'yakushima', 'amami'], desc: '九州・離島の路線にくわしい。' },
+  mikan:   { name: 'みかん航空', code: 'MK', body: '#ffffff', tail: '#f39a3c', accent: '#4cb85c', fleet: ['atr42', 'crj9'], rank: 2, cities: ['matsuyama', 'kochi', 'takamatsu', 'tokushima', 'izumo', 'okayama', 'osaka'], desc: '四国生まれのアットホームな航空会社。' },
+  tsuru:   { name: 'つるジェット', code: 'TJ', body: '#ffffff', tail: '#e5484d', accent: '#2a2a36', fleet: ['a320', 'max8', 'a220'], rank: 4, lcc: true, cities: ['tokyo', 'osaka', 'sapporo', 'naha', 'fukuoka', 'busan', 'kaohsiung', 'danang', 'cebu'], desc: '赤い鶴がトレードマークのLCC。' },
+  dragon:  { name: 'ドラゴン・アジア航空', code: 'DA', body: '#ffffff', tail: '#c0302a', accent: '#e8b830', fleet: ['a330', 'a350'], rank: 5, cities: ['beijing', 'shanghai', 'hongkong', 'taipei', 'seoul'], desc: '東アジアの大都市を結ぶ。' },
+  lotus:   { name: 'ロータス航空', code: 'LT', body: '#f8f4ff', tail: '#9a62d0', accent: '#ffb0d0', fleet: ['a330', 'b78x'], rank: 6, resort: true, cities: ['bangkok', 'kualalumpur', 'jakarta', 'danang', 'cebu', 'delhi', 'singapore'], desc: '東南アジア・南アジアへ飛ぶ。' },
+  pstar:   { name: 'パシフィックスター航空', code: 'PS', body: '#ffffff', tail: '#1e3a7a', accent: '#e5484d', fleet: ['b78x', 'a35k', 'b777'], rank: 7, cities: ['sanfran', 'seattle', 'la', 'vancouver', 'newyork', 'honolulu'], desc: '北米の大手。' },
+  euro:    { name: 'ユーロスカイ', code: 'ES', body: '#ffffff', tail: '#2f4f9a', accent: '#ffd84a', fleet: ['a330', 'a35k'], rank: 8, cities: ['frankfurt', 'rome', 'paris', 'london', 'helsinki'], desc: 'ヨーロッパの主要都市へ直行。' },
+});
+
+// ---------- お客さん 10 ----------
+Object.assign(PAX, {
+  surfer:    { name: 'サーファー', speed: 1.05, money: 0.8, needs: { food: .7, shop: .3, toilet: .5, rest: .2, fun: .3 }, desc: '波を求めて南の島へ。手荷物預かり所が好き。' },
+  hiker:     { name: '登山客', speed: 1.0, money: 0.8, needs: { food: .7, shop: .4, toilet: .6, rest: .5, fun: .1 }, desc: '屋久島や北の山へ。シャワーがあると喜ぶ。' },
+  athlete:   { name: 'スポーツ選手団', speed: 1.15, money: 1.0, needs: { food: .8, shop: .2, toilet: .4, rest: .5, fun: .1 }, desc: '遠征中のチーム。よく食べる。' },
+  idol:      { name: 'アイドル', speed: 1.1, money: 2.5, needs: { food: .4, shop: .7, toilet: .3, rest: .6, fun: .3 }, desc: 'ライブの日に来ると、ファンの見学客が増える。' },
+  abroad:    { name: '留学生', speed: 1.05, money: 0.7, needs: { food: .7, shop: .5, toilet: .4, rest: .4, fun: .4 }, desc: '図書コーナーと礼拝室があるとうれしい。' },
+  diplomat:  { name: '外交官', speed: 1.0, money: 3.5, needs: { food: .5, shop: .3, toilet: .3, rest: .9, fun: .1 }, desc: 'ラウンジがないと不満。' },
+  photog:    { name: 'カメラマン', speed: 1.0, money: 1.2, needs: { food: .5, shop: .5, toilet: .3, rest: .1, fun: .9 }, desc: '展望デッキで飛行機を撮影するのが生きがい。' },
+  babyc:     { name: '赤ちゃん連れ', speed: 0.8, money: 1.1, needs: { food: .5, shop: .5, toilet: .8, rest: .7, fun: .3 }, desc: 'ベビールームとキッズルームが必須。' },
+  petowner:  { name: 'ペット連れ', speed: 0.95, money: 1.0, needs: { food: .5, shop: .5, toilet: .6, rest: .3, fun: .2 }, desc: 'わんちゃんと一緒にお出かけ。' },
+  astronaut: { name: '宇宙飛行士', speed: 1.1, money: 2.0, needs: { food: .5, shop: .2, toilet: .3, rest: .5, fun: .1 }, desc: '宇宙へ向かう人。みんなのあこがれ。' },
+});
+MIX.dom.hiker = 3; MIX.dom.athlete = 3; MIX.dom.babyc = 4; MIX.dom.petowner = 3;
+MIX.resort.surfer = 8; MIX.resort.babyc = 4; MIX.island.hiker = 6; MIX.island.petowner = 3;
+MIX.lcc.surfer = 3; MIX.lcc.abroad = 5; MIX.asia.abroad = 8; MIX.asia.photog = 3; MIX.long.diplomat = 3; MIX.long.abroad = 5; MIX.long.photog = 3;
+MIX.lux.diplomat = 10; MIX.space.astronaut = 20; MIX.space.photog = 8;
+
+// ---------- 開発 15 ----------
+RESEARCH.push(
+  { id: 'deicing', name: '除氷液リサイクル', icon: 'snow', dev: 25, cost: 900000, rank: 3, desc: '雪の日の除氷作業が半分の時間に。' },
+  { id: 'turnfast', name: 'ターンアラウンド短縮', icon: 'clock', dev: 40, cost: 2000000, rank: 4, desc: '飛行機の折り返し時間 -10%' },
+  { id: 'cdm', name: '空港CDM（協調的意思決定）', icon: 'board', dev: 70, cost: 6000000, rank: 6, desc: '到着の間隔をつめられる（-15%）。たくさん発着できる。' },
+  { id: 'wifi6', name: '超高速Wi-Fi', icon: 'wifi', dev: 30, cost: 1500000, rank: 4, desc: 'みんなの満足度 さらに +3' },
+  { id: 'signage', name: 'デジタルサイネージ', icon: 'tv', dev: 25, cost: 1200000, rank: 3, desc: 'お店の売上 +5%' },
+  { id: 'localfood', name: '地産地消メニュー', icon: 'onigiri', dev: 30, cost: 1500000, rank: 3, desc: '飲食店の売上 +10%' },
+  { id: 'carbon', name: 'カーボンオフセット', icon: 'leaf', dev: 50, cost: 4000000, rank: 5, desc: '環境にやさしい空港として評価 +0.1' },
+  { id: 'barrierfree', name: 'バリアフリー化', icon: 'people', dev: 30, cost: 2000000, rank: 3, desc: 'お年寄り・赤ちゃん連れの満足度 +6' },
+  { id: 'kidsfriendly', name: '子育て応援空港', icon: 'balloon', dev: 30, cost: 1500000, rank: 3, desc: '子ども・家族づれの満足度 +5' },
+  { id: 'nightshop', name: '深夜営業', icon: 'moon', dev: 35, cost: 2000000, rank: 4, desc: '20時以降のお店の売上 +30%' },
+  { id: 'tourism', name: '観光案内の連携', icon: 'globe', dev: 40, cost: 3000000, rank: 5, desc: '見学のお客さん +30%' },
+  { id: 'cargoauto', name: '貨物の自動化', icon: 'cargo', dev: 50, cost: 5000000, rank: 5, desc: '貨物の売上 +25%' },
+  { id: 'sms', name: '安全管理システム', icon: 'firstaid', dev: 45, cost: 3000000, rank: 5, desc: '上空で待てる時間が長くなり、他空港へのダイバートが減る。' },
+  { id: 'maglev', name: 'リニア連絡線', icon: 'train', dev: 120, cost: 30000000, rank: 9, desc: '空港駅とモノレール駅から来られる人が2倍に。' },
+  { id: 'hydrogen', name: '水素エネルギー', icon: 'sun', dev: 110, cost: 20000000, rank: 9, desc: '維持費 さらに -10%' },
+);
+for (const r of RESEARCH) RESEARCH_BY[r.id] = r;
+
+// ---------- 組み合わせ 20 ----------
+COMBOS.push(
+  { id: 'konamon', name: 'こなもん横丁', need: ['takoyaki', 'okonomi'], bonus: 0.3, desc: 'たこ焼きとお好み焼き。売上+30%' },
+  { id: 'teishoku', name: 'がっつり定食通り', need: [['tonkatsu', 'gyudon', 'curry', 'ramen'], 3], bonus: 0.25, desc: 'がっつりごはんが3つ。売上+25%' },
+  { id: 'italia', name: 'イタリア広場', need: ['pizza', 'pasta'], bonus: 0.3, desc: 'ピザとパスタ。売上+30%' },
+  { id: 'sweetsroad', name: 'スイーツロード', need: [['crepe', 'donut', 'icecream', 'sweets'], 3], bonus: 0.3, desc: '甘いものが3つ。子どもと若い人が大よろこび' },
+  { id: 'wafu', name: '和カフェ', need: ['matcha', 'wagashi'], bonus: 0.3, desc: '抹茶と和菓子。海外のお客さんにも大人気' },
+  { id: 'unaju', name: '老舗の味', need: ['unagi', 'sakeshop'], bonus: 0.25, desc: 'うなぎと地酒。売上+25%' },
+  { id: 'nihon', name: 'ニッポンのおみやげ', need: [['localgoods', 'teashop', 'sakeshop', 'wagashi', 'souvenir'], 4], bonus: 0.35, desc: '日本のおみやげが4種類。売上+35%' },
+  { id: 'beauty', name: 'ビューティーコーナー', need: ['cosme', 'pharmacy'], bonus: 0.25, desc: 'コスメとドラッグストア。売上+25%' },
+  { id: 'travelgear', name: '旅じたく', need: ['luggageshop', 'luggage'], bonus: 0.25, desc: 'かばん屋と手荷物預かり。売上+25%' },
+  { id: 'luxury2', name: '高級時計ギャラリー', need: ['watchshop', 'jewelry'], bonus: 0.35, desc: '時計とジュエリー。お金持ちが集まる' },
+  { id: 'camerafan', name: 'カメラ好きの聖地', need: ['camerashop', 'deck'], bonus: 0.3, desc: 'カメラ店と展望デッキ。カメラマン大満足' },
+  { id: 'kidsland', name: 'キッズランド', need: ['kidsroom', 'toy', 'game'], bonus: 0.3, desc: 'キッズルーム・おもちゃ・ゲーム。家族づれ大満足' },
+  { id: 'refresh', name: 'リフレッシュゾーン', need: ['shower', 'massage'], bonus: 0.25, desc: 'シャワーとマッサージ。売上+25%' },
+  { id: 'quiet', name: '静かな読書室', need: ['library', 'cafe'], bonus: 0.2, desc: '図書コーナーとカフェ。売上+20%' },
+  { id: 'souvenirpost', name: 'おみやげ発送', need: ['postoffice', 'souvenir'], bonus: 0.3, desc: '買ってすぐ送れる。おみやげ屋の売上+30%' },
+  { id: 'aviation', name: '航空ファンの町', need: ['museum', 'goods'], bonus: 0.3, desc: '博物館と航空グッズ店。マニアが集まる' },
+  { id: 'dateplan', name: 'デートコース', need: ['ferris', 'restaurant'], bonus: 0.3, desc: '観覧車とレストラン。新婚さんに大人気' },
+  { id: 'japangarden', name: '日本庭園', need: ['bamboo', 'gardenrock', 'stonelantern'], bonus: 0.2, desc: '竹・庭石・石灯籠。美しさがぐっとアップ' },
+  { id: 'autumn', name: '紅葉狩り', need: ['maple', 'ginkgo'], bonus: 0.2, desc: 'もみじとイチョウ。秋の見学客が増える' },
+  { id: 'vrmuseum', name: 'ヒコーキ体験館', need: ['vr', 'gallery'], bonus: 0.3, desc: 'VRとギャラリー。売上+30%' },
+);
+
+// ---------- 実績 30 ----------
+ACHIEVEMENTS.push(
+  { id: 'plane10', name: '機材コレクター', desc: '10種類の機材がやってきた', icon: 'plane', c: () => new Set(Object.keys(G.seenPlanes).map(k => k.split(':')[0])).size >= 10 },
+  { id: 'planeall', name: '空飛ぶ図鑑', desc: 'すべての機材がやってきた', icon: 'plane2', c: () => new Set(Object.keys(G.seenPlanes).map(k => k.split(':')[0])).size >= Object.keys(PLANES).length },
+  { id: 'livery30', name: 'カラフルな空', desc: '30種類の塗装を見た', icon: 'star', c: () => Object.keys(G.seenPlanes).length >= 30 },
+  { id: 'airline10', name: '人気者', desc: '10社と路線を結んだ', icon: 'globe', c: () => new Set(G.routes.map(r => r.airline)).size >= 10 },
+  { id: 'stamp40', name: 'スタンプラリー', desc: '40都市のスタンプを集めた', icon: 'flag', c: () => Object.keys(G.stamps).length >= 40 },
+  { id: 'paxall', name: 'いろんな人', desc: 'すべてのお客さんタイプが来た', icon: 'people', c: () => Object.keys(PAX).every(k => G.seenPax[k]) },
+  { id: 'build100', name: '建設ラッシュ', desc: '建物を100個建てた', icon: 'hangar', c: () => Object.keys(G.blds).length >= 100 },
+  { id: 'build300', name: '空港都市', desc: '建物を300個建てた', icon: 'hangar', c: () => Object.keys(G.blds).length >= 300 },
+  { id: 'shop30', name: '巨大モール', desc: 'お店を30軒にした', icon: 'shopping', c: () => Object.values(G.blds).filter(b => B[b.id].cat === 'shop' || B[b.id].cat === 'food').length >= 30 },
+  { id: 'gate10', name: '10番ゲート', desc: '搭乗口を10か所にした', icon: 'gate', c: () => countKind('gate') >= 10 },
+  { id: 'stand20', name: 'ずらりと並ぶ翼', desc: '駐機場を20か所にした', icon: 'stand', c: () => countKind('stand') >= 20 },
+  { id: 'lv5', name: 'ピカピカの店', desc: '施設をLv5にした', icon: 'up', c: () => Object.values(G.blds).some(b => b.lv >= 5) },
+  { id: 'lv5x10', name: '名店ぞろい', desc: 'Lv5の施設が10軒', icon: 'up', c: () => Object.values(G.blds).filter(b => b.lv >= 5).length >= 10 },
+  { id: 'beauty', name: '花の空港', desc: 'かざりを50個置いた', icon: 'flower', c: () => Object.values(G.blds).filter(b => B[b.id].cat === 'deco').length >= 50 },
+  { id: 'night', name: '夜の空港', desc: '夜間照明システムを開発した', icon: 'moon', c: () => !!G.research.nightops },
+  { id: 'cargo', name: '物流の拠点', desc: '貨物路線を3つ開いた', icon: 'cargo', c: () => G.routes.filter(r => PLANES[r.type].cargo).length >= 3 },
+  { id: 'resort', name: '南国への入口', desc: 'リゾート路線を5つ開いた', icon: 'palm', c: () => G.routes.filter(r => CITIES[r.city].resort).length >= 5 },
+  { id: 'island', name: '島をつなぐ', desc: '離島路線を4つ開いた', icon: 'pond', c: () => G.routes.filter(r => CITIES[r.city].island).length >= 4 },
+  { id: 'ontime100', name: '定時の鬼', desc: '1日の定時運航率100%（10便以上）', icon: 'clock', c: () => RT.lastDay && RT.lastDay.flights >= 10 && RT.lastDay.late === 0 },
+  { id: 'nomiss', name: 'だれも乗りおくれない', desc: '乗りおくれ0人の日（乗客500人以上）', icon: 'heart', c: () => RT.lastDay && RT.lastDay.pax >= 500 && RT.lastDay.missed < 0.5 },
+  { id: 'sat80', name: '大満足', desc: '1日の満足度80以上', icon: 'heart', c: () => RT.lastDay && RT.lastDay.sat >= 80 },
+  { id: 'visitors100', name: '見学スポット', desc: '1日の見学客100人', icon: 'binocular', c: () => RT.lastDay && RT.lastDay.visitors >= 100 },
+  { id: 'income10m', name: '1日で1000万', desc: '1日の収入1,000万円', icon: 'money', c: () => RT.lastDay && RT.lastDay.inc >= 1e7 },
+  { id: 'income100m', name: '1日で1億', desc: '1日の収入1億円', icon: 'money', c: () => RT.lastDay && RT.lastDay.inc >= 1e8 },
+  { id: 'salute', name: 'ウォーターサリュート', desc: '新しい路線の初便を放水アーチでむかえた', icon: 'fountain', c: () => !!G.flags.salute },
+  { id: 'deiced', name: '雪の日の職人', desc: '除氷作業をした', icon: 'snow', c: () => !!G.flags.deiced },
+  { id: 'goaround', name: 'やり直しも大事', desc: 'ゴーアラウンドを見た', icon: 'plane2', c: () => !!G.flags.goAround },
+  { id: 'event10', name: 'イベント好き', desc: 'イベントを10回経験した', icon: 'star', c: () => G.events.length >= 10 },
+  { id: 'year5', name: '5年目の空港', desc: '5年目をむかえた', icon: 'sakura', c: () => dateOf(G.day).year >= 5 },
+  { id: 'combo30', name: 'くみあわせ大全', desc: '組み合わせを30個発見', icon: 'note', c: () => Object.keys(G.combos).length >= 30 },
+);
+
+// ---------- お客さんのつぶやき 14 ----------
+const VOICES = [
+  { t: 'はやく乗らなきゃ！ 走れ〜！', c: p => p.kind === 'dep' && p.fl && G.min > p.fl.depT - 35 && p.steps[0] !== 'gate' },
+  { t: '列が長いなぁ…', c: p => p.state === 'queue' && p.wait > 10 },
+  { t: 'この空港、きれいで気持ちいい！', c: p => RT.beauty[p.tile] > 4 },
+  { t: 'トイレどこかな…', c: p => p.needs && p.needs[0] === 'toilet' },
+  { t: 'おなかすいた〜', c: p => p.needs && p.needs[0] === 'food' },
+  { t: 'おみやげ、何にしよう？', c: p => p.needs && p.needs[0] === 'shop' },
+  { t: '飛行機、かっこいい！', c: p => p.type === 'kid' || p.type === 'maniac' || p.type === 'photog' },
+  { t: '今日はいい写真がとれそうだ', c: p => p.type === 'photog' || (p.kind === 'visit' && p.type === 'maniac') },
+  { t: 'ねむい…', c: p => (G.min % 1440) < 7 * 60 || (G.min % 1440) > 21 * 60 },
+  { t: 'わんちゃんも一緒に旅行だよ', c: p => p.type === 'petowner' },
+  { t: '宇宙、楽しみだなぁ', c: p => p.type === 'astronaut' || (p.fl && CITIES[p.fl.city].region === 'space') },
+  { t: '久しぶりの里帰りです', c: p => p.kind === 'arr' && (p.type === 'elder' || p.type === 'family') },
+  { t: '波が待ってるぜ！', c: p => p.type === 'surfer' },
+  { t: 'いい旅だった〜', c: p => p.kind === 'arr' && p.mood > 60 },
+];
 
 // ============================================================
 //  サウンド（WebAudio で全部その場で作る）
@@ -2958,6 +3260,7 @@ function makePlaneGeos(typeId, airlineId) {
     for (const sx of [-1, 1]) {
       const tx = sx * (hs - 0.02), tz = LE(1) - ct / 2, ty = wingY + dih(1);
       if (P.tip === 'blended') { mb.box(tx, ty, tz - ct * 0.1, 0.03, fh * 0.5, ct * 0.8, tail); }
+      else if (P.tip === 'split') { mb.box(tx, ty, tz - ct * 0.1, 0.03, fh * 0.5, ct * 0.7, tail); mb.box(tx, ty - fh * 0.2, tz, 0.03, fh * 0.2, ct * 0.4, tail); }
       else if (P.tip === 'sharklet') { mb.box(tx, ty, tz, 0.03, fh * 0.38, ct * 0.65, tail); }
       else if (P.tip === 'curved') { mb.box(tx, ty, tz, 0.03, fh * 0.22, ct * 0.8, WING); mb.box(tx + sx * 0.02, ty + fh * 0.2, tz - ct * 0.15, 0.03, fh * 0.2, ct * 0.5, WING); }
       else if (P.tip === 'raked') { mb.box(tx + sx * hs * 0.04, ty + 0.01, tz - ct * 0.4, hs * 0.08, 0.04, ct * 0.55, WING); }
@@ -3742,6 +4045,8 @@ function rebuildBeauty() {
     const def = B[b.id]; let v = def.beauty || 0;
     if (!v) continue;
     if (b.id === 'sakura' && season === 0) v *= 2;
+    if (def.seasonBoost != null && (def.seasonBoost === season || (def.seasonBoost === 3 && dateOf(G.day).month === 12))) v *= 2;
+    if (G.flags.clean) v *= 1.2;
     if (def.lamp && night) v *= 2;
     if (G.research.clean) v *= 1.15;
     if (G.research.lightup && night) v *= 1.5;
@@ -3822,7 +4127,7 @@ function initPeopleRender() {
   People.frameAttr = ib(MAXP, 1); People.flipAttr = ib(MAXP, 1);
   geo.setAttribute('aFrame', People.frameAttr); geo.setAttribute('aFlip', People.flipAttr);
   const mat = new THREE.ShaderMaterial({
-    uniforms: { map: { value: tex }, cell: { value: new THREE.Vector2(SPR_W / 512, SPR_H / 512) }, cols: { value: SPR_COLS }, night: { value: 0 }, tint: { value: new THREE.Color(1, 1, 1) } },
+    uniforms: { map: { value: tex }, cell: { value: new THREE.Vector2(SPR_W / 512, SPR_H / 1024) }, cols: { value: SPR_COLS }, night: { value: 0 }, tint: { value: new THREE.Color(1, 1, 1) } },
     vertexShader: `
       attribute float aFrame; attribute float aFlip; uniform vec2 cell; uniform float cols; varying vec2 vUv;
       void main(){
@@ -3915,6 +4220,7 @@ function newPerson(type, kind, x, z) {
     money: (def.money || 1), spent: 0, seen: {}, ox: rnd(-0.28, 0.28), oz: rnd(-0.28, 0.28)
   };
   if (G.research.wifi) p.mood += 4;
+  p.mood += Extra.moodStart(p);
   if (G.research.multi && (type === 'foreign')) p.mood += 8;
   if (G.flags.event === 'festival') p.mood += 5;
   if (!G.seenPax[type] && PAX[type]) { G.seenPax[type] = 1; }
@@ -3948,7 +4254,7 @@ function spawnAt(b) {
 }
 function chooseAccess(type) {
   const aps = accessPoints(); if (!aps.length) return null;
-  return weightedPick(aps, b => (B[b.id].access || 10) * (B[b.id].likes && B[b.id].likes.includes(type) ? 2 : 1));
+  return weightedPick(aps, b => (B[b.id].access || 10) * Extra.accessMul(b) * (B[b.id].likes && B[b.id].likes.includes(type) ? 2 : 1));
 }
 function spawnDeparting(fl, n, w) {
   for (let k = 0; k < n; k++) {
@@ -3965,6 +4271,7 @@ function spawnDeparting(fl, n, w) {
     p.needs = rollNeeds(p);
     p.intl = intl;
     if (B[ap.id].likes && B[ap.id].likes.includes(type)) p.mood += 3;
+    if ((type === 'family' || type === 'babyc') && Math.random() < 0.6) addFollower(p);
     RT.accessCount = (RT.accessCount || 0) + w;
     if (B[ap.id].park) earn(B[ap.id].park * w * 0.35 * (1 + (ap.lv - 1) * 0.2), 'park', ap);
     fl.spawned += w;
@@ -3985,6 +4292,7 @@ function spawnArriving(fl, n, w, gate) {
     if (Math.random() < 0.25) p.needs.push(pick(['shop', 'food']));
     p.steps.push('free', 'exit');
     p.wait = rnd(0, 6); p.state = 'delay';
+    if (type === 'family' && Math.random() < 0.5) addFollower(p);
   }
 }
 function spawnVisitor(type) {
@@ -4029,6 +4337,7 @@ function pickPaxType(fl) {
   else if (city.island) mix = MIX.island;
   else mix = MIX.dom;
   if (PLANES[fl.type].vip && Math.random() < 0.6) return 'vip';
+  { const ex = Extra.extraPax(fl); if (ex) return ex; }
   if (Math.random() < 0.003 * (G.rank + 1)) return 'celeb';
   if (G.flags.schoolTrip && Math.random() < 0.4 && city.region === 'dom') return 'student';
   return weightedPick(Object.keys(mix), k => mix[k]);
@@ -4067,7 +4376,7 @@ function findFacility(p, need) {
 function findKind(p, kind) {
   let best = null, bd = 1e9;
   for (const b of Object.values(G.blds)) {
-    if (B[b.id].kind !== kind) continue;
+    if (kind === 'aura_fids') { if (b.id !== 'fids') continue; } else if (B[b.id].kind !== kind) continue;
     const d = getField(b)[p.tile]; if (d < 0) continue;
     const s = d + facOf(b).queue.length * 1.5;
     if (s < bd) { bd = s; best = b; }
@@ -4110,6 +4419,8 @@ function think(p) {
     if (!gate) {
       // まだ搭乗口が決まっていない
       if (p.kind === 'crew') { if (G.min - p.t0 > 120) leave(p); else { p.state = 'idle'; p.wait = 10; } return; }
+      const fids = !p.lookedFids && findKind(p, 'aura_fids');
+      if (fids) { goTo(p, fids); return; }
       p.state = 'idle'; p.wait = rnd(5, 10); return;
     }
     if (p.atGate === gate.uid) { p.state = 'gatewait'; return; }
@@ -4149,6 +4460,7 @@ function arrive(p, b) {
     return;
   }
   if (def.kind === 'access') { leave(p); return; }
+  if (def.kind === 'aura' || def.kind === 'decor') { p.state = 'idle'; p.wait = rnd(3, 7); p.lookedFids = true; if (b.id === 'fids') bubble(p, 'board', 1.5); return; }
   // 列にならぶ（出発がせまっている人は優先レーン）
   if (p.kind === 'dep' && p.fl && G.min > p.fl.depT - 40 && (def.kind === 'checkin' || def.kind === 'security' || def.kind === 'emig')) { fac.queue.unshift(p); bubble(p, 'sweat', 1.2); }
   else fac.queue.push(p);
@@ -4178,6 +4490,7 @@ function serviceDone(p, b) {
       if ((b.id === 'dutyfree' || b.id === 'brand') && G.research.dutyplus) m *= 1.25;
       if (b.id === 'lounge' && G.research.firstlounge) m *= 2;
       if (b.nearATM) m *= 1.05;
+      m *= Extra.priceMul(b, p);
       if (p.fl && AIRLINES[p.fl.airline] && AIRLINES[p.fl.airline].lcc) m *= 0.75;
       if (b.id === 'izakaya' && (G.min % 1440) > 17 * 60) m *= 1.4;
       if (b.combo && b.combo.includes('morning') && (G.min % 1440) < 10 * 60) m *= 1.3;
@@ -4241,6 +4554,8 @@ function updatePerson(p, dt) {
   if (p.bubT > 0) { p.bubT -= dt * REAL_SEC_PER_GMIN * 2; if (p.bubT <= 0) p.bub = null; }
   switch (p.state) {
     case 'delay': p.wait -= dt; if (p.wait <= 0) p.state = 'think'; return;
+    case 'follow': updateFollower(p, dt); return;
+    case 'wave': p.wait -= dt; p.moving = false; if (Math.random() < dt * 0.4) bubble(p, pick(['heart', 'note']), 1); if (p.wait <= 0) p.gone = true; return;
     case 'think': think(p); return;
     case 'walk': walkStep(p, dt); return;
     case 'queue': {
@@ -4371,7 +4686,8 @@ function walkStep(p, dt) {
       p.nx = ni % W + 0.5 + p.ox * lane / 0.28; p.nz = Math.floor(ni / W) + 0.5 + p.oz * lane / 0.28;
     }
     const before = Math.hypot(p.nx - p.x, p.nz - p.z);
-    const crowdSlow = RT.crowd[p.tile] > 7 ? 0.8 : 1;
+    let crowdSlow = RT.crowd[p.tile] > 7 ? 0.8 : 1;
+    if (p.kind === 'dep' && p.fl && G.min > p.fl.depT - 35) { crowdSlow *= 1.6; if (!p.bub && Math.random() < 0.02) bubble(p, 'sweat', 1); }
     if (moveToward(p, p.nx, p.nz, rem * crowdSlow)) {
       rem -= before / (p.spd * crowdSlow);
       p.tile = p.next; p.hasStep = false; p.walked++;
@@ -4466,7 +4782,7 @@ function turnTime(type) {
   let t = PLANES[type].turn;
   if (hasKind('fuel')) t *= 0.8;
   if (G.weather === 'snow' && !hasKind('snow')) t *= 1.5;
-  return t;
+  return t * Extra.turnMul();
 }
 function hasKind(k) { for (const b of Object.values(G.blds)) if (B[b.id].kind === k) return true; return false; }
 function countKind(k) { let n = 0; for (const b of Object.values(G.blds)) if (B[b.id].kind === k) n++; return n; }
@@ -4492,7 +4808,7 @@ function makeSchedule(dayStartMin, fromMin) {
   out.sort((a, b) => a.arrT - b.arrT);
   // 滑走路の数に合わせて到着の間隔をあける
   const nrw = Math.max(1, countKind('runway'));
-  const gap = (G.research.aitower ? 10 : 14) / nrw;
+  const gap = (G.research.aitower ? 10 : 14) * Extra.gapMul() / nrw;
   // 駐機場の数にも合わせる（発着枠の調整）
   const stands = Object.values(G.blds).filter(b => B[b.id].kind === 'stand').map(b => ({ cls: B[b.id].cls, gate: !!b.gate, freeAt: -1e9 }));
   let last = -1e9;
@@ -4548,6 +4864,7 @@ function loadFactor(r) {
   if (G.flags.event === 'festival' || G.flags.event === 'airshow') lf *= 1.1;
   lf *= 1 + (G.feeLevel - 1) * -0.35;
   lf *= 1 + ((G.airlines[r.airline] || {}).rel || 0) / 400;
+  { const evd = eventDef(); if (evd && evd.demand) lf *= evd.demand; }
   return clamp(lf, 0.15, 1);
 }
 
@@ -4742,6 +5059,7 @@ function updatePlane(pl, dt) {
           const remain = Math.max(4, pl.ax.len - (pl.td && Math.abs(along)) - 5);
           pl.decel = (pl.spd * pl.spd - V_TAXI * V_TAXI) / (2 * Math.min(remain, Math.max(5, pl.ax.len * 0.55)));
           Sound.se('land'); if (P.eng !== 'prop') setTimeout(() => Sound.se('jet'), 300);
+          Bus.emit('touchdown', pl);
           fl.status = 'landed'; fl.landT = G.min;
           onLanded(fl);
         }
@@ -4761,7 +5079,7 @@ function updatePlane(pl, dt) {
         const fogBlock = G.weather === 'fog' && !hasKind('ils');
         if (!fogBlock && (pl.cleared || pickStand(pl)) && !landingClose(r, pl)) { setApproachPath(pl, r); pl.phase = 'base'; }
       }
-      if (pl.holdT > 100) { // ダイバート
+      if (pl.holdT > Extra.holdLimit()) { // ダイバート
         removePlane(pl); fl.status = 'cancel'; fl.why = '着陸できず他の空港へ';
         G.stat.today.divert++;
         const a = G.airlines[fl.airline]; if (a) a.rel = clamp(a.rel - 3, 0, 100);
@@ -4795,6 +5113,7 @@ function updatePlane(pl, dt) {
         pl.path = smoothPath(path ? path.map(tilePt) : [], pl);
         pl.path.push({ x: sc.x, z: sc.z });
         pl.pi = 0; pl.state = 'taxi_in'; pl.leaveRw = true;
+        Bus.emit('taxiIn', pl);
       }
       break;
     }
@@ -4833,6 +5152,7 @@ function updatePlane(pl, dt) {
     case 'parked': break;
     case 'pushback': {
       // トーイングカーで後ろに押し出し、誘導路の向きへ回す
+      if (updateDeice(pl, dt)) break;
       pl.pbT += dt;
       const back = pl.pbDist || 1.5;
       if (pl.pbDone < back) {
@@ -4888,6 +5208,7 @@ function updatePlane(pl, dt) {
       const st = pl.spd * dt;
       pl.x += Math.sin(pl.hdg) * st; pl.z += Math.cos(pl.hdg) * st;
       pl.y += st * Math.tan(pl.pitch) * 0.85; pl.pitch = lerp(pl.pitch, 0.13, 0.05);
+      contrail(pl);
       if (pl.y > 22 || pl.x < -60 || pl.x > W + 60 || pl.z < -60 || pl.z > H + 60) removePlane(pl);
       break;
     }
@@ -4907,7 +5228,7 @@ function updatePlane(pl, dt) {
   if (u.beacon) u.beacon.visible = pl.engines && (tt % 1.0) < 0.12;
   const inAirOrRw = pl.state === 'approach' || pl.state === 'hold' || pl.state === 'roll' || pl.state === 'takeoff' || pl.state === 'climb' || pl.state === 'align';
   if (u.strobe) u.strobe.visible = inAirOrRw && ((tt % 1.2) < 0.05 || ((tt % 1.2) > 0.15 && (tt % 1.2) < 0.2));
-  if (u.land) u.land.visible = (pl.state === 'approach' && pl.phase === 'final') || pl.state === 'roll' || pl.state === 'takeoff' || (pl.state === 'climb' && pl.y < 6);
+  if (u.land) u.land.visible = (pl.state === 'approach' && pl.phase === 'final') || pl.state === 'roll' || pl.state === 'takeoff' || (pl.state === 'climb' && pl.y < 6) || (RT.nightF > 0.5 && (pl.state === 'taxi_in' || pl.state === 'taxi_out' || pl.state === 'align'));
   // プロペラ
   for (const c of u.props || []) c.rotation.z += pl.engines ? 0.9 : (c.userData.spin = Math.max(0, (c.userData.spin || 0.9) * 0.96));
   // 地上車両・搭乗橋
@@ -5001,7 +5322,8 @@ function onLanded(fl) {
   const P = PLANES[fl.type];
   let fee = P.fee * G.feeLevel;
   earn(fee, 'landing');
-  if (fl.cargo) earn(P.cargo * 9000 * rnd(0.8, 1.2), 'cargo');
+  Extra.onLanded(fl);
+  if (fl.cargo) earn(P.cargo * 9000 * rnd(0.8, 1.2) * Extra.cargoMul(), 'cargo');
   else earn(fl.paxArr * REGION_PFC[CITIES[fl.city].region] * G.feeLevel, 'pfc');
   if (hasKind('fuel')) earn(P.fee * 0.15, 'fuel');
   G.stat.today.flights++;
@@ -5029,7 +5351,7 @@ function pushback(fl) {
   if (!fl.cargo) {
     earn(fl.boarded * REGION_PFC[CITIES[fl.city].region] * G.feeLevel, 'pfc');
     G.stat.today.paxDep += fl.boarded; G.totalPax += fl.boarded;
-  } else earn(PLANES[fl.type].cargo * 7000 * rnd(0.8, 1.2), 'cargo');
+  } else earn(PLANES[fl.type].cargo * 7000 * rnd(0.8, 1.2) * Extra.cargoMul(), 'cargo');
   const route = G.routes.find(r => r.id === fl.rid);
   if (route) { route.flights = (route.flights || 0) + 1; route.pax = (route.pax || 0) + fl.boarded + fl.paxArr; route.seats = (route.seats || 0) + PLANES[fl.type].seats * 2; if (fl.delay <= 15) route.ontime = (route.ontime || 0) + 1; }
   // 車両片づけ（搭乗橋を外す）
@@ -5063,6 +5385,7 @@ function pushback(fl) {
     pl.pbTurn = pl.hdg + clamp(dd, -Math.PI / 2, Math.PI / 2);
   }
   pl.tug = vehicleMesh('tug'); pl.tug.scale.setScalar(0.7); R.scene.add(pl.tug);
+  startDeice(pl);
   pl.state = 'pushback'; pl.pbT = 0; pl.spd = 0;
   if (stand) stand.busy = 0;
   Bus.emit('departed', fl);
@@ -5289,7 +5612,7 @@ function dailyUpkeep() {
   let k = 1;
   if (G.research.eco) k -= 0.15;
   if (G.research.ecoplus) k -= 0.15;
-  up *= k * 2;
+  up *= k * 2 * Extra.upkeepMul();
   // 人件費（乗客の数に応じて）
   const t = G.stat.today; up += (t.paxArr + t.paxDep) * 70;
   const solars = Object.values(G.blds).filter(b => b.id === 'solar').length;
@@ -5327,6 +5650,7 @@ function closeDay() {
   updateRating();
   for (const b of Object.values(G.blds)) { b.salesYest = b.salesToday || 0; b.salesToday = 0; b.ckToday = 0; }
   RT.lastDay = G.hist[G.hist.length - 1];
+  Extra.daily();
   Bus.emit('dayClosed', RT.lastDay);
 }
 function updateRating() {
@@ -5340,6 +5664,7 @@ function updateRating() {
   if (last && last.flights > 0) { const otp = (last.ontime + 1) / (last.ontime + last.late + 1); r += (otp - 0.8) * 0.8; }
   if (last && last.cancel > 0) r -= Math.min(0.6, last.cancel * 0.1);
   if (G.research.mascot) r += 0.1;
+  r += Extra.ratingAdd();
   G.rating = clamp(Math.round(r * 10) / 10, 0.5, 5);
 }
 function startDay(day) {
@@ -5355,7 +5680,7 @@ function startDay(day) {
   // 雪だるまは春にとける
   if (d.season !== 3) for (const b of Object.values(G.blds)) if (b.id === 'snowman') removeBuilding(b.uid, { noRefund: true });
   // イベント
-  G.flags.event = null; G.flags.schoolTrip = false;
+  G.flags.event = null; G.flags.schoolTrip = false; G.flags.athlete = G.flags.idol = G.flags.diplomat = G.flags.bizBoost = G.flags.clean = G.flags.birds = false;
   rollEvent(day);
   RT.todayFlights = makeSchedule(day * 1440);
   RT.visitorsToday = 0;
@@ -5392,7 +5717,7 @@ const RANDOM_EVENTS = [
 ];
 function rollEvent(day) {
   const d = dateOf(day);
-  for (const ev of EVENTS) if (ev.when(d)) { G.flags.event = ev.id; G.flags.eventDef = ev.id; announceEvent(ev); if (ev.id === 'airshow') unlockAch('airshow'); return; }
+  for (const ev of EVENTS) if (ev.when(d)) { G.flags.event = ev.id; G.flags.eventDef = ev.id; if (ev.apply) ev.apply(); announceEvent(ev); if (ev.id === 'airshow') unlockAch('airshow'); return; }
   if (day < 3) return;
   for (const ev of RANDOM_EVENTS) {
     if (ev.minRank && G.rank < ev.minRank) continue;
@@ -5412,8 +5737,9 @@ function visitorRate() {
     if (b.id === 'aquarium' || b.id === 'planetarium') v += 1.5;
     if (b.id === 'statue' || b.id === 'shrine' || b.id === 'clocktower') v += 0.6;
   }
+  for (const b of Object.values(G.blds)) { if (b.id === 'outlet') v += 4; if (b.id === 'museum') v += 3; if (b.id === 'ferris') v += 2.5; }
   const ev = eventDef(); if (ev && ev.visitors) v *= ev.visitors;
-  v *= 0.6 + G.rating / 6;
+  v *= (0.6 + G.rating / 6) * Extra.visitorMul();
   return v;
 }
 function hourlyTick(hour) {
@@ -5475,6 +5801,7 @@ function checkAchievements() {
   const nrs = Object.keys(G.research).length;
   if (nrs >= 15) unlockAch('research'); if (nrs >= RESEARCH.length) unlockAch('research_all');
   if (G.rank >= 10) unlockAch('rank10');
+  extraAchievements();
 }
 
 // ---------- 開発（研究） ----------
@@ -6198,7 +6525,7 @@ function renderInfo() {
     if (p.gone) { hideInfo(); return; }
     const pd = PAX[p.type] || { name: p.kind === 'mascot' ? 'ソラまる' : p.type === 'pilot' ? 'パイロット' : p.type === 'ca' ? '客室乗務員' : 'スタッフ', desc: '' };
     const fl = p.fl;
-    const kindName = { dep: '出発', arr: '到着', visit: '見学', crew: '乗務員', mascot: 'マスコット', missed: '乗りおくれ…' }[p.kind] || '';
+    const kindName = { dep: '出発', arr: '到着', visit: '見学', crew: '乗務員', mascot: 'マスコット', missed: '乗りおくれ…', follow: '家族といっしょ', wave: '地上スタッフ' }[p.kind] || '';
     const sprite = spriteURL(p.v);
     h += `<h3><img src="${sprite}" style="width:32px;height:40px;image-rendering:pixelated">${p.kind === 'mascot' ? 'ソラまる' : pd.name} <span class="tag">${kindName}</span></h3><div class="sub">${esc(pd.desc || '')}</div>`;
     if (p.w > 0) h += `<div class="row"><b>きもち</b><span style="flex:1;max-width:150px"><div class="bar"><i style="width:${p.mood}%;background:${p.mood > 65 ? 'var(--good)' : p.mood > 40 ? 'var(--gold)' : 'var(--bad)'}"></i></div></span></div>`;
@@ -6206,6 +6533,7 @@ function renderInfo() {
     if (p.needs && p.needs.length) h += `<div class="row"><b>したいこと</b><span>${p.needs.map(n => iconImg({ food: 'food', shop: 'shopping', toilet: 'toilet', rest: 'zzz', fun: 'note' }[n], 's')).join('')}</span></div>`;
     if (p.spent) h += `<div class="row"><b>使ったお金</b><span>${fmtYen(p.spent)}</span></div>`;
     h += `<div class="row"><b>いま</b><span>${personDoing(p)}</span></div>`;
+    if (p.w > 0 || p.kind === 'follow') h += `<div class="combo">💬 「${esc(personVoice(p))}」</div>`;
     if (p.w > 1.05) h += `<div class="sub">※この人は約${p.w.toFixed(1)}人ぶんのお客さんを表しています</div>`;
     box.innerHTML = h;
   } else if (s.type === 'plane') {
@@ -6229,6 +6557,9 @@ function personDoing(p) {
   if (p.state === 'gatewait') return '搭乗口で待っている';
   if (p.state === 'boarding') return '飛行機に乗るところ';
   if (p.state === 'wander') return 'おさんぽ中';
+  if (p.state === 'follow') return 'おうちの人についていく';
+  if (p.state === 'wave') return '飛行機に手をふってお見送り';
+  if (p.state === 'idle') return p.lookedFids ? '発着案内板を見ている' : 'ひと休み';
   return 'かんがえ中';
 }
 function spriteURL(v) {
@@ -7033,6 +7364,333 @@ const Cloud = {
 };
 
 // ============================================================
+//  追加の建物モデル・イベント12・いろいろな挙動
+// ============================================================
+
+// ---------- 建物モデル ----------
+const MORE_SHOPC = {
+  takoyaki: ['#f4e0b0', '#e5484d', ['#a0683c', '#ffd84a']], okonomi: ['#a0683c', '#2a1e1a', ['#a0683c', '#4cb85c']],
+  tonkatsu: ['#e8d8b8', '#7a4c2c', ['#d8a050', '#4cb85c']], gyudon: ['#ffffff', '#f39a3c', ['#a0683c', '#ffffff']],
+  yakiniku: ['#3a2a22', '#c02838', ['#2a2a36', '#ff8040']], pizza: ['#fff4e0', '#3e8a3c', ['#e5484d', '#ffd84a']],
+  pasta: ['#fff8f0', '#c02838', ['#ffd84a', '#e5484d']], crepe: ['#ffe8f0', '#f59ac0', ['#ffffff', '#f59ac0']],
+  matcha: ['#e8dcc0', '#3e8a3c', ['#4cb85c', '#a0683c']], juice: ['#ffffff', '#f39a3c', ['#ffd84a', '#4cb85c']],
+  donut: ['#fff0e0', '#ff7090', ['#f59ac0', '#a0683c']], unagi: ['#5a3a24', '#2a1e1a', ['#a0683c', '#ffd84a']],
+  icecream: ['#e8f8ff', '#8fdcf4', ['#f59ac0', '#ffffff']], onigiri: ['#ffffff', '#2a2a36', ['#ffffff', '#2e7d4a']],
+  cosme: ['#fff0f4', '#ff7090', ['#f59ac0', '#ffffff', '#e5484d']], watchshop: ['#2a2a30', '#d8a020', ['#d8a020', '#c0c0c8']],
+  luggageshop: ['#f4f2ee', '#3a7bd5', ['#e5484d', '#4a8fe0', '#ffd84a']], sports: ['#ffffff', '#e5484d', ['#4a8fe0', '#e5484d', '#ffffff']],
+  camerashop: ['#e8e8f0', '#2a2a36', ['#2a2a36', '#c0c0c8']], localgoods: ['#e8d8b8', '#a0683c', ['#e5484d', '#4cb85c', '#ffd84a']],
+  sakeshop: ['#d8c4a0', '#2a1e1a', ['#ffffff', '#4a8fe0', '#a0683c']], teashop: ['#e8dcc0', '#3e8a3c', ['#4cb85c', '#a0683c']],
+  charashop: ['#fff8d8', '#ff7090', ['#ffd84a', '#4a8fe0', '#f59ac0']], stationery: ['#ffffff', '#4a8fe0', ['#e5484d', '#ffd84a', '#4cb85c']],
+  eyewear: ['#f4f2ee', '#4a4a58', ['#2a2a36', '#c0c0c8']], jewelry: ['#1a1a22', '#d8a020', ['#c9a0ff', '#ffffff', '#d8a020']],
+};
+for (const [id, [wall, awn, cols]] of Object.entries(MORE_SHOPC)) {
+  const def = B[id];
+  shopModel(id, {
+    wall, awn, stripe: !['watchshop', 'jewelry', 'unagi', 'yakiniku', 'camerashop'].includes(id), sign: awn, icon: def.icon,
+    floor: id === 'jewelry' || id === 'watchshop' ? '#3a3a44' : '#efe6d6', counter: id === 'jewelry' ? '#d8a020' : WOOD,
+    signGlow: id === 'jewelry' ? '#ffe080' : undefined,
+    props: (mb, w, d) => {
+      if (def.cat === 'food') {
+        if (d >= 2) tables(mb, w, d, w >= 3 ? 4 : 2, '#ffffff', cols[0], -0.15);
+        else { mb.box(0, 0, 0.05, w - 0.3, 0.6, 0.35, cols[0]); mb.box(0, 0.6, 0.05, w - 0.35, 0.05, 0.38, '#d8d8d8'); }
+        if (id === 'yakiniku' || id === 'takoyaki' || id === 'okonomi') mb.box(-w / 2 + 0.45, 0.4, -d / 2 + 0.35, 0.5, 0.05, 0.25, '#ff8040', { glow: '#ff6020' });
+        if (id === 'icecream' || id === 'juice') mb.box(0, 0.6, -0.1, w * 0.6, 0.2, 0.25, '#e8f8ff', { glow: '#ffffff' });
+      } else if (id === 'jewelry' || id === 'watchshop') {
+        for (let i = 0; i < 2; i++) { mb.box(-0.5 + i, 0, -0.1, 0.6, 0.6, 0.5, cols[2]); mb.box(-0.5 + i, 0.6, -0.1, 0.55, 0.2, 0.45, '#f0f8ff', { glow: '#ffffff' }); mb.box(-0.5 + i, 0.62, -0.1, 0.1, 0.08, 0.1, cols[i]); }
+      } else shelves(mb, w, d, cols);
+    }
+  });
+}
+MODELS.kidsroom = (mb, w, d) => {
+  mb.box(0, 0, 0, w - 0.04, 0.05, d - 0.04, '#ffe080');
+  for (const [x, z] of [[-w / 2 + 0.06, 0], [w / 2 - 0.06, 0]]) mb.box(x, 0, z, 0.08, 0.5, d - 0.04, '#ff7090');
+  mb.box(0, 0, -d / 2 + 0.06, w - 0.04, 0.5, 0.08, '#4a8fe0');
+  mb.box(-0.8, 0.05, -0.2, 0.6, 0.5, 0.6, '#e5484d'); mb.box(-0.8, 0.55, -0.2, 0.3, 0.3, 0.3, '#ffd84a');
+  for (let i = 0; i < 4; i++) mb.cyl(0.3 + (i % 2) * 0.4, 0.05, -0.3 + Math.floor(i / 2) * 0.5, 0.14, 0.14, 0.14, ['#4cb85c', '#4a8fe0', '#ff7090', '#ffd84a'][i], 8);
+  mb.box(0.9, 0.05, 0.3, 0.4, 0.3, 0.8, '#3fc9b8'); mb.icon('balloon', 0, 0.75, -d / 2 + 0.11, 0.36, 0);
+};
+MODELS.prayer = (mb, w, d) => { mb.box(0, 0, -0.1, w - 0.1, 1.2, d - 0.3, '#e8f0e8'); mb.box(0, 1.2, -0.1, w - 0.05, 0.06, d - 0.25, '#3e8a3c'); mb.box(0, 0, d / 2 - 0.22, 0.5, 1.0, 0.06, '#c8d8c8'); mb.icon('heart', 0, 0.75, d / 2 - 0.18, 0.32, 0); };
+MODELS.shower = (mb, w, d) => { booth(mb, w, d, { wall: '#e0f0f8', floor: '#d8e8f0', awn: '#4a8fe0', sign: '#4a8fe0', icon: 'onsen', noCounter: true }); for (let i = 0; i < 2; i++) { mb.box(-0.4 + i * 0.8, 0, -0.2, 0.6, 1.0, 0.7, '#ffffff'); mb.box(-0.4 + i * 0.8, 0.9, -0.2, 0.1, 0.1, 0.1, '#c0c0c8'); } };
+MODELS.library = (mb, w, d) => { booth(mb, w, d, { wall: '#a0683c', floor: '#c8a878', awn: '#3e6a4a', sign: '#3e6a4a', icon: 'book', noCounter: true }); shelves(mb, w, 0.6, ['#e5484d', '#4a8fe0', '#4cb85c', '#ffd84a']); for (let i = 0; i < 3; i++) { mb.box(-0.9 + i * 0.9, 0, 0.45, 0.4, 0.25, 0.35, '#7a4c2c'); } };
+MODELS.vr = (mb, w, d) => { booth(mb, w, d, { wall: '#2a2040', floor: '#3a3060', awn: '#40e0ff', sign: '#2a2040', signIn: '#80f0ff', signGlow: '#40e0ff', icon: 'game', noCounter: true }); for (let i = 0; i < 2; i++) { mb.box(-0.4 + i * 0.8, 0, -0.1, 0.5, 0.45, 0.6, '#4a4a58'); mb.box(-0.4 + i * 0.8, 0.45, -0.3, 0.5, 0.35, 0.08, '#203040', { glow: '#40e0ff' }); } };
+MODELS.photostudio = (mb, w, d) => { booth(mb, w, d, { wall: '#ffffff', floor: '#e8e0f0', awn: '#c9a0ff', sign: '#9a62d0', icon: 'camera', noCounter: true }); mb.box(0, 0.2, -d / 2 + 0.2, w - 0.5, 0.9, 0.05, '#8fdcf4'); mb.box(0, 0.4, -d / 2 + 0.24, 0.9, 0.2, 0.02, '#ffffff'); mb.box(0, 0, 0.4, 0.1, 0.8, 0.1, '#2a2a36'); mb.box(0, 0.8, 0.4, 0.25, 0.2, 0.2, '#2a2a36'); };
+MODELS.luggage = (mb, w) => { mb.box(0, 0, -0.2, w - 0.2, 0.6, 0.45, '#e8e4dc'); mb.box(0, 0.6, -0.2, w - 0.1, 0.05, 0.5, '#3a7bd5'); for (let i = 0; i < 4; i++) mb.box(-0.6 + i * 0.4, 0, -0.42, 0.3, 0.5, 0.15, ['#e5484d', '#4a8fe0', '#ffd84a', '#3fc9b8'][i]); mb.icon('suitcase', 0, 0.95, -0.4, 0.3, 0); };
+MODELS.postoffice = (mb, w) => { mb.box(0, 0, -0.2, w - 0.2, 0.6, 0.45, '#ffffff'); mb.box(0, 0.6, -0.2, w - 0.1, 0.05, 0.5, '#e5484d'); mb.box(0.7, 0, 0.25, 0.25, 0.7, 0.25, '#e5484d'); mb.box(0.7, 0.7, 0.25, 0.3, 0.06, 0.3, '#c02838'); mb.icon('mail', -0.3, 0.95, -0.4, 0.32, 0); };
+MODELS.deicer = (mb, w, d) => { mb.box(0, 0, -0.3, w - 0.2, 0.15, d - 0.8, '#7a8a9a'); mb.box(-0.6, 0, 0.3, 0.7, 0.5, 0.9, '#f39a3c'); mb.box(-0.6, 0.5, 0.3, 0.1, 0.8, 0.1, '#ffd84a'); mb.box(-0.6, 1.3, 0.1, 0.12, 0.12, 0.6, '#ffd84a'); mb.cyl(0.7, 0, -0.3, 0.4, 0.4, 0.9, '#f39a3c', 8); mb.icon('snow', 0.7, 0.6, 0.11, 0.3, 0); };
+MODELS.cateringfac = (mb, w, d) => { mb.box(0, 0, -0.3, w - 0.1, 1.3, d - 0.7, '#f4f2ee'); mb.box(0, 1.3, -0.3, w, 0.1, d - 0.6, '#3a7bd5'); for (let i = 0; i < 3; i++) mb.box(-1.2 + i * 1.2, 0, 0.86, 0.8, 0.9, 0.04, '#9a9aa6'); mb.box(0.8, 0, 1.1, 0.5, 0.8, 0.6, '#f4f2ee'); mb.icon('bento', 0, 1.1, 0.86, 0.34, 0); };
+MODELS.gsebase = (mb, w, d) => { mb.box(0, 0, 0, w - 0.1, 0.05, d - 0.1, '#5a5a64'); mb.box(-1, 0, -0.5, 1.6, 1.0, 1.2, '#d8d8e0'); mb.box(-1, 1.0, -0.5, 1.7, 0.08, 1.3, '#ffd84a'); car(mb, 0.6, -0.5, '#ffd84a', 0); car(mb, 1.2, -0.5, '#f39a3c', 0); car(mb, 0.9, 0.6, '#ffd84a', 1); mb.icon('cargo', -1, 0.75, 0.11, 0.3, 0); };
+MODELS.training = (mb, w, d) => { mb.box(0, 0, -0.2, w - 0.2, 1.3, d - 0.6, '#e8e4dc'); mb.box(0, 1.3, -0.2, w - 0.1, 0.1, d - 0.5, '#2f4f9a'); for (let i = 0; i < 3; i++) mb.box(-0.9 + i * 0.9, 0.3, d / 2 - 0.49, 0.5, 0.4, 0.02, '#8fc8e8', { glow: '#ffe8a0' }); mb.cyl(0.8, 1.4, -0.5, 0.45, 0.45, 0.5, '#f4f2ee', 10); mb.icon('plane2', -0.6, 1.0, d / 2 - 0.48, 0.34, 0); };
+MODELS.busterminal = (mb, w, d) => { mb.box(0, 0, -0.2, w - 0.1, 0.06, d - 0.2, '#c8c8d0'); for (let i = 0; i < 4; i++) mb.box(-w / 2 + 0.4 + i * (w - 0.8) / 3, 0, -0.5, 0.08, 1.2, 0.08, '#9a9aa6'); mb.box(0, 1.2, -0.3, w, 0.08, d - 0.3, '#4cb85c'); for (let i = 0; i < 3; i++) mb.box(-1.2 + i * 1.2, 0, -0.55, 0.8, 0.28, 0.25, '#a0683c'); mb.icon('bus', 1.6, 1.0, d / 2 - 0.2, 0.3, 0); };
+MODELS.monorail = (mb, w, d) => {
+  mb.box(0, 0, 0.3, w - 0.2, 1.5, d - 1.2, '#e8e4dc'); mb.box(0, 1.5, 0.3, w, 0.1, d - 1.1, '#3a7bd5'); mb.box(0, 0.1, d / 2 - 0.51, 1.6, 1.1, 0.02, '#8fc8e8', { glow: '#ffe8a0' });
+  for (let i = 0; i < 4; i++) mb.box(-w / 2 + 0.4 + i * (w - 0.8) / 3, 0, -1.1, 0.25, 1.9, 0.25, '#c8c8d0');
+  mb.box(0, 1.9, -1.1, w, 0.25, 0.4, '#d8d8e0'); mb.box(0.3, 2.15, -1.1, 2.6, 0.5, 0.36, '#f4f2ee'); mb.box(0.3, 2.35, -1.1, 2.62, 0.16, 0.38, '#3a4a5a', { glow: '#ffe8a0' }); mb.box(0.3, 2.2, -1.1, 2.62, 0.05, 0.38, '#3a7bd5');
+  mb.icon('train', 0, 1.25, d / 2 - 0.49, 0.36, 0);
+};
+MODELS.outlet = (mb, w, d) => {
+  mb.box(0, 0, 0, w - 0.1, 0.05, d - 0.1, '#d8d2c6');
+  const cs = ['#e5484d', '#4a8fe0', '#ffd84a', '#4cb85c', '#9a62d0'];
+  for (let i = 0; i < 5; i++) { mb.box(-w / 2 + 0.55 + i * (w - 1.1) / 4, 0, -d / 2 + 0.7, 0.9, 1.2, 1.1, '#f4f2ee'); mb.box(-w / 2 + 0.55 + i * (w - 1.1) / 4, 1.0, -d / 2 + 1.27, 0.9, 0.2, 0.08, cs[i]); mb.box(-w / 2 + 0.55 + i * (w - 1.1) / 4, 0.1, -d / 2 + 1.26, 0.6, 0.7, 0.02, '#8fc8e8', { glow: '#ffe8a0' }); }
+  mb.cyl(0, 0.05, 0.8, 0.6, 0.6, 0.2, '#c8c8d0', 10); mb.cyl(0, 0.08, 0.8, 0.5, 0.5, 0.18, '#5cc8e0', 10, { glow: '#80e0ff' });
+  for (const x of [-1.6, 1.6]) treeShape(mb, x, 1.1, 'round', 1, 0.8);
+  mb.box(0, 1.25, -d / 2 + 0.7, 2.0, 0.5, 0.1, '#2a2a36'); mb.icon('shopping', 0, 1.5, -d / 2 + 0.77, 0.4, 0);
+};
+MODELS.museum = (mb, w, d) => {
+  mb.box(0, 0, -0.4, w - 0.2, 1.4, d - 1.0, '#e8e4dc');
+  for (let k = 0; k < 4; k++) { const ww = (w - 0.2) * Math.cos(k / 4 * Math.PI / 2.4); mb.box(0, 1.4 + k * 0.25, -0.4, ww, 0.25, d - 1.0, k % 2 ? '#c8ccd8' : '#d8d8e0'); }
+  mb.box(0, 0.1, d / 2 - 0.9, 2.0, 1.1, 0.02, '#8fc8e8', { glow: '#ffe8a0' });
+  // 外に展示されたプロペラ機
+  mb.box(1.6, 0.4, 0.95, 0.25, 0.25, 1.3, '#d8d0b8'); mb.box(1.6, 0.6, 0.85, 1.8, 0.04, 0.3, '#d8d0b8'); mb.box(1.6, 0.4, 0.3, 0.04, 0.4, 0.2, '#e5484d'); mb.box(1.6, 0.3, 1.62, 0.05, 0.6, 0.04, '#3a3a44');
+  mb.box(1.6, 0, 0.95, 0.06, 0.4, 0.06, '#7a7a80');
+  mb.box(-0.8, 1.6, d / 2 - 0.88, 2.0, 0.4, 0.06, '#2f4f9a'); mb.icon('plane2', -0.8, 1.8, d / 2 - 0.84, 0.34, 0);
+};
+MODELS.ferris = (mb, w, d) => {
+  mb.box(0, 0, 0, w - 0.2, 0.1, d - 0.2, '#c8c8d0');
+  mb.box(-0.5, 0, 0, 0.1, 2.0, 0.1, '#9a9aa6'); mb.box(0.5, 0, 0, 0.1, 2.0, 0.1, '#9a9aa6');
+  const cs = ['#e5484d', '#4a8fe0', '#ffd84a', '#4cb85c', '#9a62d0', '#f59ac0', '#3fc9b8', '#f39a3c'];
+  for (let i = 0; i < 16; i++) { const a = i / 16 * TAU; mb.box(0, 2.1 + Math.sin(a) * 1.25, Math.cos(a) * 1.25, 0.04, 0.12, 0.12, '#d8d8e0', { glow: i % 2 ? '#ff80c0' : '#80d0ff' }); }
+  for (let i = 0; i < 8; i++) { const a = i / 8 * TAU; mb.box(0, 1.85 + Math.sin(a) * 1.35, Math.cos(a) * 1.35, 0.3, 0.3, 0.3, cs[i]); }
+  mb.box(0, 2.0, 0, 0.12, 0.2, 0.2, '#4a4a58');
+};
+MODELS.maple = (mb, w, d, o) => { const s = o.season || 0; const c = ['#7ac060', '#4aa040', '#e0302c', '#8a6a5a'][s]; mb.box(0, 0, 0, 0.14, 0.5, 0.14, '#6b4226'); mb.box(0, 0.45, 0, 0.75, 0.45, 0.75, c); mb.box(0.05, 0.85, 0.05, 0.5, 0.3, 0.5, shade(c, 0.15)); };
+MODELS.ginkgo = (mb, w, d, o) => { const s = o.season || 0; const c = ['#8ad060', '#5ab04a', '#ffd030', '#8a7a5a'][s]; mb.box(0, 0, 0, 0.14, 0.6, 0.14, '#6b4226'); mb.box(0, 0.5, 0, 0.6, 0.4, 0.6, c); mb.box(0, 0.88, 0, 0.42, 0.35, 0.42, shade(c, 0.15)); mb.box(0, 1.2, 0, 0.24, 0.2, 0.24, c); };
+MODELS.bamboo = (mb) => { for (const [x, z, h] of [[-0.2, -0.15, 1.6], [0.15, 0.1, 1.9], [0.25, -0.25, 1.4], [-0.1, 0.25, 1.7]]) { mb.box(x, 0, z, 0.07, h, 0.07, '#4cb85c'); mb.box(x + 0.08, h - 0.4, z, 0.25, 0.08, 0.18, '#3e8a3c'); } };
+MODELS.hedge = (mb, w) => { mb.box(0, 0, 0, w - 0.1, 0.45, 0.5, '#3e8a3c'); mb.box(0, 0.45, 0, w - 0.2, 0.08, 0.4, '#4cb85c'); };
+MODELS.gardenrock = (mb) => { mb.box(0, 0, 0, 0.6, 0.35, 0.5, '#8a8478'); mb.box(0.1, 0.35, -0.05, 0.35, 0.2, 0.3, '#9a9488'); mb.box(-0.25, 0, 0.25, 0.25, 0.15, 0.2, '#7a7468'); };
+MODELS.stonelantern = (mb) => { mb.box(0, 0, 0, 0.4, 0.12, 0.4, '#9a9488'); mb.box(0, 0.12, 0, 0.14, 0.5, 0.14, '#9a9488'); mb.box(0, 0.62, 0, 0.36, 0.08, 0.36, '#8a8478'); mb.box(0, 0.7, 0, 0.26, 0.24, 0.26, '#c8c0a8', { glow: '#ffd080' }); mb.box(0, 0.94, 0, 0.46, 0.1, 0.46, '#8a8478'); mb.box(0, 1.04, 0, 0.1, 0.1, 0.1, '#8a8478'); };
+MODELS.xmastree = (mb) => { mb.box(0, 0, 0, 0.3, 0.2, 0.3, '#e5484d'); for (let k = 0; k < 4; k++) mb.box(0, 0.2 + k * 0.32, 0, 0.9 - k * 0.2, 0.34, 0.9 - k * 0.2, '#2e7d4a'); const lc = ['#ffd84a', '#e5484d', '#4a8fe0', '#ffffff']; for (let i = 0; i < 10; i++) { const a = i * 2.4, r = 0.42 - (i / 10) * 0.3; mb.box(Math.cos(a) * r, 0.3 + i * 0.11, Math.sin(a) * r, 0.07, 0.07, 0.07, lc[i % 4], { glow: lc[i % 4] }); } mb.box(0, 1.5, 0, 0.16, 0.16, 0.16, '#ffd84a', { glow: '#ffe060' }); };
+MODELS.koinobori = (mb) => { mb.cyl(0, 0, 0, 0.04, 0.05, 2.2, '#d8d8e0', 5); const cs = ['#2a2a36', '#e5484d', '#4a8fe0']; cs.forEach((c, i) => { const y = 1.85 - i * 0.4; for (let k = 0; k < 4; k++) mb.box(0.18 + k * 0.17, y - k * 0.02, 0, 0.18, 0.22 - k * 0.03, 0.12, k === 0 ? c : k % 2 ? '#ffffff' : c); mb.box(0.12, y + 0.04, 0.065, 0.05, 0.05, 0.01, '#ffffff'); }); mb.box(0, 2.2, 0, 0.12, 0.12, 0.12, '#ffd84a'); };
+MODELS.sunflower = (mb, w, d) => { mb.box(0, 0, 0, w - 0.1, 0.05, d - 0.1, '#5a3a24'); for (let i = 0; i < 9; i++) { const x = -0.6 + (i % 3) * 0.6, z = -0.6 + Math.floor(i / 3) * 0.6; mb.box(x, 0.05, z, 0.05, 0.7, 0.05, '#4cb85c'); mb.box(x, 0.75, z + 0.03, 0.3, 0.3, 0.05, '#ffd84a'); mb.box(x, 0.82, z + 0.06, 0.12, 0.12, 0.02, '#7a4c2c'); } };
+MODELS.rocketstatue = (mb) => { mb.box(0, 0, 0, 1.4, 0.4, 1.4, '#c8c0b0'); mb.cyl(0, 0.4, 0, 0.3, 0.3, 2.0, '#f4f2ee', 10); mb.cyl(0, 2.4, 0, 0.02, 0.3, 0.6, '#e5484d', 10); for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2; mb.box(Math.cos(a) * 0.35, 0.4, Math.sin(a) * 0.35, 0.12 + Math.abs(Math.cos(a)) * 0.2, 0.6, 0.12 + Math.abs(Math.sin(a)) * 0.2, '#e5484d'); } mb.box(0, 1.6, 0.3, 0.16, 0.16, 0.02, '#203040', { glow: '#80d0ff' }); };
+
+// ---------- イベント 12 ----------
+EVENTS.push(
+  { id: 'tsuyu', name: '梅雨入り', when: d => d.month === 6 && d.part === 0, desc: '雨の日が多くなる季節。屋内の施設が人気', visitors: 0.7 },
+  { id: 'koyo', name: '紅葉シーズン', when: d => d.month === 11 && d.part === 0, desc: 'もみじ・イチョウがきれい。見学客が増える', visitors: 1.6 },
+  { id: 'hatsuhi', name: '初日の出フライト', when: d => d.month === 1 && d.part === 0 && d.year > 1, desc: '初日の出を見る特別便！ ごほうびの収入が入る', apply: () => earn(800000 * G.rank, 'other') },
+  { id: 'valentine', name: 'バレンタイン', when: d => d.month === 2 && d.part === 1, desc: 'スイーツ店が大にぎわい', visitors: 1.2 },
+  { id: 'tanabata', name: '七夕まつり', when: d => d.month === 7 && d.part === 0, desc: '笹かざりで空港が華やか。見学客が増える', visitors: 1.5 },
+  { id: 'silverweek', name: 'シルバーウィーク', when: d => d.month === 9 && d.part === 1, desc: '秋の大型連休。旅行のお客さんがいっぱい', demand: 1.15 },
+);
+RANDOM_EVENTS.push(
+  { id: 'conference', name: '国際学会', p: 0.04, minRank: 4, desc: 'ビジネスのお客さんがたくさん来る', apply: () => { G.flags.bizBoost = true; } },
+  { id: 'sportstour', name: 'プロ野球チームの遠征', p: 0.04, minRank: 2, desc: '選手団がやってくる！ ファンの見学客も', visitors: 1.5, apply: () => { G.flags.athlete = true; } },
+  { id: 'live', name: 'アイドルのライブ', p: 0.04, minRank: 3, desc: 'ファンの見学客が大集合！', visitors: 2.2, apply: () => { G.flags.idol = true; } },
+  { id: 'ambassador', name: '大使の来訪', p: 0.03, minRank: 5, desc: '外交官のお客さんが来る。ラウンジがあると評価アップ', apply: () => { G.flags.diplomat = true; } },
+  { id: 'rarejet', name: 'めずらしい機体の飛来', p: 0.04, minRank: 3, desc: '特別塗装機がやってくる！ マニアとカメラマンが集まる', visitors: 1.8 },
+  { id: 'cleanday', name: '空港クリーンデー', p: 0.04, desc: 'みんなでおそうじ。今日は美しさアップ', apply: () => { G.flags.clean = true; } },
+);
+
+// ---------- 研究・建物の効果（ほかのファイルから呼ばれる） ----------
+const Extra = {
+  turnMul() { let k = 1; if (hasKind('gse')) k *= 0.9; if (G.research.turnfast) k *= 0.9; return k; },
+  gapMul() { return G.research.cdm ? 0.85 : 1; },
+  holdLimit() { return G.research.sms ? 140 : 100; },
+  priceMul(b, p) {
+    const def = B[b.id]; let k = 1;
+    if (G.research.signage && def.cat === 'shop') k *= 1.05;
+    if (G.research.localfood && def.cat === 'food') k *= 1.1;
+    if (G.research.nightshop && (G.min % 1440) >= 20 * 60) k *= 1.3;
+    if (G.flags.event === 'valentine' && ['sweets', 'crepe', 'donut', 'icecream'].includes(b.id)) k *= 1.6;
+    return k;
+  },
+  moodStart(p) {
+    let m = 0;
+    if (G.research.wifi6) m += 3;
+    if (G.research.barrierfree && (p.type === 'elder' || p.type === 'babyc')) m += 6;
+    if (G.research.kidsfriendly && (p.type === 'kid' || p.type === 'family' || p.type === 'babyc')) m += 5;
+    return m;
+  },
+  visitorMul() { let k = 1; if (G.research.tourism) k *= 1.3; for (const b of Object.values(G.blds)) if (b.id === 'outlet' || b.id === 'museum' || b.id === 'ferris') k += 0.15; return k; },
+  cargoMul() { return G.research.cargoauto ? 1.25 : 1; },
+  upkeepMul() { return G.research.hydrogen ? 0.9 : 1; },
+  ratingAdd() { return (G.research.carbon ? 0.1 : 0); },
+  accessMul(b) { return G.research.maglev && (b.id === 'station' || b.id === 'monorail') ? 2 : 1; },
+  daily() {
+    if (hasKind('training')) { G.dev = (G.dev || 0) + 8; for (const a of Object.values(G.airlines)) a.rel = Math.min(100, a.rel + 0.3); }
+  },
+  onLanded(fl) {
+    if (!fl.cargo && hasKind('catering')) earn(PLANES[fl.type].seats * 90, 'svc');
+  },
+  extraPax(fl) {
+    if (G.flags.athlete && Math.random() < 0.15) return 'athlete';
+    if (G.flags.idol && Math.random() < 0.02) return 'idol';
+    if (G.flags.diplomat && Math.random() < 0.05) return 'diplomat';
+    if (G.flags.bizBoost && Math.random() < 0.25) return 'biz';
+    return null;
+  },
+};
+
+// ---------- 挙動 ----------
+// 接地のタイヤスモーク
+Bus.on('touchdown', pl => {
+  const s = Math.sin(pl.hdg), c = Math.cos(pl.hdg), L = pl.P.len;
+  for (const sx of [-1, 1]) {
+    const lx = sx * 0.3, lz = -L * 0.05;
+    burst(pl.x + c * lx + s * lz, 0.08, pl.z - s * lx + c * lz, '#e8e8ec', 14, 0.6, 1.4, -0.2);
+  }
+});
+// 飛行機雲
+function contrail(pl) {
+  if (pl.y < 9 || pl.P.eng === 'prop' || Math.random() > 0.7) return;
+  const s = Math.sin(pl.hdg), c = Math.cos(pl.hdg), L = pl.P.len, xs = pl.P.engines === 4 ? [-0.7, -0.35, 0.35, 0.7] : [-0.4, 0.4];
+  for (const f of xs) { const lx = f * pl.P.span * 0.5, lz = -L * 0.2; burst(pl.x + c * lx + s * lz, pl.y, pl.z - s * lx + c * lz, '#ffffff', 1, 0.05, 5, -0.02); }
+}
+// ウォーターサリュート（新しい路線の初便を放水アーチでおむかえ）
+const Salute = { list: [] };
+Bus.on('taxiIn', pl => {
+  const fl = pl.fl, route = G.routes.find(r => r.id === fl.rid);
+  if (!route || route.saluted || !hasKind('fire') || (route.flights || 0) > 0) return;
+  route.saluted = true; G.flags.salute = true;
+  const p0 = pl.path[Math.min(2, pl.path.length - 1)]; if (!p0) return;
+  const trucks = [];
+  for (const sd of [-1, 1]) {
+    const m = vehicleMesh('fire'); m.scale.setScalar(0.55);
+    const dir = Math.atan2(p0.x - pl.x, p0.z - pl.z);
+    const px = p0.x + Math.cos(dir) * sd * 2.2, pz = p0.z - Math.sin(dir) * sd * 2.2;
+    m.position.set(px, 0, pz); m.rotation.y = dir; R.scene.add(m); trucks.push({ m, x: px, z: pz, sd, dir });
+  }
+  Salute.list.push({ trucks, t: 0, cx: p0.x, cz: p0.z });
+  toast(`${CITIES[fl.city].name}線の初便をウォーターサリュートでおむかえ！`, 'gold', 'fountain');
+});
+function updateSalute(dtReal) {
+  for (const s of Salute.list) {
+    s.t += dtReal;
+    for (const t of s.trucks) if (s.t < 9) { burst(t.x, 0.7, t.z, '#cfefff', 3, 0, 1.6, 2.2); aimWater(t, s); }
+    if (s.t > 12) { for (const t of s.trucks) R.scene.remove(t.m); s.done = true; }
+  }
+  Salute.list = Salute.list.filter(s => !s.done);
+}
+function aimWater(t, s) {
+  // 直前に出した粒に、反対側のトラックへ向かう速度を与える（アーチ）
+  const n = 3;
+  for (let k = 0; k < n; k++) {
+    const i = (FX.cur - k + FX.max) % FX.max;
+    const dx = s.cx - t.x, dz = s.cz - t.z;
+    FX.vel[i * 3] = dx * 0.65 + rnd(-0.1, 0.1); FX.vel[i * 3 + 1] = 3.0 + rnd(-0.2, 0.2); FX.vel[i * 3 + 2] = dz * 0.65 + rnd(-0.1, 0.1);
+  }
+}
+// 除氷作業（雪の日の出発前）
+function startDeice(pl) {
+  if (G.weather !== 'snow') return;
+  let t = 8; if (hasKind('deice')) t *= 0.5; if (G.research.deicing) t *= 0.5;
+  pl.deiceT = t; G.flags.deiced = true;
+  const m = vehicleMesh('fuel'); m.scale.setScalar(0.62); R.scene.add(m); pl.deicer = m;
+}
+function updateDeice(pl, dt) {
+  if (!pl.deicer) return false;
+  pl.deiceT -= dt;
+  const s = Math.sin(pl.hdg), c = Math.cos(pl.hdg), lx = pl.P.span * 0.35, lz = -pl.P.len * 0.05;
+  const x = pl.x + c * lx + s * lz, z = pl.z - s * lx + c * lz;
+  pl.deicer.position.set(x, 0, z); pl.deicer.rotation.y = pl.hdg;
+  if (Math.random() < 0.8) burst(x - c * 0.4, 0.8, z + s * 0.4, '#ffa040', 3, 0.8, 0.8, 2);
+  if (pl.deiceT <= 0) { R.scene.remove(pl.deicer); pl.deicer = null; return false; }
+  return true;
+}
+// 地上スタッフのお見送り（手をふる）
+Bus.on('departed', fl => {
+  const st = G.blds[fl.stand]; if (!st || fl.cargo) return;
+  const c = bCenter(st), [fx, fy] = frontDir(st.rot), [w, h] = dims(B[st.id], st.rot);
+  for (let k = 0; k < 3; k++) {
+    const x = c.x + fx * (h / 2 - 0.3) * (fy ? 1 : 0) + fx * (w / 2 - 0.3) * (fx ? 1 : 0) + (fy ? (k - 1) * 0.5 : 0);
+    const z = c.z + fy * (h / 2 - 0.3) * (fy ? 1 : 0) + fy * (w / 2 - 0.3) * (fx ? 1 : 0) + (fx ? (k - 1) * 0.5 : 0);
+    const p = newPerson('staff', 'wave', x, z);
+    p.w = 0; p.state = 'wave'; p.wait = 14; p.face = 1;
+  }
+});
+// 鳥の群れ
+const Birds = { flocks: [] };
+function updateBirds(dtReal) {
+  const d = dateOf(G.day);
+  const want = (G.flags.event === 'birds' || G.flags.birds ? 3 : (d.season === 0 || d.season === 2) ? 1 : 0.4) * (RT.nightF > 0.7 ? 0 : 1);
+  if (Birds.flocks.length < Math.round(want) && Math.random() < dtReal * 0.05) {
+    const g = new THREE.Group(), n = rndi(6, 14), mat = new THREE.MeshBasicMaterial({ color: '#3a3a44', fog: false });
+    const geo = new THREE.BoxGeometry(0.22, 0.03, 0.08);
+    const birds = [];
+    for (let i = 0; i < n; i++) { const m = new THREE.Mesh(geo, mat); m.position.set(rnd(-2, 2), rnd(-0.4, 0.4), rnd(-2, 2)); g.add(m); birds.push(m); }
+    const side = Math.random() < 0.5 ? -1 : 1;
+    g.position.set(side < 0 ? -30 : W + 30, rnd(5, 9), rnd(0, H));
+    R.scene.add(g);
+    Birds.flocks.push({ g, birds, v: side * rnd(3, 5), t: 0 });
+  }
+  for (const f of Birds.flocks) {
+    f.t += dtReal;
+    f.g.position.x -= f.v * dtReal; f.g.position.z += Math.sin(f.t * 0.5) * dtReal;
+    f.birds.forEach((b, i) => { b.scale.x = 0.5 + Math.abs(Math.sin(f.t * 8 + i)) * 0.8; });
+    if (f.g.position.x < -40 || f.g.position.x > W + 40) { R.scene.remove(f.g); f.done = true; }
+  }
+  Birds.flocks = Birds.flocks.filter(f => !f.done);
+}
+// 吹き流しは風の向きへ
+function updateWindsocks() {
+  const a = (G.windDir ? Math.PI : 0) + Math.sin(RT.time * 0.7) * 0.15;
+  for (const b of Object.values(G.blds)) if (b.id === 'windsock' && b.mesh) b.mesh.rotation.y = a;
+}
+// バス停にバスが来る
+const BusArr = { list: [], t: 0 };
+function updateBusArrivals(dt) {
+  BusArr.t -= dt;
+  if (BusArr.t <= 0) {
+    BusArr.t = 25;
+    const stops = Object.values(G.blds).filter(b => (b.id === 'busstop' || b.id === 'busterminal') && b.mesh);
+    if (stops.length && RT.persons.length > 3 && RT.nightF < 0.8) {
+      const b = pick(stops), c = bCenter(b), [fx, fy] = frontDir(b.rot);
+      const m = vehicleMesh('bus', b.id === 'busterminal' ? '#3a7bd5' : '#4cb85c'); m.scale.setScalar(0.8);
+      const x = c.x - fx * 1.2 + (fy ? 0 : 0), z = c.z - fy * 1.2;
+      m.position.set(x, 0, z); m.rotation.y = Math.atan2(fy, -fx) + Math.PI / 2 * 0 + (fy ? Math.PI / 2 : 0);
+      R.scene.add(m); BusArr.list.push({ m, t: 0 });
+    }
+  }
+  for (const a of BusArr.list) { a.t += dt; a.m.visible = true; if (a.t > 8) { R.scene.remove(a.m); a.done = true; } }
+  BusArr.list = BusArr.list.filter(a => !a.done);
+}
+// 展望デッキのカメラ・子どもの歓声
+function updateSpotters() {
+  const busy = RT.planes.some(p => p.state === 'takeoff' || p.state === 'roll' || (p.state === 'approach' && p.phase === 'final' && p.y < 2));
+  if (!busy || Math.random() > 0.2) return;
+  for (const p of RT.persons) {
+    if (p.state !== 'service' && p.state !== 'gatewait') continue;
+    const b = G.blds[p.facUid];
+    const atDeck = b && (b.id === 'deck' || b.id === 'museum');
+    if (!atDeck && !(p.state === 'gatewait' && (p.type === 'kid' || p.type === 'maniac' || p.type === 'photog'))) continue;
+    if (Math.random() < 0.15) bubble(p, p.type === 'photog' || p.type === 'maniac' || p.type === 'tourist' ? 'camera' : p.type === 'kid' ? 'plane' : 'note', 1.2);
+  }
+}
+// 家族はいっしょに歩く（子どもがついていく）
+function addFollower(leader) {
+  const kid = newPerson(leader.type === 'babyc' ? 'kid' : 'kid', 'follow', leader.x + 0.2, leader.z + 0.2);
+  kid.w = 0; kid.state = 'follow'; kid.leader = leader; kid.fl = leader.fl;
+  kid.ox = rnd(-0.3, 0.3); kid.oz = rnd(-0.3, 0.3);
+  return kid;
+}
+function updateFollower(p, dt) {
+  const L = p.leader;
+  if (!L || L.gone) { p.gone = true; return; }
+  p.hidden = L.hidden;
+  const tx = L.x + p.ox * 0.9 - (L.mvx ? Math.sign(L.mvx) * 0.2 : 0), tz = L.z + p.oz * 0.9 - (L.mvz ? Math.sign(L.mvz) * 0.2 : 0);
+  const dx = tx - p.x, dz = tz - p.z, d = Math.hypot(dx, dz);
+  if (d > 4) { p.x = tx; p.z = tz; }
+  else if (d > 0.08) { const st = Math.min(d, L.spd * 1.25 * dt); p.x += dx / d * st; p.z += dz / d * st; p.moving = true; p.mvx = dx; p.mvz = dz; }
+  else p.moving = false;
+  p.tile = idx(clamp(Math.floor(p.x), 0, W - 1), clamp(Math.floor(p.z), 0, H - 1));
+  if (L.bub === 'heart' && !p.bub && Math.random() < 0.3) bubble(p, 'note', 1);
+}
+// つぶやき
+function personVoice(p) {
+  if (p.voiceT && RT.time - p.voiceT < 6 && p.voice) return p.voice;
+  const opts = VOICES.filter(v => { try { return v.c(p); } catch (e) { return false; } });
+  p.voice = opts.length ? pick(opts).t : 'ふんふ〜ん♪'; p.voiceT = RT.time;
+  return p.voice;
+}
+// 実績のチェック（追加分）
+function extraAchievements() {
+  for (const a of ACHIEVEMENTS) if (a.c && !G.ach[a.id]) { let ok = false; try { ok = a.c(); } catch (e) { } if (ok) unlockAch(a.id); }
+}
+function updateExtras(dt, dtReal) {
+  updateSalute(dtReal); updateBirds(dtReal); updateWindsocks(); updateBusArrivals(dt); updateSpotters();
+}
+
+// ============================================================
 //  起動・タイトル・メインループ
 // ============================================================
 const Game = { speed: 1, userSpeed: 1, slot: 0, demo: true, opts: { nightSkip: true }, modalPause: false, dialogPause: false, started: false, last: 0, bgmT: 0, hintT: 0 };
@@ -7047,7 +7705,7 @@ function initFX() {
   FX.pts = new THREE.Points(geo, new THREE.PointsMaterial({ size: 3, sizeAttenuation: false, vertexColors: true, transparent: true, depthWrite: false, fog: false }));
   FX.pts.frustumCulled = false; FX.pts.renderOrder = 10;
   R.scene.add(FX.pts);
-  FX.life = new Float32Array(FX.max); FX.vel = new Float32Array(FX.max * 3);
+  FX.life = new Float32Array(FX.max); FX.vel = new Float32Array(FX.max * 3); FX.gr = new Float32Array(FX.max);
   Bus.on('fireworks', () => { FX.fwT = 22; });
   Bus.on('airshow', () => startAirshow());
 }
@@ -7063,8 +7721,9 @@ function burst(x, y, z, color, n, spd, life, grav) {
     FX.vel[i * 3] = Math.sin(ph) * Math.cos(th) * s; FX.vel[i * 3 + 1] = Math.cos(ph) * s; FX.vel[i * 3 + 2] = Math.sin(ph) * Math.sin(th) * s;
     col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
     FX.life[i] = life * (0.7 + Math.random() * 0.5);
-    FX.vel.grav = grav;
+    FX.gr[i] = grav == null ? 3 : grav;
   }
+  FX.pts.geometry.attributes.color.needsUpdate = true;
 }
 function updateFX(dt) {
   if (!FX.pts) return;
@@ -7083,7 +7742,7 @@ function updateFX(dt) {
     if (FX.life[i] <= 0) continue;
     any = true;
     FX.life[i] -= dt;
-    FX.vel[i * 3 + 1] -= 3 * dt;
+    FX.vel[i * 3 + 1] -= FX.gr[i] * dt;
     FX.vel[i * 3] *= 0.985; FX.vel[i * 3 + 2] *= 0.985;
     pos[i * 3] += FX.vel[i * 3] * dt; pos[i * 3 + 1] += FX.vel[i * 3 + 1] * dt; pos[i * 3 + 2] += FX.vel[i * 3 + 2] * dt;
     if (FX.life[i] <= 0) pos[i * 3 + 1] = -100;
@@ -7299,6 +7958,7 @@ function loop(now) {
   updateAmbient(spd > 0 ? dtReal / REAL_SEC_PER_GMIN * Math.min(spd, 4) : 0, dtReal);
   renderPeople(dtReal);
   updateFX(dtReal);
+  if (!Game.demo || true) updateExtras(spd > 0 ? dtReal / REAL_SEC_PER_GMIN * Math.min(spd, 4) : 0, dtReal);
   if (Cam.shake > 0) Cam.shake = Math.max(0, Cam.shake - dtReal);
   renderFrame();
   // UI

@@ -656,6 +656,8 @@ function rebuildBeauty() {
     const def = B[b.id]; let v = def.beauty || 0;
     if (!v) continue;
     if (b.id === 'sakura' && season === 0) v *= 2;
+    if (def.seasonBoost != null && (def.seasonBoost === season || (def.seasonBoost === 3 && dateOf(G.day).month === 12))) v *= 2;
+    if (G.flags.clean) v *= 1.2;
     if (def.lamp && night) v *= 2;
     if (G.research.clean) v *= 1.15;
     if (G.research.lightup && night) v *= 1.5;

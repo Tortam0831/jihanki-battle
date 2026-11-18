@@ -734,6 +734,7 @@ function makePlaneGeos(typeId, airlineId) {
     for (const sx of [-1, 1]) {
       const tx = sx * (hs - 0.02), tz = LE(1) - ct / 2, ty = wingY + dih(1);
       if (P.tip === 'blended') { mb.box(tx, ty, tz - ct * 0.1, 0.03, fh * 0.5, ct * 0.8, tail); }
+      else if (P.tip === 'split') { mb.box(tx, ty, tz - ct * 0.1, 0.03, fh * 0.5, ct * 0.7, tail); mb.box(tx, ty - fh * 0.2, tz, 0.03, fh * 0.2, ct * 0.4, tail); }
       else if (P.tip === 'sharklet') { mb.box(tx, ty, tz, 0.03, fh * 0.38, ct * 0.65, tail); }
       else if (P.tip === 'curved') { mb.box(tx, ty, tz, 0.03, fh * 0.22, ct * 0.8, WING); mb.box(tx + sx * 0.02, ty + fh * 0.2, tz - ct * 0.15, 0.03, fh * 0.2, ct * 0.5, WING); }
       else if (P.tip === 'raked') { mb.box(tx + sx * hs * 0.04, ty + 0.01, tz - ct * 0.4, hs * 0.08, 0.04, ct * 0.55, WING); }

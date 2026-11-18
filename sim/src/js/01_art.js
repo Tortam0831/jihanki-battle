@@ -350,6 +350,36 @@ const ICONS = {
   mascot: [
     '....kkkk....', '..kkwwwwkk..', '.kwwwwwwwwk.', 'kbwkwwwwkwbk', 'kbwwwyywwwbk', 'kbbwwwwwwbbk',
     '.kbwwwwwwbk.', '..kkwwwwkk..', '...kk..kk...'],
+  pizza: [
+    '.....kk.....', '....koyk....', '...koyrok...', '...kyyyyk...', '..koryyyok..', '..kyyyroyk..', '.koyyyyyyok.', '.kyroyyyrok.', 'knnnnnnnnnnk', 'kkkkkkkkkkkk'],
+  icecream: [
+    '....kkkk....', '...kppppk...', '..kpwpppxk..', '..kppppppk..', '..kkkkkkkk..', '...keeeek...', '...kenenk...', '....keek....', '....kenk....', '.....kk.....'],
+  onigiri: [
+    '.....kk.....', '....kwwk....', '...kwwwwk...', '..kwwwwwwk..', '.kwwwwwwwwk.', '.kwwkkkkwwk.', 'kwwkGGGGkwwk', 'kwwkGGGGkwwk', 'kkkkkkkkkkkk'],
+  donut: [
+    '...kkkkkk...', '..kppxppxk..', '.kpxppppppk.', '.kppkkkkppk.', '.kpxk..kpxk.', '.kppkkkkppk.', '.keppxppppk.', '..keeeeeek..', '...kkkkkk...'],
+  cosme: [
+    '....kk......', '...kxxk.....', '...kxxk.....', '..kkkkkk....', '..kYYYYk....', '..kddddk....', '..kddddk....', '..kddddk....', '..kkkkkk....'],
+  watch: [
+    '...kkkkk....', '...kdddk....', '..kkkkkkk...', '.kwwwkwwwk..', '.kwwwkwwwk..', '.kwwwkkwwk..', '.kwwwwwwwk..', '..kkkkkkk...', '...kdddk....', '...kkkkk....'],
+  ball: [
+    '...kkkkkk...', '..kwwkkwwk..', '.kwwkwwkwwk.', '.kkwwwwwwkk.', '.kwwkkkkwwk.', '.kwkwwwwkwk.', '.kkwwwwwwkk.', '..kwwkkwwk..', '...kkkkkk...'],
+  ferris: [
+    '...kkkkkk...', '..kr....bk..', '.k..k..k..k.', 'ky...kk...gk', 'k...kddk...k', 'kp...kk...ok', '.k..k..k..k.', '..kc.kk.yk..', '...kkddkk...', '..kkkkkkkk..'],
+  leaf: [
+    '.....r......', '...r.r.r....', '....rrr.....', '.rrrrorrrr..', '..rrooorr...', '...rrorr....', '..r..o..r...', '.....o......', '.....N......'],
+  mail: [
+    'kkkkkkkkkkkk', 'krwwwwwwwwrk', 'kwrwwwwwwrwk', 'kwwrwwwwrwwk', 'kwwwrkkrwwwk', 'kwwwwkkwwwwk', 'kwwwwwwwwwwk', 'kkkkkkkkkkkk'],
+  suitcase: [
+    '....kkkk....', '....k..k....', '..kkkkkkkk..', '..kbbbbbbk..', '..kbybbybk..', '..kbybbybk..', '..kbybbybk..', '..kbbbbbbk..', '..kkkkkkkk..', '...k....k...'],
+  balloon: [
+    '...kkk......', '..krrrk.kk..', '.krwrrrkbbk.', '.krrrrrkbwbk', '..krrrk.kbbk', '...kkk...kk.', '....k...k...', '....k..k....', '.....kk.....', '.....k......'],
+  bamboo: [
+    '.g..kGk..g..', 'gg..kGk..gg.', '.g..kgk..g..', '....kGk.....', '..g.kGk.g...', '.gg.kgk.gg..', '..g.kGk.g...', '....kGk.....', '...kkkkk....'],
+  lantern: [
+    '....kkkk....', '...kddddk...', '..kkkkkkkk..', '...kdyydk...', '...kdyydk...', '..kkkkkkkk..', '....kddk....', '...kddddk...', '..kkkkkkkk..'],
+  stroller: [
+    '..kkkkk.....', '.kpppppk....', 'kppppppk....', 'kkkkkkkkkkk.', '.kppppppk.k.', '..kkkkkkk.k.', '..k.....k...', '.kdk...kdk..', '..k.....k...'],
 };
 
 function iconRows(name) {
@@ -585,6 +615,16 @@ const PAX_LOOKS = {
   ca:       { hair: ['bun'], top: ['#3a5aa0', '#c03040', '#3a8a6a'], bottom: ['#2a3050'], skirt: 1, acc: ['suitcase'], scarf: true },
   staff:    { hair: ['cap'], hairc: ['#2a1e1a'], top: ['#f39a3c'], bottom: ['#4a4a58'], acc: ['none'] },
   student_trip: { hair: ['short', 'long'], top: ['#2a2a40'], bottom: ['#2a2a40'], skirt: 0.5, acc: ['backpack'], cap2: '#ffd84a' },
+  surfer:   { hair: ['short', 'long'], hairc: ['#d8b060', '#a06a3a', '#2a1e1a'], skin: [1, 2, 3], top: ['#3fc9b8', '#ffd84a', '#ff7090', '#ffffff'], bottom: ['#4a8fe0', '#f39a3c'], acc: ['board'] },
+  hiker:    { hair: ['cap', 'short'], top: ['#e5484d', '#f39a3c', '#4cb85c'], bottom: ['#5a4a3a', '#4a4a58'], acc: ['bigpack'] },
+  athlete:  { hair: ['short', 'cap'], top: ['#2f4f9a', '#c03040'], bottom: ['#ffffff', '#2f4f9a'], acc: ['bag'], stripes: true },
+  idol:     { hair: ['long', 'pony'], hairc: ['#f59ac0', '#c9a0ff', '#2a1e1a', '#e8d080'], top: ['#ff80c0', '#ffffff', '#c9a0ff'], bottom: ['#ff80c0', '#ffffff'], skirt: 1, acc: ['bag'], glasses: 'sun' },
+  abroad:   { hair: ['short', 'long', 'pony'], hairc: ['#2a1e1a', '#4a3020', '#d8b060'], skin: [0, 1, 2, 3], top: ['#4a8fe0', '#e8c890', '#ffffff', '#4cb85c'], bottom: ['#3a4a7a', '#4a4a58'], acc: ['backpack', 'suitcase'] },
+  diplomat: { hair: ['short', 'bald'], hairc: ['#b0b0b8', '#2a1e1a'], top: ['#1a1a22', '#2a2a40'], bottom: ['#1a1a22'], acc: ['briefcase'], tie: true },
+  photog:   { hair: ['cap', 'short'], top: ['#6a7a5a', '#4a4a58', '#a0683c'], bottom: ['#3a4a7a', '#5a4a3a'], acc: ['camera'], glasses: 'normal' },
+  babyc:    { hair: ['long', 'short', 'bun'], top: ['#f59ac0', '#8fdcf4', '#ffffff', '#ffd84a'], bottom: ['#3a4a7a', '#e8c890'], skirt: 0.4, acc: ['stroller'] },
+  petowner: { hair: ['short', 'long', 'pony'], top: CLOTH, bottom: ['#3a4a7a', '#4a4a58', '#e8c890'], acc: ['dog'] },
+  astronaut:{ hair: ['short'], top: ['#f4f2ee'], bottom: ['#f4f2ee'], acc: ['bag'], stripes: true },
 };
 
 function drawPerson(ctx, ox, oy, L, back, frame) {
@@ -665,6 +705,9 @@ function drawPerson(ctx, ox, oy, L, back, frame) {
   if (L.acc === 'suitcase') { R(12, legY + 1, 3, legH - 1, L.case); R(13, legY - 1, 1, 2, '#2a2028'); P(12, 19, '#2a2028'); P(14, 19, '#2a2028'); }
   if (L.acc === 'briefcase') { R(12, torsoY + torsoH, 3, 3, '#5a3a24'); P(13, torsoY + torsoH - 1, '#2a2028'); }
   if (L.acc === 'bag') { R(back ? 2 : 12, torsoY + 2, 2, 3, L.case); P(back ? 3 : 12, torsoY, '#2a2028'); P(back ? 3 : 12, torsoY + 1, '#2a2028'); }
+  if (L.acc === 'board') { R(13, top + 1, 2, 17 - top, '#3fc9b8'); R(13, top + 1, 2, 1, '#ffffff'); R(13, top + 8, 2, 1, '#ffffff'); }
+  if (L.acc === 'dog') { R(11, 16, 4, 2, '#c8905a'); R(14, 15, 2, 2, '#c8905a'); P(15, 15, '#2a2028'); P(11, 18, '#7a5434'); P(14, 18, '#7a5434'); P(10, 15, '#c8905a'); }
+  if (L.acc === 'stroller') { R(11, 14, 5, 3, '#f59ac0'); R(11, 13, 2, 1, '#f59ac0'); P(11, 18, '#2a2028'); P(15, 18, '#2a2028'); R(11, 17, 5, 1, '#8a8a9a'); P(10, 12, '#8a8a9a'); }
   if (L.acc === 'cane') { R(12, torsoY + torsoH - 1, 1, 19 - (torsoY + torsoH) + 2, '#7a5434'); }
 }
 function shade(hex, f) {
@@ -689,7 +732,7 @@ function outlineCanvas(ctx, x0, y0, w, h, col) {
 // 人物アトラス生成：type → [variant番号...]
 const SPR = { atlas: null, variants: {}, count: 0, mascot: -1 };
 function makePersonAtlas() {
-  const c = document.createElement('canvas'); c.width = 512; c.height = 512;
+  const c = document.createElement('canvas'); c.width = 512; c.height = 1024;
   const ctx = c.getContext('2d');
   const rng = mulberry32(12345);
   const rp = a => a[Math.floor(rng() * a.length)];

@@ -12,7 +12,7 @@ function initPeopleRender() {
   People.frameAttr = ib(MAXP, 1); People.flipAttr = ib(MAXP, 1);
   geo.setAttribute('aFrame', People.frameAttr); geo.setAttribute('aFlip', People.flipAttr);
   const mat = new THREE.ShaderMaterial({
-    uniforms: { map: { value: tex }, cell: { value: new THREE.Vector2(SPR_W / 512, SPR_H / 512) }, cols: { value: SPR_COLS }, night: { value: 0 }, tint: { value: new THREE.Color(1, 1, 1) } },
+    uniforms: { map: { value: tex }, cell: { value: new THREE.Vector2(SPR_W / 512, SPR_H / 1024) }, cols: { value: SPR_COLS }, night: { value: 0 }, tint: { value: new THREE.Color(1, 1, 1) } },
     vertexShader: `
       attribute float aFrame; attribute float aFlip; uniform vec2 cell; uniform float cols; varying vec2 vUv;
       void main(){
@@ -105,6 +105,7 @@ function newPerson(type, kind, x, z) {
     money: (def.money || 1), spent: 0, seen: {}, ox: rnd(-0.28, 0.28), oz: rnd(-0.28, 0.28)
   };
   if (G.research.wifi) p.mood += 4;
+  p.mood += Extra.moodStart(p);
   if (G.research.multi && (type === 'foreign')) p.mood += 8;
   if (G.flags.event === 'festival') p.mood += 5;
   if (!G.seenPax[type] && PAX[type]) { G.seenPax[type] = 1; }
@@ -138,7 +139,7 @@ function spawnAt(b) {
 }
 function chooseAccess(type) {
   const aps = accessPoints(); if (!aps.length) return null;
-  return weightedPick(aps, b => (B[b.id].access || 10) * (B[b.id].likes && B[b.id].likes.includes(type) ? 2 : 1));
+  return weightedPick(aps, b => (B[b.id].access || 10) * Extra.accessMul(b) * (B[b.id].likes && B[b.id].likes.includes(type) ? 2 : 1));
 }
 function spawnDeparting(fl, n, w) {
   for (let k = 0; k < n; k++) {
@@ -155,6 +156,7 @@ function spawnDeparting(fl, n, w) {
     p.needs = rollNeeds(p);
     p.intl = intl;
     if (B[ap.id].likes && B[ap.id].likes.includes(type)) p.mood += 3;
+    if ((type === 'family' || type === 'babyc') && Math.random() < 0.6) addFollower(p);
     RT.accessCount = (RT.accessCount || 0) + w;
     if (B[ap.id].park) earn(B[ap.id].park * w * 0.35 * (1 + (ap.lv - 1) * 0.2), 'park', ap);
     fl.spawned += w;
@@ -175,6 +177,7 @@ function spawnArriving(fl, n, w, gate) {
     if (Math.random() < 0.25) p.needs.push(pick(['shop', 'food']));
     p.steps.push('free', 'exit');
     p.wait = rnd(0, 6); p.state = 'delay';
+    if (type === 'family' && Math.random() < 0.5) addFollower(p);
   }
 }
 function spawnVisitor(type) {
@@ -219,6 +222,7 @@ function pickPaxType(fl) {
   else if (city.island) mix = MIX.island;
   else mix = MIX.dom;
   if (PLANES[fl.type].vip && Math.random() < 0.6) return 'vip';
+  { const ex = Extra.extraPax(fl); if (ex) return ex; }
   if (Math.random() < 0.003 * (G.rank + 1)) return 'celeb';
   if (G.flags.schoolTrip && Math.random() < 0.4 && city.region === 'dom') return 'student';
   return weightedPick(Object.keys(mix), k => mix[k]);
@@ -257,7 +261,7 @@ function findFacility(p, need) {
 function findKind(p, kind) {
   let best = null, bd = 1e9;
   for (const b of Object.values(G.blds)) {
-    if (B[b.id].kind !== kind) continue;
+    if (kind === 'aura_fids') { if (b.id !== 'fids') continue; } else if (B[b.id].kind !== kind) continue;
     const d = getField(b)[p.tile]; if (d < 0) continue;
     const s = d + facOf(b).queue.length * 1.5;
     if (s < bd) { bd = s; best = b; }
@@ -300,6 +304,8 @@ function think(p) {
     if (!gate) {
       // まだ搭乗口が決まっていない
       if (p.kind === 'crew') { if (G.min - p.t0 > 120) leave(p); else { p.state = 'idle'; p.wait = 10; } return; }
+      const fids = !p.lookedFids && findKind(p, 'aura_fids');
+      if (fids) { goTo(p, fids); return; }
       p.state = 'idle'; p.wait = rnd(5, 10); return;
     }
     if (p.atGate === gate.uid) { p.state = 'gatewait'; return; }
@@ -339,6 +345,7 @@ function arrive(p, b) {
     return;
   }
   if (def.kind === 'access') { leave(p); return; }
+  if (def.kind === 'aura' || def.kind === 'decor') { p.state = 'idle'; p.wait = rnd(3, 7); p.lookedFids = true; if (b.id === 'fids') bubble(p, 'board', 1.5); return; }
   // 列にならぶ（出発がせまっている人は優先レーン）
   if (p.kind === 'dep' && p.fl && G.min > p.fl.depT - 40 && (def.kind === 'checkin' || def.kind === 'security' || def.kind === 'emig')) { fac.queue.unshift(p); bubble(p, 'sweat', 1.2); }
   else fac.queue.push(p);
@@ -368,6 +375,7 @@ function serviceDone(p, b) {
       if ((b.id === 'dutyfree' || b.id === 'brand') && G.research.dutyplus) m *= 1.25;
       if (b.id === 'lounge' && G.research.firstlounge) m *= 2;
       if (b.nearATM) m *= 1.05;
+      m *= Extra.priceMul(b, p);
       if (p.fl && AIRLINES[p.fl.airline] && AIRLINES[p.fl.airline].lcc) m *= 0.75;
       if (b.id === 'izakaya' && (G.min % 1440) > 17 * 60) m *= 1.4;
       if (b.combo && b.combo.includes('morning') && (G.min % 1440) < 10 * 60) m *= 1.3;
@@ -431,6 +439,8 @@ function updatePerson(p, dt) {
   if (p.bubT > 0) { p.bubT -= dt * REAL_SEC_PER_GMIN * 2; if (p.bubT <= 0) p.bub = null; }
   switch (p.state) {
     case 'delay': p.wait -= dt; if (p.wait <= 0) p.state = 'think'; return;
+    case 'follow': updateFollower(p, dt); return;
+    case 'wave': p.wait -= dt; p.moving = false; if (Math.random() < dt * 0.4) bubble(p, pick(['heart', 'note']), 1); if (p.wait <= 0) p.gone = true; return;
     case 'think': think(p); return;
     case 'walk': walkStep(p, dt); return;
     case 'queue': {
@@ -561,7 +571,8 @@ function walkStep(p, dt) {
       p.nx = ni % W + 0.5 + p.ox * lane / 0.28; p.nz = Math.floor(ni / W) + 0.5 + p.oz * lane / 0.28;
     }
     const before = Math.hypot(p.nx - p.x, p.nz - p.z);
-    const crowdSlow = RT.crowd[p.tile] > 7 ? 0.8 : 1;
+    let crowdSlow = RT.crowd[p.tile] > 7 ? 0.8 : 1;
+    if (p.kind === 'dep' && p.fl && G.min > p.fl.depT - 35) { crowdSlow *= 1.6; if (!p.bub && Math.random() < 0.02) bubble(p, 'sweat', 1); }
     if (moveToward(p, p.nx, p.nz, rem * crowdSlow)) {
       rem -= before / (p.spd * crowdSlow);
       p.tile = p.next; p.hasStep = false; p.walked++;
