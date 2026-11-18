@@ -391,7 +391,6 @@ function nearRunway(b) {
 function leave(p, why) {
   if (p.gone) return;
   p.gone = true;
-  if (p.kind === 'dep') { RT.dbg = RT.dbg || {}; const k = 'depLeave_' + (why || p.state + '_' + (p.steps[0] || '-')); RT.dbg[k] = (RT.dbg[k] || 0) + 1; }
   if (p.kind === 'arr' || p.kind === 'visit') finishPax(p);
 }
 function missFlight(p) {

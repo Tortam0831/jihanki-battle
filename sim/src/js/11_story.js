@@ -318,12 +318,11 @@ function initStoryEvents() {
     for (const d of Object.values(B)) if (d.rank === r && !d.fixed) unlocks.push(d.name);
     const als = Object.values(AIRLINES).filter(a => a.rank === r).map(a => a.name);
     const cs = Object.values(CITIES).filter(c => c.rank === r).map(c => c.name);
-    const ps = Object.values(PLANES).filter(p => p.rank === r).map(p => p.name);
+    const ps = Object.values(PLANES).filter(p => p.rank === r).map(p => p.name + (r > 1 ? '' : ''));
     const rs = RESEARCH.filter(x => x.rank === r).map(x => x.name);
-    upgradeRoutePlanes();
     const sec = (t, a) => a.length ? `<div class="sec">${t}</div><div>${a.join('、')}</div>` : '';
     openModal('ランクアップ！', `<div style="text-align:center"><div style="font-size:15px">空港ランクが上がりました！</div><div style="font-size:34px;margin:6px 0;color:var(--blue2)">ランク${r}</div><div style="font-size:20px">「${RANKS[r - 1].name}」</div></div>
-      ${sec('新しい建物', unlocks)}${sec('新しい航空会社', als)}${sec('新しい就航先', cs)}${sec('新しい機材', ps)}${sec('新しい開発', rs)}
+      ${sec('新しい建物', unlocks)}${sec('新しい航空会社', als)}${sec('新しい就航先', cs)}${sec('新しい機材（路線の画面で機材を変えられます）', ps)}${sec('新しい開発', rs)}
       <div style="text-align:center;margin-top:10px"><button class="pbtn gold" onclick="document.getElementById('mClose').click()">やったー！</button></div>`, { icon: 'star', narrow: true, pause: true });
     if (r === 2 && !G.free) Dialog.show([{ who: 'jii', t: 'ランクが上がると、新しい建物や航空会社が解放されるんじゃ。どんどん大きくしていこう！', e: 'h' }]);
   });
@@ -333,6 +332,7 @@ function initStoryEvents() {
   Bus.on('routeOpened', r => toast(`${CITIES[r.city].name}行きの路線が開きました！（${AIRLINES[r.airline].name}）`, 'good', 'globe'));
   Bus.on('cancel', (fl, why) => toast(`${fl.code} ${CITIES[fl.city].name}便 欠航：${why}`, 'bad', 'anger'));
   Bus.on('divert', fl => toast(`${fl.code} 着陸できず他の空港へ…`, 'bad', 'anger'));
+  Bus.on('holdNoStand', fl => { toast(`${fl.code} 空いている駐機場がなく上空で待機中…（駐機場・搭乗口を増やそう）`, 'bad', 'plane'); if (!G.free) { G.hints = G.hints || {}; if (!G.hints.hold) { G.hints.hold = 1; Dialog.show([{ who: 'jii', t: '飛行機が空の上でぐるぐる回っておる！ 駐機場がいっぱいなんじゃ。駐機場と搭乗口を増やすか、便数を見直すんじゃ。大きな機材は大型駐機場にしか入れんぞ。' }]); } } });
   Bus.on('goAround', fl => toast(`${fl.code} 滑走路が空いていないため着陸やり直し（ゴーアラウンド）`, '', 'plane'));
   Bus.on('firstFlight', fl => { Sound.se('levelup'); toast('はじめての飛行機が到着しました！', 'gold', 'plane'); });
   Bus.on('event', ev => { toast(`今日は「${ev.name}」！ ${ev.desc}`, 'gold', 'star'); if (Sound.cur !== 'event' && (ev.visitors || 0) >= 2) Sound.bgm('event'); });

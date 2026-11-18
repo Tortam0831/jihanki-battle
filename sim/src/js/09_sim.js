@@ -202,7 +202,7 @@ function checkRank() {
   }
 }
 function unlockAch(id) {
-  if (G.ach[id]) return;
+  if (G.ach[id] || G.free) return;
   const a = ACHIEVEMENTS.find(x => x.id === id); if (!a) return;
   G.ach[id] = G.day + 1;
   Bus.emit('ach', a);
@@ -275,19 +275,21 @@ function upgradeBuilding(b) {
 const ROUTE_COST = { dom: 300000, asia: 1500000, long: 4000000, space: 30000000 };
 function maxRunwayCls() { let c = 0; for (const b of Object.values(G.blds)) if (B[b.id].kind === 'runway') c = Math.max(c, B[b.id].cls); return c; }
 function maxStandCls() { let c = 0; for (const b of Object.values(G.blds)) if (B[b.id].kind === 'stand' && (b.gate || true)) c = Math.max(c, B[b.id].cls); return c; }
-function bestPlaneFor(airlineId, cityId) {
+// その路線で使える機材（滑走路・駐機場の大きさ、ランク、距離）
+function planesFor(airlineId, cityId) {
   const al = AIRLINES[airlineId], city = CITIES[cityId];
   const minCls = REGION_CLS[city.region];
   const rc = maxRunwayCls(), sc = maxStandCls();
-  let best = null;
-  for (const t of al.fleet) {
+  return al.fleet.filter(t => {
     const P = PLANES[t];
-    if (P.rank > G.rank && !G.free) continue;
-    if (P.cls < minCls && !(city.region === 'asia' && P.cls >= 1 && t === 'tsubame' && false)) { if (!(al.cargo && P.cargo)) continue; }
-    if (P.cls > rc || (P.stand || P.cls) > sc) continue;
-    if (!best || P.seats + (P.cargo || 0) * 4 > PLANES[best].seats + (PLANES[best].cargo || 0) * 4) best = t;
-  }
-  // 地域の最低クラスを満たす機材がなければ、滑走路の条件を表示用に
+    if (P.rank > G.rank && !G.free) return false;
+    if (P.cls < minCls && !(al.cargo && P.cargo)) return false;
+    return P.cls <= rc && (P.stand || P.cls) <= sc;
+  });
+}
+function bestPlaneFor(airlineId, cityId) {
+  let best = null;
+  for (const t of planesFor(airlineId, cityId)) { const P = PLANES[t]; if (!best || P.seats + (P.cargo || 0) * 4 > PLANES[best].seats + (PLANES[best].cargo || 0) * 4) best = t; }
   return best;
 }
 function airlineAvailable(id) {
@@ -298,14 +300,14 @@ function airlineAvailable(id) {
   if (al.space && !G.research.spaceport) return { ok: false, why: '開発「宇宙港計画」が必要' };
   return { ok: true };
 }
-function routeCheck(airlineId, cityId) {
+function routeCheck(airlineId, cityId, wantType) {
   const al = AIRLINES[airlineId], city = CITIES[cityId];
   const a = airlineAvailable(airlineId); if (!a.ok) return a;
   if (city.rank > G.rank && !G.free) return { ok: false, why: `ランク${city.rank}で就航できます` };
   if (G.routes.some(r => r.airline === airlineId && r.city === cityId)) return { ok: false, why: 'もう就航しています' };
   if (!hasKind('tower')) return { ok: false, why: '管制塔が必要です' };
   if (!countKind('runway')) return { ok: false, why: '滑走路が必要です' };
-  const t = bestPlaneFor(airlineId, cityId);
+  const t = wantType && planesFor(airlineId, cityId).includes(wantType) ? wantType : bestPlaneFor(airlineId, cityId);
   if (!t) {
     const need = REGION_CLS[city.region];
     const nm = ['', '短い滑走路', 'ふつうの滑走路', '長い滑走路'][Math.max(need, Math.min(...al.fleet.map(f => PLANES[f].cls)))];
@@ -322,8 +324,8 @@ function routeCheck(airlineId, cityId) {
 }
 function routeCost(cityId) { const c = CITIES[cityId]; return Math.round(ROUTE_COST[c.region] * (1 + c.demand * 0.1)); }
 function maxFreq(airlineId) { const rel = (G.airlines[airlineId] || {}).rel || 0; return Math.min(6, 2 + Math.floor(rel / 25)); }
-function openRoute(airlineId, cityId, freq) {
-  const c = routeCheck(airlineId, cityId);
+function openRoute(airlineId, cityId, freq, type) {
+  const c = routeCheck(airlineId, cityId, type);
   if (!c.ok) { toast(c.why, 'bad'); Sound.se('error'); return null; }
   if (!G.free) G.money -= c.cost;
   const r = { id: airlineId + '-' + cityId, airline: airlineId, city: cityId, type: c.type, freq: clamp(freq || 1, 1, maxFreq(airlineId)), active: true, opened: G.day, flights: 0, pax: 0, seats: 0, ontime: 0 };

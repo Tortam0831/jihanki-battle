@@ -37,11 +37,21 @@ function makeSchedule(dayStartMin, fromMin) {
   // 滑走路の数に合わせて到着の間隔をあける
   const nrw = Math.max(1, countKind('runway'));
   const gap = (G.research.aitower ? 10 : 14) / nrw;
+  // 駐機場の数にも合わせる（発着枠の調整）
+  const stands = Object.values(G.blds).filter(b => B[b.id].kind === 'stand').map(b => ({ cls: B[b.id].cls, gate: !!b.gate, freeAt: -1e9 }));
   let last = -1e9;
   for (const f of out) {
+    const P = PLANES[f.type], sc = P.stand || P.cls;
+    const cand = stands.filter(st => st.cls >= sc && (f.cargo || st.gate)).sort((a, b) => a.freeAt - b.freeAt || a.cls - b.cls);
+    if (cand.length) {
+      const st = cand[0];
+      if (st.freeAt > f.arrT - 15) { const sh = Math.ceil((st.freeAt - (f.arrT - 15)) / 5) * 5; f.arrT += sh; f.depT += sh; }
+    }
     if (f.arrT < last + gap) { const sh = Math.ceil((last + gap - f.arrT) / 5) * 5; f.arrT += sh; f.depT += sh; }
+    if (cand.length) cand[0].freeAt = f.depT + 15;
     last = f.arrT;
   }
+  out.sort((a, b) => a.arrT - b.arrT);
   return out;
 }
 function hashStr(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); }
@@ -241,7 +251,11 @@ function updatePlane(pl, dt) {
         targetBank = clamp(-turn * 1.4, -0.45, 0.45);
         pl.x += Math.sin(pl.hdg) * pl.spd * dt; pl.z += Math.cos(pl.hdg) * pl.spd * dt;
         pl.y += (Math.max(pl.faf.y, 1.5) - pl.y) * Math.min(1, dt * 0.15);
-        if (d < 2.2) pl.phase = 'final';
+        const hx0 = Math.sin(pl.ax.hdg), hz0 = Math.cos(pl.ax.hdg);
+        const al0 = (pl.x - pl.td.x) * hx0 + (pl.z - pl.td.z) * hz0, cr0 = (pl.x - pl.td.x) * hz0 - (pl.z - pl.td.z) * hx0;
+        pl.baseT = (pl.baseT || 0) + dt;
+        if (d < 3.5 || (Math.abs(cr0) < 2 && al0 > -45 && al0 < -8 && Math.abs(angDiff(pl.hdg, pl.ax.hdg)) < 0.6)) { pl.phase = 'final'; pl.baseT = 0; }
+        else if (pl.baseT > 30) { pl.baseT = 0; const st0 = pl.state; pl.state = 'x'; setApproachPath(pl, r); }
         pl.pitch = lerp(pl.pitch, 0.03, 0.1);
       } else {
         // 最終進入：滑走路の中心線にのり、5°で降下
@@ -333,7 +347,7 @@ function updatePlane(pl, dt) {
       // 滑走路を出たら使用中を解除
       if (pl.leaveRw && r && r.busy === pl && !onRunway(pl, r)) { r.busy = null; pl.leaveRw = false; r.wakeUntil = G.min + (P.cls >= 3 ? 2.5 : 1); }
       // 離陸前は滑走路の手前で一時停止（ホールドショート）
-      if (pl.state === 'taxi_out' && pl.holdIdx != null && pl.pi >= pl.holdIdx && !pl.rwCleared) {
+      if (pl.state === 'taxi_out' && pl.holdIdx != null && !pl.rwCleared && (pl.pi > pl.holdIdx || (pl.pi === pl.holdIdx && Math.hypot(pl.path[pl.pi].x - pl.x, pl.path[pl.pi].z - pl.z) < 0.6))) {
         pl.spd = Math.max(0, pl.spd - dt * 0.8);
         pl.wait += dt;
         if (runwayFreeFor(r, pl) && !landingClose(r, pl)) { pl.rwCleared = true; r.busy = pl; }
@@ -352,7 +366,8 @@ function updatePlane(pl, dt) {
       // 停止線に向かってゆっくり旋回して止まる
       const dA = turnToward(pl, pl.tHdg, 0.6, dt);
       pl.spd = 0.15;
-      if (Math.abs(dA) < 0.01) {
+      const stp = G.blds[pl.stand]; if (stp) { const c = bCenter(stp), k = Math.min(1, dt * 0.5); pl.x += (c.x - pl.x) * k; pl.z += (c.z - pl.z) * k; }
+      if (Math.abs(dA) < 0.01 && (!stp || Math.hypot(bCenter(stp).x - pl.x, bCenter(stp).z - pl.z) < 0.05)) {
         pl.hdg = pl.tHdg; pl.state = 'parked'; pl.spd = 0; pl.engines = false;
         fl.status = 'parked'; fl.parkT = G.min;
         spawnTurnVehicles(pl);
@@ -374,8 +389,8 @@ function updatePlane(pl, dt) {
       } else {
         if (pl.tug) { R.scene.remove(pl.tug); pl.tug = null; }
         pl.state = 'taxi_out'; pl.pi = 0; pl.spd = 0.1;
-        // 後ろにある経路点はとばす
-        while (pl.pi < pl.path.length - 1) { const p = pl.path[pl.pi]; const f = (p.x - pl.x) * Math.sin(pl.hdg) + (p.z - pl.z) * Math.cos(pl.hdg); if (f > 0.3) break; pl.pi++; }
+        // 自分の駐機場の中の経路点はとばす
+        while (pl.pi < pl.path.length - 1 && G.floor[idx(Math.floor(pl.path[pl.pi].x), Math.floor(pl.path[pl.pi].z))] === FLOOR.APRON) pl.pi++;
       }
       if (pl.tug) { const nx = pl.x + Math.sin(pl.hdg) * (P.len / 2 + 0.4), nz = pl.z + Math.cos(pl.hdg) * (P.len / 2 + 0.4); pl.tug.position.set(nx, 0, nz); pl.tug.rotation.y = pl.hdg + Math.PI; }
       break;
@@ -422,6 +437,7 @@ function updatePlane(pl, dt) {
     }
   }
   pl.bank = lerp(pl.bank, targetBank, 0.08);
+  pl.hdg = Math.atan2(Math.sin(pl.hdg), Math.cos(pl.hdg));
   // 着陸脚
   if (pl.state === 'approach' || pl.state === 'hold') { const want = pl.y < 6 ? 1 : 0; pl.gearT = clamp(pl.gearT + (want ? 1 : -1) * dt * 0.6, 0, 1); }
   // メッシュ
@@ -490,15 +506,18 @@ function followPath(pl, dt) {
   const diff = Math.abs(angDiff(pl.hdg, want));
   // 曲がるときと止まる前はゆっくり
   let vt = diff > 0.9 ? 0.3 : diff > 0.4 ? V_TAXI_TURN : V_TAXI;
+  // 目標が旋回円の内側にあるときは、ほぼその場で向きを変える（前輪ステアリング）
+  const tight = diff > 0.8 && d < rMin * 1.6;
+  if (tight) vt = 0.1;
   if (pl.pi + 1 < pl.path.length) { const n = pl.path[pl.pi + 1]; const nd = Math.abs(angDiff(want, Math.atan2(n.x - t.x, n.z - t.z))); if (nd > 0.6 && d < 1.6) vt = Math.min(vt, V_TAXI_TURN); }
   if (last) vt = Math.min(vt, Math.max(0.15, d * 0.5));
-  if (pl.state === 'taxi_out' && pl.holdIdx != null && !pl.rwCleared && pl.pi >= pl.holdIdx - 1) vt = Math.min(vt, Math.max(0.12, d * 0.4));
+  if (pl.state === 'taxi_out' && pl.holdIdx != null && !pl.rwCleared && pl.pi === pl.holdIdx) vt = Math.min(vt, Math.max(0.12, d * 0.4));
   pl.spd += clamp(vt - pl.spd, -dt * 0.9, dt * 0.35);
   // 速さ÷最小旋回半径 ＝ 曲がれる角速度（小さい機体ほど小回り）
-  turnToward(pl, want, Math.max(0.25, pl.spd / rMin), dt);
+  turnToward(pl, want, Math.max(0.25, pl.spd / (tight ? rMin * 0.3 : rMin)), dt);
   const st = pl.spd * dt;
   pl.x += Math.sin(pl.hdg) * st; pl.z += Math.cos(pl.hdg) * st;
-  if (last && d < 0.12) { pl.pi++; return true; }
+  if (last && d < Math.max(0.55, rMin * 0.9)) { pl.pi++; return true; }
   return false;
 }
 function goAround(pl) {
@@ -507,6 +526,7 @@ function goAround(pl) {
   Bus.emit('goAround', pl.fl);
 }
 function startHold(pl) {
+  if (!pl.cleared && (!RT.holdMsgT || G.min - RT.holdMsgT > 90)) { RT.holdMsgT = G.min; Bus.emit('holdNoStand', pl.fl); }
   pl.state = 'hold'; pl.holdT = pl.holdT || 0;
   pl.hc = { x: clamp(pl.x, 8, W - 8), z: clamp(pl.z, 6, H - 6) };
   pl.ha = Math.atan2((pl.z - pl.hc.z) / 8, (pl.x - pl.hc.x) / 14);
@@ -540,7 +560,6 @@ function onLanded(fl) {
 }
 function pushback(fl) {
   const pl = fl.plane; if (!pl) return;
-  { const st = {}; for (const p of RT.persons) if (p.fl === fl && p.kind === 'dep') { const k = p.state + ':' + (p.steps[0] || '') + (p.facUid && G.blds[p.facUid] ? ':' + G.blds[p.facUid].id : ''); st[k] = (st[k] || 0) + 1; } RT.dbgPush = RT.dbgPush || []; RT.dbgPush.push(fl.code + ' ' + JSON.stringify(st)); }
   fl.status = 'departed'; fl.actualDep = G.min; fl.boarding = false;
   fl.delay = Math.max(0, G.min - fl.depT);
   // 遅れ判定・好感度

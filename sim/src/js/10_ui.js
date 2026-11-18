@@ -672,7 +672,8 @@ function openRoutes(tab, sel) {
       const al = AIRLINES[r.airline], c = CITIES[r.city], P = PLANES[r.type];
       const lf = r.seats ? Math.round((r.pax / r.seats) * 100) : Math.round(loadFactor(r) * 100);
       const otp = r.flights ? Math.round(r.ontime / r.flights * 100) : 100;
-      h += `<div class="li"><div style="width:10px;height:44px;background:${al.tail};border:2px solid var(--ink);border-radius:3px"></div><div class="grow"><b>${c.name}</b> <span class="tag ${c.region}">${REGION_NAME[c.region]}</span><div class="sub">${al.name}・${P.name}・搭乗率${lf}%・定時率${otp}%・のべ${fmtNum(r.pax)}人</div></div>
+      const tys = planesFor(r.airline, r.city); if (!tys.includes(r.type)) tys.unshift(r.type);
+      h += `<div class="li"><div style="width:10px;height:44px;background:${al.tail};border:2px solid var(--ink);border-radius:3px"></div><div class="grow"><b>${c.name}</b> <span class="tag ${c.region}">${REGION_NAME[c.region]}</span><div class="sub">${al.name}・搭乗率${lf}%・定時率${otp}%・のべ${fmtNum(r.pax)}人</div><div class="sub">機材 <select data-rt="${r.id}">${tys.map(tt => `<option value="${tt}" ${tt === r.type ? 'selected' : ''}>${PLANES[tt].name}（${PLANES[tt].cargo ? PLANES[tt].cargo + 't' : PLANES[tt].seats + '席'}）</option>`).join('')}</select></div></div>
         <div style="display:flex;align-items:center;gap:4px"><button class="pbtn sm" data-f="-1" data-r="${r.id}">－</button><b style="min-width:52px;text-align:center">1日${r.freq}便</b><button class="pbtn sm" data-f="1" data-r="${r.id}">＋</button>
         <button class="pbtn sm ${r.active ? '' : 'green'}" data-t="${r.id}">${r.active ? '運休' : '再開'}</button></div></div>`;
     }
@@ -690,6 +691,7 @@ function openRoutes(tab, sel) {
   }
   openModal('路線', h, { icon: 'globe', tabs, tab, onTab: t => openRoutes(t), id: 'routes', silent: !!UI.modalOpen });
   const body = $('#mBody');
+  body.onchange = e => { const sel = e.target.closest('[data-rt]'); if (sel) { const r = G.routes.find(x => x.id === sel.dataset.rt); r.type = sel.value; Sound.se('click'); toast(`${CITIES[r.city].name}線の機材を ${PLANES[r.type].name} に変更しました（明日から）`, 'good', 'plane'); } };
   body.onclick = e => {
     const card = e.target.closest('[data-city]');
     if (card && !card.classList.contains('lock')) { UI.routeCity = card.dataset.city; Sound.se('click'); openRoutes('new', card.dataset.city); body.scrollTop = 0; return; }
@@ -698,7 +700,8 @@ function openRoutes(tab, sel) {
     const tg = e.target.closest('[data-t]');
     if (tg && tab === 'list') { const r = G.routes.find(x => x.id === tg.dataset.t); r.active = !r.active; Sound.se('click'); openRoutes('list'); return; }
     const op = e.target.closest('[data-open]');
-    if (op) { const [al, city] = op.dataset.open.split('|'); const fq = +($('#frq') ? $('#frq').value : 1); const r = openRoute(al, city, fq); if (r) { UI.routeCity = null; openRoutes('list'); } return; }
+    if (op) { const [al, city] = op.dataset.open.split('|'); const fq = +($('#frq_' + al) ? $('#frq_' + al).value : 1); const ty = $('#typ_' + al) ? $('#typ_' + al).value : null; const r = openRoute(al, city, fq, ty); if (r) { UI.routeCity = null; openRoutes('list'); } return; }
+    if (e.target.closest('select')) return;
     const fee = e.target.closest('#feeSeg button');
     if (fee) { G.feeLevel = +fee.dataset.v; Sound.se('click'); openRoutes('fee'); }
   };
@@ -709,18 +712,17 @@ function routeCityPanel(cityId) {
   let h = `<div class="card" style="background:#fff8d8;margin-bottom:8px"><h5>${iconImg('globe')}${c.name} <span class="tag ${c.region}">${REGION_NAME[c.region]}</span></h5><div class="list">`;
   for (const [id, al] of als) {
     const chk = routeCheck(id, cityId);
+    const types = planesFor(id, cityId);
     const t = chk.type || bestPlaneFor(id, cityId);
     const P = t ? PLANES[t] : null;
     let est = '';
     if (P) {
-      const tmp = { airline: id, city: cityId, type: t, freq: 1 };
-      const lf = loadFactor(tmp), pax = Math.round((P.seats || 0) * lf);
-      const per = P.fee * G.feeLevel + pax * 2 * REGION_PFC[c.region] * G.feeLevel + (P.cargo ? P.cargo * 16000 : pax * 1500);
-      est = `<div class="sub">${P.name}（${P.cargo ? '貨物' + P.cargo + 't' : P.seats + '席'}）・1便あたり 約${fmtYenShort(per)}の収入見込み</div>`;
+      const opts = types.map(tt => { const Q = PLANES[tt]; const lf = loadFactor({ airline: id, city: cityId, type: tt, freq: 1 }), pax = Math.round((Q.seats || 0) * lf); const per = Q.fee * G.feeLevel + pax * 2 * REGION_PFC[c.region] * G.feeLevel + (Q.cargo ? Q.cargo * 16000 : pax * 1500); return `<option value="${tt}" ${tt === t ? 'selected' : ''}>${Q.name}（${Q.cargo ? '貨物' + Q.cargo + 't' : Q.seats + '席'}・1便 約${fmtYenShort(per)}）</option>`; }).join('');
+      est = `<div class="sub">機材 <select id="typ_${id}" style="max-width:100%">${opts}</select></div>`;
     }
     const done = G.routes.some(r => r.airline === id && r.city === cityId);
     h += `<div class="li ${chk.ok ? '' : 'lock'}"><div style="width:12px;height:40px;background:${al.tail};border:2px solid var(--ink);border-radius:3px"></div><div class="grow"><b>${al.name}</b>${est}${chk.ok ? '' : `<div class="sub" style="color:var(--bad)">${done ? '就航中' : chk.why}</div>`}</div>
-      ${chk.ok ? `<div style="text-align:right"><div class="sub">就航費 ${fmtYen(chk.cost)}</div><label class="sub">1日 <select id="frq">${Array.from({ length: maxFreq(id) }, (_, i) => `<option value="${i + 1}" ${i === 0 ? 'selected' : ''}>${i + 1}</option>`).join('')}</select> 便</label><br><button class="pbtn sm green" data-open="${id}|${cityId}">${iconImg('plane', 's')}就航する</button></div>` : ''}</div>`;
+      ${chk.ok ? `<div style="text-align:right"><div class="sub">就航費 ${fmtYen(chk.cost)}</div><label class="sub">1日 <select id="frq_${id}">${Array.from({ length: maxFreq(id) }, (_, i) => `<option value="${i + 1}" ${i === 0 ? 'selected' : ''}>${i + 1}</option>`).join('')}</select> 便</label><br><button class="pbtn sm green" data-open="${id}|${cityId}">${iconImg('plane', 's')}就航する</button></div>` : ''}</div>`;
   }
   if (!als.length) h += '<div class="sub">この都市へ飛ぶ航空会社がありません</div>';
   h += '</div></div>';
