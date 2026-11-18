@@ -114,7 +114,7 @@ function importCode(code) {
     const json = b64dec(code.slice(6));
     JSON.parse(json);
     localStorage.setItem(SAVE_KEY + Game.slot, json);
-    setTimeout(() => location.reload(), 300);
+    setTimeout(() => startGame(Game.slot, null), 300);
     return true;
   } catch (e) { return false; }
 }

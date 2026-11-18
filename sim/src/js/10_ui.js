@@ -946,7 +946,7 @@ function openMenu() {
   };
   const cl = $('#mCloud'); if (cl) cl.onclick = () => Cloud.save();
   $('#mName').onchange = e => { G.name = e.target.value.trim().slice(0, 16) || G.name; updateHUD(true); };
-  $('#mTitleBtn').onclick = () => { saveGame(); closeModal(); location.reload(); };
+  $('#mTitleBtn').onclick = () => { saveGame(); closeModal(); backToTitle(); };
 }
 
 // ---------- 写真モード ----------

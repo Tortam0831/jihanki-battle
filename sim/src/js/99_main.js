@@ -114,7 +114,8 @@ function buildDemo() {
 // ---------- 起動 ----------
 async function boot() {
   const bar = $('#loadBar'), txt = $('#loadTxt');
-  const step = async (p, t) => { bar.style.width = p + '%'; txt.textContent = t; await new Promise(r => setTimeout(r, 16)); };
+  const T0 = performance.now(); window.__bootTimes = [];
+  const step = async (p, t) => { window.__bootTimes.push([t, Math.round(performance.now() - T0)]); bar.style.width = p + '%'; txt.textContent = t; await new Promise(r => setTimeout(r, 16)); };
   try {
     await step(5, 'ドット絵をかいています…');
     makePersonAtlas();
@@ -138,6 +139,7 @@ async function boot() {
     await step(100, '完成！');
     $('#loading').classList.add('hidden');
     showTitle();
+    warmThumbs();
     Game.last = performance.now();
     requestAnimationFrame(loop);
   } catch (e) {
@@ -204,6 +206,25 @@ function howTo() {
   <div class="sec">${iconImg('note', 's')}組み合わせ</div>特定のお店を近くに置くと「組み合わせ」が見つかって売上がアップ。全部で${COMBOS.length}種類！
   <div class="sec">${iconImg('gear', 's')}操作</div><b>PC</b>：ドラッグで移動、ホイールでズーム、Q/Eで回転、Rで建物を回転、右クリック/Escでキャンセル、スペースで一時停止、1〜3で速さ。<br><b>iPad</b>：1本指で移動、2本指でズーム、建物は「1回タップで場所決め→もう1回タップで建てる」。
   </div>`, { icon: 'info' });
+}
+// 建設メニューのサムネイルを、タイトル画面のあいだに少しずつ作っておく
+function warmThumbs() {
+  const ids = BUILD_ORDER.filter(id => !B[id].paint && B[id].kind !== 'runway');
+  let i = 0;
+  const next = () => { if (i >= ids.length) return; const id = ids[i++]; if (!Thumb.cache[id]) { try { thumbURL(id); } catch (e) { } } setTimeout(next, 40); };
+  setTimeout(next, 500);
+}
+function backToTitle() {
+  clearRuntime();
+  if (Dialog.active) { Dialog.q = []; Dialog.active = false; $('#dialog').classList.add('hidden'); Game.dialogPause = false; }
+  newGameState({ free: true, seed: 4242 });
+  buildDemo();
+  initWorldMeshes();
+  RT.todayFlights = makeSchedule(0, G.min - 60);
+  for (let i = 0; i < 200; i++) simStep(0.5);
+  Game.started = false;
+  showTitle();
+  Sound.bgm('title');
 }
 function clearRuntime() {
   for (const pl of RT.planes) removePlane(pl);

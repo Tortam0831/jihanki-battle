@@ -305,7 +305,12 @@ function updateFollower(p, dt) {
   const tx = L.x + p.ox * 0.9 - (L.mvx ? Math.sign(L.mvx) * 0.2 : 0), tz = L.z + p.oz * 0.9 - (L.mvz ? Math.sign(L.mvz) * 0.2 : 0);
   const dx = tx - p.x, dz = tz - p.z, d = Math.hypot(dx, dz);
   if (d > 4) { p.x = tx; p.z = tz; }
-  else if (d > 0.08) { const st = Math.min(d, L.spd * 1.25 * dt); p.x += dx / d * st; p.z += dz / d * st; p.moving = true; p.mvx = dx; p.mvz = dz; }
+  else if (d > 0.08) {
+    const st = Math.min(d, L.spd * 1.25 * dt), nx = p.x + dx / d * st, nz = p.z + dz / d * st;
+    const ti = idx(clamp(Math.floor(nx), 0, W - 1), clamp(Math.floor(nz), 0, H - 1));
+    if (WALKABLE[ti] || G.floor[ti] === FLOOR.TERM) { p.x = nx; p.z = nz; } else { p.x = L.x; p.z = L.z; }
+    p.moving = true; p.mvx = dx; p.mvz = dz;
+  }
   else p.moving = false;
   p.tile = idx(clamp(Math.floor(p.x), 0, W - 1), clamp(Math.floor(p.z), 0, H - 1));
   if (L.bub === 'heart' && !p.bub && Math.random() < 0.3) bubble(p, 'note', 1);

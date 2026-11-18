@@ -1099,12 +1099,13 @@ function makePersonAtlas() {
   const rng = mulberry32(12345);
   const rp = a => a[Math.floor(rng() * a.length)];
   let v = 0;
+  const cellsToOutline = [];
   const addVariant = (L) => {
     for (let f = 0; f < 8; f++) {
       const cell = v * 8 + f, cx = (cell % SPR_COLS) * SPR_W, cy = Math.floor(cell / SPR_COLS) * SPR_H;
       if (L.mascot) drawMascot(ctx, cx, cy, f >= 4, f % 4);
       else drawPerson(ctx, cx, cy, L, f >= 4, f % 4);
-      outlineCanvas(ctx, cx, cy, SPR_W, SPR_H, '#2b2134');
+      cellsToOutline.push([cx, cy]);
     }
     return v++;
   };
@@ -1128,6 +1129,7 @@ function makePersonAtlas() {
   SPR.mascot = addVariant({ mascot: true });
   SPR.variants.mascot = [SPR.mascot];
   SPR.count = v;
+  outlineCells(ctx, c.width, c.height, cellsToOutline, SPR_W, SPR_H, [0x2b, 0x21, 0x34]);
   SPR.atlas = c;
   return c;
 }
@@ -1279,6 +1281,23 @@ function makeStandTexture(sz, num) {
   ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText(String(num), cx + 12, c.height - 10);
   return c;
+}
+
+// まとめてふちどり（getImageData を1回だけにして速くする）
+function outlineCells(ctx, cw, ch, cells, w, h, rgb) {
+  let maxY = 0; for (const [, y] of cells) maxY = Math.max(maxY, y + h);
+  const img = ctx.getImageData(0, 0, cw, Math.min(ch, maxY)), d = img.data, src = new Uint8Array(cw * img.height);
+  for (let i = 0; i < src.length; i++) src[i] = d[i * 4 + 3] > 0 ? 1 : 0;
+  for (const [x0, y0] of cells) {
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const gx = x0 + x, gy = y0 + y, gi = gy * cw + gx;
+      if (src[gi]) continue;
+      if ((x > 0 && src[gi - 1]) || (x < w - 1 && src[gi + 1]) || (y > 0 && src[gi - cw]) || (y < h - 1 && src[gi + cw])) {
+        d[gi * 4] = rgb[0]; d[gi * 4 + 1] = rgb[1]; d[gi * 4 + 2] = rgb[2]; d[gi * 4 + 3] = 255;
+      }
+    }
+  }
+  ctx.putImageData(img, 0, 0);
 }
 
 // ============================================================
@@ -6991,7 +7010,7 @@ function openMenu() {
   };
   const cl = $('#mCloud'); if (cl) cl.onclick = () => Cloud.save();
   $('#mName').onchange = e => { G.name = e.target.value.trim().slice(0, 16) || G.name; updateHUD(true); };
-  $('#mTitleBtn').onclick = () => { saveGame(); closeModal(); location.reload(); };
+  $('#mTitleBtn').onclick = () => { saveGame(); closeModal(); backToTitle(); };
 }
 
 // ---------- 写真モード ----------
@@ -7643,7 +7662,7 @@ function importCode(code) {
     const json = b64dec(code.slice(6));
     JSON.parse(json);
     localStorage.setItem(SAVE_KEY + Game.slot, json);
-    setTimeout(() => location.reload(), 300);
+    setTimeout(() => startGame(Game.slot, null), 300);
     return true;
   } catch (e) { return false; }
 }
@@ -7975,7 +7994,12 @@ function updateFollower(p, dt) {
   const tx = L.x + p.ox * 0.9 - (L.mvx ? Math.sign(L.mvx) * 0.2 : 0), tz = L.z + p.oz * 0.9 - (L.mvz ? Math.sign(L.mvz) * 0.2 : 0);
   const dx = tx - p.x, dz = tz - p.z, d = Math.hypot(dx, dz);
   if (d > 4) { p.x = tx; p.z = tz; }
-  else if (d > 0.08) { const st = Math.min(d, L.spd * 1.25 * dt); p.x += dx / d * st; p.z += dz / d * st; p.moving = true; p.mvx = dx; p.mvz = dz; }
+  else if (d > 0.08) {
+    const st = Math.min(d, L.spd * 1.25 * dt), nx = p.x + dx / d * st, nz = p.z + dz / d * st;
+    const ti = idx(clamp(Math.floor(nx), 0, W - 1), clamp(Math.floor(nz), 0, H - 1));
+    if (WALKABLE[ti] || G.floor[ti] === FLOOR.TERM) { p.x = nx; p.z = nz; } else { p.x = L.x; p.z = L.z; }
+    p.moving = true; p.mvx = dx; p.mvz = dz;
+  }
   else p.moving = false;
   p.tile = idx(clamp(Math.floor(p.x), 0, W - 1), clamp(Math.floor(p.z), 0, H - 1));
   if (L.bub === 'heart' && !p.bub && Math.random() < 0.3) bubble(p, 'note', 1);
@@ -8121,7 +8145,8 @@ function buildDemo() {
 // ---------- 起動 ----------
 async function boot() {
   const bar = $('#loadBar'), txt = $('#loadTxt');
-  const step = async (p, t) => { bar.style.width = p + '%'; txt.textContent = t; await new Promise(r => setTimeout(r, 16)); };
+  const T0 = performance.now(); window.__bootTimes = [];
+  const step = async (p, t) => { window.__bootTimes.push([t, Math.round(performance.now() - T0)]); bar.style.width = p + '%'; txt.textContent = t; await new Promise(r => setTimeout(r, 16)); };
   try {
     await step(5, 'ドット絵をかいています…');
     makePersonAtlas();
@@ -8145,6 +8170,7 @@ async function boot() {
     await step(100, '完成！');
     $('#loading').classList.add('hidden');
     showTitle();
+    warmThumbs();
     Game.last = performance.now();
     requestAnimationFrame(loop);
   } catch (e) {
@@ -8211,6 +8237,25 @@ function howTo() {
   <div class="sec">${iconImg('note', 's')}組み合わせ</div>特定のお店を近くに置くと「組み合わせ」が見つかって売上がアップ。全部で${COMBOS.length}種類！
   <div class="sec">${iconImg('gear', 's')}操作</div><b>PC</b>：ドラッグで移動、ホイールでズーム、Q/Eで回転、Rで建物を回転、右クリック/Escでキャンセル、スペースで一時停止、1〜3で速さ。<br><b>iPad</b>：1本指で移動、2本指でズーム、建物は「1回タップで場所決め→もう1回タップで建てる」。
   </div>`, { icon: 'info' });
+}
+// 建設メニューのサムネイルを、タイトル画面のあいだに少しずつ作っておく
+function warmThumbs() {
+  const ids = BUILD_ORDER.filter(id => !B[id].paint && B[id].kind !== 'runway');
+  let i = 0;
+  const next = () => { if (i >= ids.length) return; const id = ids[i++]; if (!Thumb.cache[id]) { try { thumbURL(id); } catch (e) { } } setTimeout(next, 40); };
+  setTimeout(next, 500);
+}
+function backToTitle() {
+  clearRuntime();
+  if (Dialog.active) { Dialog.q = []; Dialog.active = false; $('#dialog').classList.add('hidden'); Game.dialogPause = false; }
+  newGameState({ free: true, seed: 4242 });
+  buildDemo();
+  initWorldMeshes();
+  RT.todayFlights = makeSchedule(0, G.min - 60);
+  for (let i = 0; i < 200; i++) simStep(0.5);
+  Game.started = false;
+  showTitle();
+  Sound.bgm('title');
 }
 function clearRuntime() {
   for (const pl of RT.planes) removePlane(pl);

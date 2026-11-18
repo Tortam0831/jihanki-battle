@@ -737,12 +737,13 @@ function makePersonAtlas() {
   const rng = mulberry32(12345);
   const rp = a => a[Math.floor(rng() * a.length)];
   let v = 0;
+  const cellsToOutline = [];
   const addVariant = (L) => {
     for (let f = 0; f < 8; f++) {
       const cell = v * 8 + f, cx = (cell % SPR_COLS) * SPR_W, cy = Math.floor(cell / SPR_COLS) * SPR_H;
       if (L.mascot) drawMascot(ctx, cx, cy, f >= 4, f % 4);
       else drawPerson(ctx, cx, cy, L, f >= 4, f % 4);
-      outlineCanvas(ctx, cx, cy, SPR_W, SPR_H, '#2b2134');
+      cellsToOutline.push([cx, cy]);
     }
     return v++;
   };
@@ -766,6 +767,7 @@ function makePersonAtlas() {
   SPR.mascot = addVariant({ mascot: true });
   SPR.variants.mascot = [SPR.mascot];
   SPR.count = v;
+  outlineCells(ctx, c.width, c.height, cellsToOutline, SPR_W, SPR_H, [0x2b, 0x21, 0x34]);
   SPR.atlas = c;
   return c;
 }
@@ -917,4 +919,21 @@ function makeStandTexture(sz, num) {
   ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText(String(num), cx + 12, c.height - 10);
   return c;
+}
+
+// まとめてふちどり（getImageData を1回だけにして速くする）
+function outlineCells(ctx, cw, ch, cells, w, h, rgb) {
+  let maxY = 0; for (const [, y] of cells) maxY = Math.max(maxY, y + h);
+  const img = ctx.getImageData(0, 0, cw, Math.min(ch, maxY)), d = img.data, src = new Uint8Array(cw * img.height);
+  for (let i = 0; i < src.length; i++) src[i] = d[i * 4 + 3] > 0 ? 1 : 0;
+  for (const [x0, y0] of cells) {
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const gx = x0 + x, gy = y0 + y, gi = gy * cw + gx;
+      if (src[gi]) continue;
+      if ((x > 0 && src[gi - 1]) || (x < w - 1 && src[gi + 1]) || (y > 0 && src[gi - cw]) || (y < h - 1 && src[gi + cw])) {
+        d[gi * 4] = rgb[0]; d[gi * 4 + 1] = rgb[1]; d[gi * 4 + 2] = rgb[2]; d[gi * 4 + 3] = 255;
+      }
+    }
+  }
+  ctx.putImageData(img, 0, 0);
 }
