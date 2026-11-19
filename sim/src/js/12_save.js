@@ -33,30 +33,37 @@ function deserialize(json) {
   // 地形は種から作り直す
   const keep = { floor: g.floor, trees: g.trees, sectors: g.sectors, blds: g.blds };
   genMap(seed);
-  const oldMap = !g.mapW;   // 72x48 の古いセーブ
+  const W0 = g.mapW || 72, H0 = g.mapH || 48;   // セーブしたときのマップの大きさ
+  const oldMap = W0 !== W || H0 !== H;
+  // 古いマップの座標 → いまの座標のずれ（72x48 → OX,OY ／ 108x72 → OX-12,OY-12）
+  const DX = W0 === 72 ? OX : OX - 12, DY = W0 === 72 ? OY : OY - 12;
   if (oldMap) {
-    const W0 = 72, H0 = 48, old = genTerrain(seed, W0, H0);
+    const old = genTerrain(seed, W0, H0);
     const f0 = unrle(keep.floor, Uint8Array, W0 * H0), t0 = unrle(keep.trees, Uint8Array, W0 * H0);
-    G.floor = new Uint8Array(W * H);
+    const o0 = typeof g.oneway === 'string' ? unrle(g.oneway, Uint8Array, W0 * H0) : null;
+    G.floor = new Uint8Array(W * H); G.oneway = new Uint8Array(W * H);
     for (let y = 0; y < H0; y++) for (let x = 0; x < W0; x++) {
-      const i0 = y * W0 + x, i = idx(x + OX, y + OY);
+      const i0 = y * W0 + x, i = idx(x + DX, y + DY);
       if (old.ter[i0] !== TER.WATER || f0[i0]) { G.ter[i] = old.ter[i0] === TER.WATER ? TER.GRASS : old.ter[i0]; G.trees[i] = t0[i0]; }
       G.floor[i] = f0[i0];
+      if (o0) G.oneway[i] = o0[i0];
     }
-    const s0 = keep.sectors; G.sectors = new Uint8Array(SECW * SECH);
-    for (let sy = 0; sy < 4; sy++) for (let sx = 0; sx < 6; sx++) if (s0[sy * 6 + sx]) G.sectors[(sy + 1) * SECW + sx + 1] = 1;
-    if (g.cam) { g.cam.tx += OX; g.cam.tz += OY; }
+    const s0 = keep.sectors, SW0 = W0 / SEC, SH0 = H0 / SEC; G.sectors = new Uint8Array(SECW * SECH);
+    for (let sy = 0; sy < SH0; sy++) for (let sx = 0; sx < SW0; sx++) if (s0[sy * SW0 + sx]) G.sectors[(sy + DY / SEC) * SECW + sx + DX / SEC] = 1;
+    // 北から来る道路を、新しいマップの端までのばす
+    for (let x = 0; x < W0; x++) if (f0[x] === FLOOR.ROAD) for (let y = 0; y < DY; y++) { const i = idx(x + DX, y); G.floor[i] = FLOOR.ROAD; G.ter[i] = TER.GRASS; G.trees[i] = 0; for (const dx of [-1, 1]) if (inMap(x + DX + dx, y)) G.trees[idx(x + DX + dx, y)] = 0; }
+    if (g.cam) { g.cam.tx += DX; g.cam.tz += DY; }
   } else {
     G.floor = unrle(keep.floor, Uint8Array, W * H);
     G.trees = unrle(keep.trees, Uint8Array, W * H);
     G.sectors = Uint8Array.from(keep.sectors);
+    G.oneway = typeof g.oneway === 'string' ? unrle(g.oneway, Uint8Array, W * H) : new Uint8Array(W * H);
   }
-  G.oneway = typeof g.oneway === 'string' && !oldMap ? unrle(g.oneway, Uint8Array, W * H) : new Uint8Array(W * H);
   G.occ = new Int32Array(W * H);
   G.blds = {};
   for (const arr of keep.blds) {
     const b = {}; BLD_KEYS.forEach((k, i) => { if (arr[i] != null) b[k] = arr[i]; });
-    if (oldMap) { b.x += OX; b.y += OY; }
+    if (oldMap) { b.x += DX; b.y += DY; }
     const def = B[b.id]; if (!def) continue;
     const [w, h] = dims(def, b.rot);
     for (let y = b.y; y < b.y + h; y++) for (let x = b.x; x < b.x + w; x++) G.occ[idx(x, y)] = b.uid;
@@ -70,7 +77,7 @@ function deserialize(json) {
   G.stat.today = Object.assign(newStatDay(), G.stat.today);
   if (g.cam) { Cam.tx = g.cam.tx; Cam.tz = g.cam.tz; Cam.zoom = g.cam.zoom; Cam.rot = g.cam.rot || 0; Cam.yaw = Cam.yawT = Math.PI / 4 + Cam.rot * Math.PI / 2; }
   G.flags.event = G.flags.event || null;
-  if (G.landBought == null) { let n = 0; for (const v of G.sectors) n += v; G.landBought = Math.max(0, n - (oldMap ? 4 : 6)); }
+  if (G.landBought == null) { let n = 0; for (const v of G.sectors) n += v; G.landBought = Math.max(0, n - (W0 === 72 ? 4 : 6)); }
   clearAirsideTrees();
   return G;
 }

@@ -113,15 +113,26 @@ function gcPushDone(pl) {
   const L = pl.pbRail.len;
   for (const e of gr.tiles) if (e.st === 1 && e.s1 <= L + 0.01) { gcDrop(e); e.st = 2; }
 }
+// 着陸機の出口の候補：前方（止まれる距離より先）の出口だけ。前方に出口がまったくないときだけ、Uターンして戻る
+function orderedExits(pl, r, ax, target, allow) {
+  const P = pl.P, v = vApp(P), tdS = pl.td ? axS(ax, pl.td) : Math.min(3, ax.len * 0.12);
+  const sMin = tdS + (v * v - V_TAXI * V_TAXI) / (2 * 1.1) + 2;
+  const sWant = tdS + (v * v - V_TAXI * V_TAXI) / (2 * 0.55) + 2;
+  const all = [];
+  for (const ex of rwExits(r, ax)) { const path = target >= 0 ? planePath(ex.tile, target, allow, true) : [ex.tile]; if (path) all.push({ ex, path, ahead: ex.s >= sMin }); }
+  const ahead = all.filter(e => e.ahead);
+  const key = e => e.ex.s >= sWant ? e.ex.s - sWant + e.path.length * 0.3 : 100 + (sWant - e.ex.s);
+  if (ahead.length) return ahead.sort((a, b) => key(a) - key(b));
+  return all.sort((a, b) => b.ex.s - a.ex.s);
+}
 // 着陸してよいか：滑走路を出て駐機場まで行ける道が、いま空いている（またはゆずってもらえる）か
 function gcCanExit(pl, r, commit) {
   const stand = G.blds[pl.stand]; if (!stand || !GC.tile) return true;
   const ax = pl.ax || rwAxis(r, G.windDir || 0), g = standGeom(stand, pl.P);
   const target = g.outTile >= 0 ? g.outTile : centerTile(stand), allow = g.outTile >= 0 ? [] : [stand.uid];
-  const exits = rwExits(r, ax); if (!exits.length) return true;
+  const exits = orderedExits(pl, r, ax, target, allow); if (!exits.length) return true;
   let any = false;
-  for (const ex of exits) {
-    const path = planePath(ex.tile, target, allow, true); if (!path) continue;
+  for (const { ex, path, ahead } of exits) {
     any = true;
     let ok = true;
     const ents = [], cuts = new Map();
@@ -145,6 +156,7 @@ function gcCanExit(pl, r, commit) {
         gcReleaseAll(pl);
         if (!pl.gid) pl.gid = ++GC.gid;
         pl.gr = { tiles: ents, rails: [], waitT: 0, ghost: false, why: null };
+        pl.exitPlan = { ex, path, ahead };
         for (const e of ents) { e.st = 1; e.pl = pl; gcList(e.t).push(e); }
       }
       return true;

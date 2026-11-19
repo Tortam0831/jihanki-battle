@@ -167,6 +167,7 @@ function planRollout(pl, r) {
   // ちょうどよい出口（ゆるいブレーキで届く最初の出口）
   const want = s0 + (v * v - V_TAXI * V_TAXI) / (2 * 0.55);
   let exitS = ex.find(s => s - 2 >= want) || ex[ex.length - 1];
+  if (pl.exitPlan) exitS = pl.exitPlan.ahead ? Math.max(pl.exitPlan.ex.s, s0 + minRoll + 2) : ax.len - 0.8;
   if (exitS == null) exitS = ax.len - 0.8;
   pl.rollHand = Math.max(s0 + 1, Math.min(exitS - 2, ax.len - 3));
   pl.decel = Math.max(0.2, (v * v - V_TAXI * V_TAXI) / (2 * Math.max(1, pl.rollHand - s0)));
@@ -178,15 +179,23 @@ function taxiInRail(pl, r, stand) {
   const target = g && g.outTile >= 0 ? g.outTile : stand ? centerTile(stand) : -1;
   const allow = g && g.outTile >= 0 ? [] : stand ? [stand.uid] : [];
   let best = null;
-  for (const ex of rwExits(r, ax)) {
-    const path = target >= 0 ? planePath(ex.tile, target, allow, true) : [ex.tile];
-    if (!path) continue;
-    const ahead = ex.s >= s0 + 1.0;
-    const cost = gcPathPenalty(path, pl) + (ahead ? (ex.s - s0) * 0.6 + path.length : (ax.len - s0) * 1.2 + (ax.len - ex.s) + path.length + 8);
-    if (!best || cost < best.cost) best = { ex, path, ahead, cost };
+  // 着陸許可のときに管制塔が決めた出口を使う（前方の出口）
+  if (pl.exitPlan && pl.exitPlan.ex.s >= s0 + 0.8) { const pp = target >= 0 ? planePath(pl.exitPlan.ex.tile, target, allow, true) : [pl.exitPlan.ex.tile]; if (pp) best = { ex: pl.exitPlan.ex, path: pp, ahead: true }; }
+  if (!best) {
+    // 前方に出口があれば必ずそこから出る（Uターンは前方に出口がないときだけ）
+    const cands = [];
+    for (const ex of rwExits(r, ax)) {
+      const path = target >= 0 ? planePath(ex.tile, target, allow, true) : [ex.tile];
+      if (path) cands.push({ ex, path, ahead: ex.s >= s0 + 0.8 });
+    }
+    const ah = cands.filter(c => c.ahead);
+    const pool = ah.length ? ah : cands;
+    for (const c of pool) { c.cost = c.ahead ? (c.ex.s - s0) * 0.6 + c.path.length + gcPathPenalty(c.path, pl) * 0.2 : (ax.len - c.ex.s) + c.path.length; if (!best || c.cost < best.cost) best = c; }
   }
+  pl.exitPlan = null;
   let poly = [{ x: pl.x, z: pl.z }];
   if (best) {
+    if (!best.ahead) (RT.uturnLog = RT.uturnLog || []).push(pl.fl.code + ' s0=' + s0.toFixed(1) + ' ex=' + best.ex.s + ' pen=' + gcPathPenalty(best.path, pl)); if (RT.uturnLog && RT.uturnLog.length > 50) RT.uturnLog.shift();
     if (!best.ahead) poly = poly.concat(uturnPts(ax, clamp(ax.len - 1.0, s0 + 0.8, ax.len - 0.7), 1));
     poly.push(axPt(ax, best.ex.s, 0));
     const pts = simplifyPts(best.path.map(tilePt));

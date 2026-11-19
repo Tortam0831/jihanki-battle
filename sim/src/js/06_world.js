@@ -30,7 +30,8 @@ function genTerrain(seed, w, h) {
     return v / t;
   };
   const s = Math.floor(rng() * 1000);
-  const sx0 = w === W ? 36 : 24, sy0 = w === W ? 24 : 12, sw = w === W ? 36 : 24;
+  // 開始エリア（マップの大きさごと。古いセーブの地形を作り直すときも同じになるように）
+  const [sx0, sy0, sw] = w === 72 ? [24, 12, 24] : w === 108 ? [36, 24, 36] : [36 + (w - 108) / 2, 24 + (h - 72) / 2, 36];
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const d = Math.min(x, y, w - 1 - x, (h - 1 - y) * 0.7);
     const n = noise(x, y, s) * 4.2;
@@ -51,7 +52,7 @@ function genMap(seed) {
   G.ter = g.ter; G.trees = g.trees; G.floor = new Uint8Array(W * H);
   G.occ = new Int32Array(W * H); G.sectors = new Uint8Array(SECW * SECH);
   // 開始の土地（3x2区画）
-  for (const [sx, sy] of [[3, 2], [4, 2], [5, 2], [3, 3], [4, 3], [5, 3]]) G.sectors[sy * SECW + sx] = 1;
+  for (const [sx, sy] of START_SECTORS) G.sectors[sy * SECW + sx] = 1;
   // 橋と道路（北から）
   const rx = 35 + OX;
   for (let y = 0; y <= 11 + OY; y++) { for (const dx of [-1, 0, 1, 2]) G.trees[idx(rx + dx, y)] = 0; G.floor[idx(rx, y)] = FLOOR.ROAD; G.floor[idx(rx + 1, y)] = FLOOR.ROAD; if (G.ter[idx(rx, y)] === TER.SAND) { G.ter[idx(rx, y)] = TER.GRASS; G.ter[idx(rx + 1, y)] = TER.GRASS; } }
@@ -249,7 +250,7 @@ function isFixedRoad(x, y) { return y <= 12 + OY && (x === 35 + OX || x === 36 +
 
 // ---------- 土地 ----------
 // 最初の1区画だけ無料。そのあとは買うほど高く、最初の土地から遠いほど高い
-const START_SECTORS = [[3, 2], [4, 2], [5, 2], [3, 3], [4, 3], [5, 3]];
+const START_SECTORS = [[5, 3], [6, 3], [7, 3], [5, 4], [6, 4], [7, 4]];
 function sectorDist(sx, sy) { let d = 99; for (const [a, b] of START_SECTORS) d = Math.min(d, Math.max(Math.abs(sx - a), Math.abs(sy - b))); return d; }
 function sectorPrice(sx, sy) {
   const k = G.landBought || 0;
@@ -758,6 +759,7 @@ function checkWarnings() {
       if (!b.gate) msgs.push('近くに搭乗口がありません（7マス以内）');
       if (runways.length && !runways.some(r => standReachable(b, r))) msgs.push('滑走路と誘導路でつながっていません');
     }
+    if (def.kind === 'runway' && typeof runwayExitWarning === 'function') msgs.push(...runwayExitWarning(b));
     if (def.kind === 'gate' && !b.stand) msgs.push('つながっている駐機場がありません');
     if (def.kind === 'access' && cks.length && accessTiles(b).length && !accessTiles(b).some(i => ckF.some(f => f[i] >= 0))) msgs.push('歩道でターミナル（チェックイン）とつながっていません');
     if (def.zone === 'term' || def.kind === 'access' || (def.kind === 'svc' && def.zone === 'land')) {

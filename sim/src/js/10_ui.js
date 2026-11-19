@@ -25,7 +25,11 @@ function initUI() {
   $('#bZoomIn').onclick = () => zoomAt(R.w / 2, R.h / 2, 1.25);
   $('#bZoomOut').onclick = () => zoomAt(R.w / 2, R.h / 2, 1 / 1.25);
   $('#bPhoto').onclick = () => togglePhoto();
-  $('#spd').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; Sound.init(); setSpeed(+b.dataset.s); });
+  $('#spd').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return; Sound.init();
+    if (b.dataset.s === 'c') { const L = [2, 4, 8, 16], i = L.indexOf(Game.speed); setSpeed(L[(i + 1) % L.length]); return; }
+    setSpeed(+b.dataset.s);
+  });
   $('#moneyIcon').src = iconURL('money');
   $('#tbMoney').style.cursor = 'pointer'; $('#tbMoney').title = '銀行（お金を借りる・返す）';
   $('#tbMoney').onclick = () => { Sound.init(); Sound.se('click'); closeBuild(); setTool(null); openBank(); };
@@ -46,7 +50,8 @@ function toolbarAction(id) {
 }
 function setSpeed(s) {
   Game.speed = s; Game.userSpeed = s;
-  $$('#spd button').forEach(b => b.classList.toggle('on', +b.dataset.s === s));
+  $$('#spd button').forEach(b => b.classList.toggle('on', +b.dataset.s === s || (b.dataset.s === 'c' && s > 1)));
+  const c = $('#spdC'); if (c) c.textContent = s > 1 ? '×' + s : '×2';
 }
 
 // ---------- HUD ----------
@@ -467,7 +472,7 @@ function initInput() {
     if (k === 'r') rotateTool();
     if (k === 'escape') { if (!$('#modal').classList.contains('hidden')) closeModal(); else if (UI.tool) cancelTool(); else if (UI.photo) togglePhoto(); else hideInfo(); }
     if (k === ' ') { e.preventDefault(); setSpeed(Game.speed === 0 ? (Game.lastSpeed || 1) : (Game.lastSpeed = Game.speed, 0)); }
-    if (k === '1') setSpeed(1); if (k === '2') setSpeed(2); if (k === '3') setSpeed(4);
+    if (k === '1') setSpeed(1); if (k === '2') setSpeed(2); if (k === '3') setSpeed(4); if (k === '4') setSpeed(8); if (k === '5') setSpeed(16);
     if (k === 'b') toolbarAction('build');
     if (k === 'delete' || k === 'x') toolbarAction('demolish');
     if (k === '+' || k === '=') Cam.zoom = clamp(Cam.zoom * 1.2, 0.4, 5);
@@ -634,12 +639,14 @@ function renderInfo() {
     h += '<div class="btns">';
     const canUp = def.kind === 'svc' || def.kind === 'checkin' || def.kind === 'security' || def.kind === 'baggage' || def.kind === 'emig' || def.kind === 'immig' || def.kind === 'access' || def.kind === 'hotel';
     if (canUp) h += b.lv < maxLevel() ? `<button class="pbtn sm gold" id="iUp">${iconImg('up', 's')}Lv${b.lv + 1}へ ${fmtYenShort(upgradeCost(b))}</button>` : `<span class="sub">${b.lv >= 5 ? '最大レベル' : '開発「施設改装」でLvアップ解放'}</span>`;
+    if (def.kind === 'stand' || def.kind === 'runway') h += `<button class="pbtn sm green" id="iAuto">${iconImg('taxiway', 's')}${def.kind === 'stand' ? '誘導路を自動でつなぐ' : '両はしを自動でつなぐ'}</button>`;
     if (!b.fixed && !b.busy) h += `<button class="pbtn sm" id="iMove">${iconImg('move', 's')}移動</button>${def.w !== def.h || !['decor'].includes(def.kind) ? `<button class="pbtn sm" id="iRot">${iconImg('rotate', 's')}回転</button>` : ''}<button class="pbtn sm red" id="iDel">${iconImg('trash', 's')}撤去 +${fmtYenShort(def.cost * 0.5 * (1 + (b.lv - 1) * 0.5))}</button>`;
     h += '</div>';
     box.innerHTML = h;
     const up = $('#iUp'); if (up) up.onclick = () => { if (upgradeBuilding(b)) renderInfo(); };
     const mv = $('#iMove'); if (mv) mv.onclick = () => startMove(b);
     const ro = $('#iRot'); if (ro) ro.onclick = () => rotateInPlace(b);
+    const at = $('#iAuto'); if (at) at.onclick = () => def.kind === 'stand' ? autoConnectStand(b) : autoConnectRunway(b);
     const dl = $('#iDel'); if (dl) dl.onclick = () => { removeBuilding(b.uid); Sound.se('demolish'); hideInfo(); };
     showSelBox(b);
   } else if (s.type === 'person') {

@@ -105,7 +105,7 @@ const CHAPTERS = [
       { t: 'トイレを置く', c: () => has('toilet') },
       { t: '飲食店を2つ置く', c: () => Object.values(G.blds).filter(b => B[b.id].cat === 'food').length >= 2, p: () => Object.values(G.blds).filter(b => B[b.id].cat === 'food').length + '/2' },
       { t: '路線を3つにする', c: () => G.routes.length >= 3, p: () => G.routes.length + '/3' },
-      { t: '1日の乗客 100人', c: () => paxBest() >= 100, p: () => paxBest() + '/100' },
+      { t: '1日の乗客 100人', c: () => paxBest() >= 100, p: () => fmtNum(paxBest()) + '/100' },
       { t: '評価 ★3.0', c: () => G.rating >= 3 },
       { t: 'ランク2「町の空港」になる', c: () => G.rank >= 2 },
     ],
@@ -343,6 +343,7 @@ function initStoryEvents() {
   Bus.on('routeOpened', r => toast(`${CITIES[r.city].name}行きの路線が開きました！（${AIRLINES[r.airline].name}）`, 'good', 'globe'));
   Bus.on('cancel', (fl, why) => toast(`${fl.code} ${CITIES[fl.city].name}便 欠航：${why}`, 'bad', 'anger'));
   Bus.on('divert', fl => toast(`${fl.code} 着陸できず他の空港へ…`, 'bad', 'anger'));
+  Bus.on('holdSeq', (fl, why) => toast(`${fl.code} 管制塔の指示で上空待機（${why === 'ground' ? '誘導路が混んでいるため' : '前の飛行機との間隔をあけるため'}）`, '', 'tower'));
   Bus.on('holdNoStand', fl => { toast(`${fl.code} 空いている駐機場がなく上空で待機中…（駐機場・搭乗口を増やそう）`, 'bad', 'plane'); if (!G.free) { G.hints = G.hints || {}; if (!G.hints.hold) { G.hints.hold = 1; Dialog.show([{ who: 'jii', t: '飛行機が空の上でぐるぐる回っておる！ 駐機場がいっぱいなんじゃ。駐機場と搭乗口を増やすか、便数を見直すんじゃ。大きな機材は大型駐機場にしか入れんぞ。' }]); } } });
   Bus.on('goAround', fl => { const g = fl.plane && fl.plane.gcGA; if (fl.plane) fl.plane.gcGA = false; toast(g ? `${fl.code} 管制塔の指示で着陸やり直し（着陸しても誘導路がふさがっていて進めないため）` : `${fl.code} 滑走路が空いていないため着陸やり直し（ゴーアラウンド）`, '', 'tower'); });
   Bus.on('firstFlight', fl => { Sound.se('levelup'); toast('はじめての飛行機が到着しました！', 'gold', 'plane'); });

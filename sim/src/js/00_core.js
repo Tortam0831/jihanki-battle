@@ -1,8 +1,8 @@
 // ============================================================
 //  そらのみなと ～ドット空港経営記～   core utilities
 // ============================================================
-const W = 108, H = 72, SEC = 12, SECW = W / SEC, SECH = H / SEC; // 9 x 6 区画
-const OX = 12, OY = 12;   // 初期レイアウトのずらし（旧72x48マップとの互換）
+const W = 156, H = 96, SEC = 12, SECW = W / SEC, SECH = H / SEC; // 13 x 8 区画
+const OX = 36, OY = 24;   // 初期レイアウトのずらし（旧72x48マップの座標 → いまのマップ）
 const MIN_PER_DAY = 1440, DAYS_PER_MONTH = 3, DAYS_PER_YEAR = 36;
 const REAL_SEC_PER_GMIN = 0.4;           // 1倍速で 1ゲーム分 = 0.4秒
 const VERSION = '1.0';

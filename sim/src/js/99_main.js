@@ -295,7 +295,9 @@ function loop(now) {
   RT.effSpeed = spd;
   if (spd > 0) {
     let dt = dtReal / REAL_SEC_PER_GMIN * spd;
-    while (dt > 0) { const s = Math.min(dt, 0.5); simStep(s); dt -= s; }
+    // 速いときは細かく分けて計算（重くなりすぎないよう1フレーム最大8回）
+    let n = 0;
+    while (dt > 0 && n++ < 8) { const s = Math.min(dt, 0.5); simStep(s); dt -= s; }
   }
   // 描画の準備
   keyPan(dtReal);
@@ -337,4 +339,4 @@ function loop(now) {
   }
 }
 window.addEventListener('load', boot);
-window.__sora = { serialize, planeModel, PLANES, get G() { return G; }, dbg: { planePath, GC, showInfo, taxiInRail, departRails, rwAxis, planRollout, standGeom, axPt, relocateBuilding, rotateInPlace, openDayReport, openBank, Bank, DayReport, getField, accessTiles, findFacility, findKind, get WALKABLE() { return WALKABLE; }, People, Story, CHAPTERS, Dialog, routeCheck, checkWarnings, relinkGates }, setTool, tryPlace, RT, simStep, World, Cam, R, startGame, placeBuilding, paintApply, openRoute, B, Game, UI };
+window.__sora = { serialize, planeModel, PLANES, get G() { return G; }, dbg: { planePath, GC, showInfo, autoConnectStand, autoConnectRunway, standReachable, taxiInRail, departRails, rwAxis, planRollout, standGeom, axPt, relocateBuilding, rotateInPlace, openDayReport, openBank, Bank, DayReport, getField, accessTiles, findFacility, findKind, get WALKABLE() { return WALKABLE; }, People, Story, CHAPTERS, Dialog, routeCheck, checkWarnings, relinkGates }, setTool, tryPlace, RT, simStep, World, Cam, R, startGame, placeBuilding, paintApply, openRoute, B, Game, UI };
