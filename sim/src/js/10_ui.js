@@ -475,8 +475,8 @@ function initInput() {
     if (k === '1') setSpeed(1); if (k === '2') setSpeed(2); if (k === '3') setSpeed(4); if (k === '4') setSpeed(8); if (k === '5') setSpeed(16);
     if (k === 'b') toolbarAction('build');
     if (k === 'delete' || k === 'x') toolbarAction('demolish');
-    if (k === '+' || k === '=') Cam.zoom = clamp(Cam.zoom * 1.2, 0.4, 5);
-    if (k === '-') Cam.zoom = clamp(Cam.zoom / 1.2, 0.4, 5);
+    if (k === '+' || k === '=') Cam.zoom = clamp(Cam.zoom * 1.2, 0.2, 5);
+    if (k === "-") Cam.zoom = clamp(Cam.zoom / 1.2, 0.2, 5);
   });
   window.addEventListener('keyup', e => { Inp.keys[e.key.toLowerCase()] = false; });
   window.addEventListener('blur', () => { Inp.keys = {}; });
@@ -675,6 +675,7 @@ function renderInfo() {
     else rows.push(['貨物', P.cargo + 'トン']);
     h += rows.map(([k, v]) => `<div class="row"><b>${k}</b><span>${v}</span></div>`).join('');
     const gs = gcStatus(pl); if (gs) h += `<div class="warn">🗼 ${gs}</div>`;
+    if ((pl.state === 'approach' || pl.state === 'hold') && pl.planT != null) h += `<div class="sub">🗼 管制塔の着陸予定 ${fmtTime(pl.planT + 2)}${pl.state === 'hold' ? '（それまで待機経路で待ちます）' : pl.spdK < 0.97 ? '（間隔をあけるため速度を落としています）' : ''}</div>`;
     showRouteLine(pl);
     if (pl.rail && pl.y < 0.5 && pl.gr) h += `<div class="sub">🗼 線：<b style="color:#3fae5a">緑</b>＝管制塔の許可が出た道　<b style="color:#e5484d">赤</b>＝許可まち</div>`;
     h += `<div class="sub" style="margin-top:6px">${P.desc}</div><div class="btns"><button class="pbtn sm blue" id="iFollow">${UI.follow === pl ? '追いかけるのをやめる' : '📷 カメラで追いかける'}</button></div>`;
@@ -1025,7 +1026,7 @@ function openMenu() {
     <div class="sub" style="margin-top:6px">夜（飛行機のない時間）は自動でとばす</div><div class="seg" id="sN"><button data-v="1" class="${o.nightSkip ? 'on' : ''}">する</button><button data-v="0" class="${o.nightSkip ? '' : 'on'}">しない</button></div>
     <div class="sub" style="margin-top:6px">一日の終わりに「一日のまとめ」を表示</div><div class="seg" id="sD"><button data-v="1" class="${o.dayReport !== false ? 'on' : ''}">する</button><button data-v="0" class="${o.dayReport === false ? 'on' : ''}">しない</button></div>
     <div class="sec">${iconImg('save', 's')}セーブ</div>
-    <div class="sub">自動で毎日セーブされます（スロット${Game.slot + 1}）。</div>
+    <div class="sub">5分ごとと毎日0時に自動でセーブされます（スロット${Game.slot + 1}）。</div>${Cloud.available() ? `<div class="card" style="margin-top:6px;text-align:center">${Cloud.code() ? `クラウドのセーブコード<div style="font-size:30px;letter-spacing:8px;font-family:monospace;font-weight:900">${Cloud.code()}</div><div class="sub">ずっと同じコードです（5分ごとに自動で上書き保存）</div>` : '<div class="sub">「クラウドに保存」を押すと、5けたのセーブコードが発行されます（そのあとは5分ごとに自動保存）</div>'}</div>` : ''}
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="pbtn sm blue" id="mSave">${iconImg('save', 's')}いまセーブ</button><button class="pbtn sm" id="mExport">引きつぎコードを作る</button><button class="pbtn sm" id="mImport">引きつぎコードを入力</button>${Cloud.available() ? '<button class="pbtn sm" id="mCloud">クラウドに保存</button>' : ''}</div>
     <div class="sec">${iconImg('flag', 's')}空港の名前</div><input type="text" id="mName" maxlength="16" value="${esc(G.name)}">
     <div style="display:flex;gap:6px;margin-top:12px"><button class="pbtn" id="mTitleBtn">タイトルへ</button></div>`;

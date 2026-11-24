@@ -168,9 +168,9 @@ function showTitle() {
   $('#tFree').onclick = () => { first(); chooseSlot('free'); };
   $('#tHow').onclick = () => { first(); howTo(); };
   const cl = $('#tCloud'); if (cl) cl.onclick = () => {
-    openModal('クラウドから読みこむ', `<p>保存したときのコードを入力してください。</p><input type="text" id="clK" maxlength="8" style="text-transform:uppercase"><div class="sub" style="margin:6px 0">読みこむスロット</div><div class="seg" id="clS"><button data-s="0" class="on">1</button><button data-s="1">2</button><button data-s="2">3</button></div><button class="pbtn blue" id="clGo" style="margin-top:8px">読みこむ</button>`, { narrow: true });
+    openModal('クラウドから読みこむ', `<p>5けたのセーブコードを入力してください。</p><input type="text" id="clK" maxlength="5" inputmode="numeric" pattern="[0-9]*" style="font-size:28px;letter-spacing:8px;text-align:center;font-family:monospace"><div class="sub" style="margin:6px 0">読みこむスロット</div><div class="seg" id="clS"><button data-s="0" class="on">1</button><button data-s="1">2</button><button data-s="2">3</button></div><button class="pbtn blue" id="clGo" style="margin-top:8px">読みこむ</button>`, { narrow: true });
     let sl = 0; $('#clS').onclick = e => { const b = e.target.closest('button'); if (!b) return; sl = +b.dataset.s; $$('#clS button').forEach(x => x.classList.toggle('on', x === b)); };
-    $('#clGo').onclick = () => Cloud.load($('#clK').value.trim().toUpperCase(), sl, () => { closeModal(); startGame(sl, null); });
+    $('#clGo').onclick = () => Cloud.load($('#clK').value.trim(), sl, () => { closeModal(); startGame(sl, null); });
   };
 }
 function chooseSlot(mode) {
@@ -314,6 +314,11 @@ function loop(now) {
   updateFX(dtReal);
   if (!Game.demo || true) updateExtras(spd > 0 ? dtReal / REAL_SEC_PER_GMIN * Math.min(spd, 4) : 0, dtReal);
   DayReport.tick(); updateOneway();
+  // 5分ごとに自動保存（GAS ならクラウドにも）
+  if (!Game.demo && Game.started) {
+    Game.autoT = (Game.autoT || 0) + dtReal;
+    if (Game.autoT >= 300) { Game.autoT = 0; saveGame(); Cloud.save(true); }
+  }
   if (Cam.shake > 0) Cam.shake = Math.max(0, Cam.shake - dtReal);
   renderFrame();
   // UI
@@ -339,4 +344,4 @@ function loop(now) {
   }
 }
 window.addEventListener('load', boot);
-window.__sora = { serialize, planeModel, PLANES, get G() { return G; }, dbg: { planePath, GC, showInfo, autoConnectStand, autoConnectRunway, standReachable, taxiInRail, departRails, rwAxis, planRollout, standGeom, axPt, relocateBuilding, rotateInPlace, openDayReport, openBank, Bank, DayReport, getField, accessTiles, findFacility, findKind, get WALKABLE() { return WALKABLE; }, People, Story, CHAPTERS, Dialog, routeCheck, checkWarnings, relinkGates }, setTool, tryPlace, RT, simStep, World, Cam, R, startGame, placeBuilding, paintApply, openRoute, B, Game, UI };
+window.__sora = { OX, OY, W, H, serialize, planeModel, PLANES, get G() { return G; }, dbg: { Cloud, rwFreeIn, standFreeAt, planePath, GC, showInfo, autoConnectStand, autoConnectRunway, standReachable, taxiInRail, departRails, rwAxis, planRollout, standGeom, axPt, relocateBuilding, rotateInPlace, openDayReport, openBank, Bank, DayReport, getField, accessTiles, findFacility, findKind, get WALKABLE() { return WALKABLE; }, People, Story, CHAPTERS, Dialog, routeCheck, checkWarnings, relinkGates }, setTool, tryPlace, RT, simStep, World, Cam, R, startGame, placeBuilding, paintApply, openRoute, B, Game, UI };

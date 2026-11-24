@@ -68,6 +68,7 @@ function confirmAutoTaxi(tiles, what, after) {
   for (const i of tiles) { G.floor[i] = FLOOR.TAXI; G.trees[i] = 0; markChunk(i % W, Math.floor(i / W)); }
   worldChanged(B.taxiway); World.dirtyWalls = true;
   pushUndo({ type: 'paint', tiles: UI.lastPaint, cost: G.free ? 0 : cost });
+  G.flags.autoTaxi = true;
   Sound.se('place'); toast(`${what}を誘導路でつなぎました（${tiles.length}マス ${fmtYen(cost)}）`, 'good', 'taxiway');
   after && after();
 }

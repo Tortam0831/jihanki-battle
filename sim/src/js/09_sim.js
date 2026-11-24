@@ -92,7 +92,7 @@ function closeDay() {
     if (d.kind === 'hotel') { const v = (t.paxArr + t.paxDep) * 60 * d.income * (1 + comboBonus(b)) * (1 + (b.lv - 1) * 0.2) + 20000 * d.income; earn(v, 'hotel', b); }
   }
   const inc = Object.values(t.income).reduce((a, b) => a + b, 0), exp = Object.values(t.expense).reduce((a, b) => a + b, 0);
-  G.hist.push({ day: G.day, pax: t.paxArr + t.paxDep, inc, exp, sat, flights: t.flights, visitors: t.visitors, cancel: t.cancel + t.divert, income: Object.assign({}, t.income), ontime: t.ontime, late: t.late, unmet: Object.assign({}, t.unmet), missed: t.missed, expense: Object.assign({}, t.expense), paxArr: t.paxArr, paxDep: t.paxDep, divert: t.divert, money: G.money });
+  G.hist.push({ day: G.day, pax: t.paxArr + t.paxDep, inc, exp, sat, flights: t.flights, visitors: t.visitors, cancel: t.cancel + t.divert, income: Object.assign({}, t.income), ontime: t.ontime, late: t.late, unmet: Object.assign({}, t.unmet), missed: t.missed, holds: t.holds || 0, expense: Object.assign({}, t.expense), paxArr: t.paxArr, paxDep: t.paxDep, divert: t.divert, money: G.money });
   if (G.hist.length > 72) G.hist.shift();
   if (t.satW > 0) G.satHist.push(sat);
   if (G.satHist.length > 4) G.satHist.shift();

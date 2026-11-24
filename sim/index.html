@@ -283,8 +283,8 @@ input[type=text]{font-family:inherit;font-size:16px;padding:8px;border:3px solid
 // ============================================================
 //  そらのみなと ～ドット空港経営記～   core utilities
 // ============================================================
-const W = 156, H = 96, SEC = 12, SECW = W / SEC, SECH = H / SEC; // 13 x 8 区画
-const OX = 36, OY = 24;   // 初期レイアウトのずらし（旧72x48マップの座標 → いまのマップ）
+const W = 228, H = 144, SEC = 12, SECW = W / SEC, SECH = H / SEC; // 19 x 12 区画
+const OX = 72, OY = 48;   // 初期レイアウトのずらし（旧72x48マップの座標 → いまのマップ）
 const MIN_PER_DAY = 1440, DAYS_PER_MONTH = 3, DAYS_PER_YEAR = 36;
 const REAL_SEC_PER_GMIN = 0.4;           // 1倍速で 1ゲーム分 = 0.4秒
 const VERSION = '1.0';
@@ -2212,6 +2212,172 @@ ACHIEVEMENTS.push(
 );
 
 // ============================================================
+//  追加データ その3（100個）
+//  建物30・機材4・航空会社4・都市20・お客さん6・開発10・組み合わせ10・実績10・イベント4（13c）・つぶやき2（13c）
+// ============================================================
+
+// ---------- 建物：飲食 8 ----------
+const MORE3_FOODS = [
+  ['kushikatsu', '串カツ屋', 2, 2, 260000, 1300, 6, 12, 3, 'beer', ['food', 'fun']],
+  ['monja', 'もんじゃ焼き', 2, 2, 270000, 1200, 6, 15, 3, 'food', ['food']],
+  ['tantan', '担々麺の店', 2, 2, 250000, 1000, 6, 12, 2, 'ramen', ['food']],
+  ['bagel', 'ベーグルカフェ', 2, 1, 180000, 600, 3, 4, 2, 'bread', ['food', 'rest']],
+  ['dimsum', '飲茶（点心）', 3, 2, 480000, 1900, 8, 18, 4, 'dumpling', ['food']],
+  ['gelato', 'ジェラート', 1, 1, 120000, 500, 2, 3, 2, 'icecream', ['food', 'fun']],
+  ['steakbento', '牛たん弁当', 2, 1, 200000, 1500, 3, 3, 3, 'bento', ['food', 'shop']],
+  ['skybar', 'スカイバー', 3, 2, 900000, 3500, 8, 25, 6, 'beer', ['food', 'rest']],
+];
+for (const [id, name, w, h, cost, price, cap, svc, rank, icon, needs] of MORE3_FOODS)
+  defB(id, { cat: 'food', name, kind: 'svc', need: needs[0], need2: needs[1], zone: 'term', w, h, cost, price, cap, svc, rank, icon, upkeep: Math.round(cost * 0.006 / 100) * 100, inside: true, desc: `売上：1人 約${fmtNum(price)}円` });
+B.skybar.likes = ['biz', 'couple', 'musician']; B.steakbento.likes = ['biz', 'foodie'];
+
+// ---------- 建物：ショップ 8 ----------
+const MORE3_SHOPS = [
+  ['pottery', '焼き物の店', 2, 2, 380000, 3200, 4, 'gift'],
+  ['kendama', 'けん玉・こま店', 2, 1, 160000, 900, 2, 'ball'],
+  ['fishingshop', '釣り具店', 2, 2, 300000, 2600, 3, 'fish'],
+  ['tea2', '紅茶専門店', 2, 1, 220000, 1700, 3, 'cafe'],
+  ['bookstore2', '旅の本とガイドブック', 2, 2, 200000, 1100, 2, 'book'],
+  ['plushie', 'ぬいぐるみ店', 2, 2, 260000, 1800, 3, 'bear'],
+  ['umbrella', '傘と雨具の店', 2, 1, 140000, 1500, 2, 'rain'],
+  ['luxwatch2', '高級万年筆の店', 2, 1, 900000, 9000, 7, 'star'],
+];
+for (const [id, name, w, h, cost, price, rank, icon] of MORE3_SHOPS)
+  defB(id, { cat: 'shop', name, kind: 'svc', need: 'shop', zone: 'term', w, h, cost, price, cap: Math.max(2, w * h), svc: 6, rank, icon, upkeep: Math.round(cost * 0.006 / 100) * 100, inside: true, rich: id === 'luxwatch2', desc: `売上：1人 約${fmtNum(price)}円` + (id === 'umbrella' ? '。雨の日は売上2倍。' : '') });
+B.fishingshop.likes = ['fisher']; B.kendama.likes = ['kid', 'foreign']; B.plushie.likes = ['kid', 'couple', 'family'];
+
+// ---------- 建物：サービス 5 ----------
+defB('sleeppod', { cat: 'svc', name: '仮眠ポッド', kind: 'svc', need: 'rest', zone: 'term', w: 2, h: 1, cap: 2, svc: 25, price: 1500, cost: 300000, upkeep: 1000, rank: 3, inside: true, likes: ['biz', 'backpack', 'medic'], icon: 'zzz', desc: '横になって少しだけ眠れるカプセル。' });
+defB('workspace', { cat: 'svc', name: 'コワーキングスペース', kind: 'svc', need: 'rest', zone: 'term', w: 3, h: 2, cap: 8, svc: 30, price: 1000, cost: 500000, upkeep: 1800, rank: 4, inside: true, likes: ['biz', 'student', 'reporter', 'scientist'], icon: 'board', desc: 'パソコンで仕事ができる。ビジネス客がよろこぶ。' });
+defB('petroom', { cat: 'svc', name: 'ペットホテル', kind: 'svc', need: 'rest', zone: 'term', w: 2, h: 2, cap: 4, svc: 12, price: 2000, cost: 350000, upkeep: 1400, rank: 3, inside: true, likes: ['petowner'], icon: 'heart', desc: '旅行のあいだ、ペットをあずかる。' });
+defB('prayerhall', { cat: 'svc', name: '展望ロビー', kind: 'svc', need: 'fun', need2: 'rest', zone: 'term', w: 4, h: 2, cap: 16, svc: 15, price: 0, cost: 700000, upkeep: 1500, rank: 4, beauty: 4, likes: ['maniac', 'kid', 'elder', 'photog'], icon: 'binocular', desc: 'ターミナルの中から飛行機が見える大きな窓。無料。' });
+defB('infodesk2', { cat: 'svc', name: '多言語案内カウンター', kind: 'aura', zone: 'term', w: 2, h: 1, cost: 200000, upkeep: 900, rank: 4, aura: 7, likes: ['foreign', 'abroad', 'diplomat'], icon: 'info', desc: 'いろいろな言葉で案内できる。海外のお客さんの満足度アップ。' });
+
+// ---------- 建物：空側 3 ----------
+defB('cargo2', { cat: 'air', name: '大型貨物上屋', kind: 'cargo', zone: 'air', w: 5, h: 3, cost: 3000000, upkeep: 8000, rank: 6, icon: 'cargo', desc: '貨物ターミナルと同じ効果。大きな荷物もたくさん扱える。' });
+defB('rescue', { cat: 'air', name: '救難ヘリ基地', kind: 'decor', zone: 'air', w: 3, h: 3, cost: 1200000, upkeep: 3000, rank: 5, beauty: 1, icon: 'heli', desc: '海や山で困った人を助けに行くヘリの基地。空港の安心感アップ（評価 +0.05）。' });
+defB('glidepath', { cat: 'air', name: '進入灯', kind: 'decor', zone: 'air', w: 1, h: 3, cost: 150000, upkeep: 500, rank: 3, lamp: true, icon: 'lamp', desc: '滑走路の手前に置く、夜に光る進入灯。本物らしさアップ。' });
+
+// ---------- 建物：陸側 3 ----------
+defB('ferryport', { cat: 'land', name: '船着き場', kind: 'access', zone: 'land', w: 4, h: 2, cost: 1500000, upkeep: 4000, access: 70, rank: 5, unique: true, icon: 'fish', desc: '港から船で来る人の入口。' });
+defB('campsite', { cat: 'land', name: 'キャンプ場', kind: 'svc', need: 'fun', zone: 'land', w: 4, h: 3, cap: 16, svc: 25, price: 1500, cost: 1200000, upkeep: 3000, rank: 4, visitor: true, beauty: 3, likes: ['hiker', 'family', 'fisher'], icon: 'leaf', desc: '空港のとなりで飛行機を見ながらキャンプ。' });
+defB('aviationpark', { cat: 'land', name: 'ヒコーキの丘公園', kind: 'decor', zone: 'land', w: 4, h: 4, cost: 900000, upkeep: 1500, rank: 3, beauty: 10, visitor: true, icon: 'binocular', desc: '滑走路を見わたせる丘。見学のお客さんが増える。' });
+
+// ---------- 建物：かざり 3 ----------
+defB('lavender', { cat: 'deco', name: 'ラベンダー畑', kind: 'decor', zone: 'land', w: 2, h: 2, cost: 45000, beauty: 4, seasonBoost: 1, icon: 'flower', desc: '夏は美しさ2倍。' });
+defB('snowlantern', { cat: 'deco', name: '雪灯籠', kind: 'decor', zone: 'any', cost: 40000, beauty: 2.5, seasonBoost: 3, lamp: true, icon: 'lantern', desc: '冬は美しさ2倍。夜にあかりがともる。' });
+defB('planestatue', { cat: 'deco', name: '名機のモニュメント', kind: 'decor', zone: 'any', w: 3, h: 3, cost: 1500000, beauty: 14, rank: 7, icon: 'plane2', desc: '昔の名機を台の上にかざったモニュメント。' });
+for (const id of Object.keys(B)) if (!BUILD_ORDER.includes(id)) BUILD_ORDER.push(id);
+
+// ---------- 機材 4（実在機・メーカー名は変えてある） ----------
+Object.assign(PLANES, {
+  do228:   { name: 'ドルニエ 228', maker: 'ドルニエ', cls: 1, seats: 19, lenM: 16.6, spanM: 17.0, dia: 1.9, eng: 'prop', engines: 2, wing: 'high', tail: 'conv', gear: 'fixed', tip: 'none', vapp: 85, turn: 20, fee: 38000, rank: 1, desc: '四角い胴体の小さなプロペラ機。島の短い滑走路が得意。' },
+  e195e2:  { name: 'エンブラエル E195-E2', maker: 'エンブラエル', cls: 2, seats: 132, lenM: 41.5, spanM: 35.1, dia: 3.0, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'raked', vapp: 132, turn: 38, fee: 175000, rank: 4, desc: '細長い胴体の新しいリージョナルジェット。' },
+  b752:    { name: 'ボーリング 757-200', maker: 'ボーリング', cls: 2, seats: 200, lenM: 47.3, spanM: 38.1, dia: 3.76, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'blended', vapp: 135, turn: 45, fee: 280000, rank: 5, desc: '長い脚と細い胴体が特徴の、力持ちの単通路機。' },
+  a339:    { name: 'エアブロー A330-900neo', maker: 'エアブロー', cls: 3, seats: 300, lenM: 63.7, spanM: 64.0, dia: 5.64, eng: 'jet', engines: 2, wing: 'low', tail: 'conv', gear: 'retract', tip: 'sharklet', vapp: 137, turn: 60, fee: 490000, rank: 6, wide: true, desc: 'A330の新しい型。長くなった翼が目印。' },
+});
+for (const P of Object.values(PLANES)) { P.len = P.lenM / TILE_M; P.span = P.spanM / TILE_M; }
+
+// ---------- 都市 20 ----------
+Object.assign(CITIES, {
+  monbetsu:    { name: '紋別', region: 'dom', demand: 1, rank: 2 },
+  odate:       { name: '大館能代', region: 'dom', demand: 1, rank: 2 },
+  fukushima:   { name: '福島', region: 'dom', demand: 2, rank: 2 },
+  iwami:       { name: '石見', region: 'dom', demand: 1, rank: 2 },
+  kitakyushu:  { name: '北九州', region: 'dom', demand: 3, rank: 3 },
+  tokunoshima: { name: '徳之島', region: 'dom', demand: 1, rank: 2, island: true },
+  qingdao:     { name: '青島', region: 'asia', demand: 3, rank: 5 },
+  dalian:      { name: '大連', region: 'asia', demand: 3, rank: 5 },
+  cheongju:    { name: '清州', region: 'asia', demand: 2, rank: 4 },
+  kathmandu:   { name: 'カトマンズ', region: 'asia', demand: 2, rank: 7 },
+  siemreap:    { name: 'シェムリアップ', region: 'asia', demand: 2, rank: 6, resort: true },
+  male:        { name: 'マレ（モルディブ）', region: 'asia', demand: 2, rank: 7, resort: true },
+  tashkent:    { name: 'タシケント', region: 'asia', demand: 2, rank: 7 },
+  nairobi:     { name: 'ナイロビ', region: 'long', demand: 2, rank: 9 },
+  cairo:       { name: 'カイロ', region: 'long', demand: 3, rank: 8 },
+  madrid:      { name: 'マドリード', region: 'long', demand: 3, rank: 8 },
+  munich:      { name: 'ミュンヘン', region: 'long', demand: 3, rank: 8 },
+  boston:      { name: 'ボストン', region: 'long', demand: 3, rank: 8 },
+  toronto:     { name: 'トロント', region: 'long', demand: 3, rank: 8 },
+  lima:        { name: 'リマ', region: 'long', demand: 2, rank: 9 },
+});
+AIRLINES.soyokaze.fleet.unshift('do228'); AIRLINES.soyokaze.cities.push('tokunoshima', 'iwami');
+AIRLINES.north.cities.push('monbetsu', 'odate'); AIRLINES.haruka.cities.push('fukushima', 'kitakyushu');
+AIRLINES.haruka.fleet.push('b752'); AIRLINES.sakura.cities.push('qingdao', 'dalian', 'kathmandu');
+AIRLINES.eagle.cities.push('boston', 'toronto'); AIRLINES.aurora.cities.push('madrid', 'munich');
+
+// ---------- 航空会社 4（すべて架空） ----------
+Object.assign(AIRLINES, {
+  yukiguni: { name: 'ゆきぐにエア', code: 'YK', body: '#ffffff', tail: '#8fdcf4', accent: '#3a7bd5', fleet: ['do228', 'atr42', 'e195e2'], rank: 2, cities: ['monbetsu', 'odate', 'hanamaki', 'shonai', 'akita', 'yamagata', 'fukushima'], desc: '雪国の町をむすぶ、白い機体の航空会社。' },
+  kanmon:   { name: 'かんもんエクスプレス', code: 'KM', body: '#ffffff', tail: '#3e8a3c', accent: '#ffd84a', fleet: ['e195e2', 'a320', 'b752'], rank: 4, lcc: true, cities: ['kitakyushu', 'tokyo', 'osaka', 'naha', 'cheongju', 'qingdao', 'dalian'], desc: '九州の玄関口から近くのアジアへ飛ぶLCC。' },
+  himalaya: { name: 'ヒマラヤ・シルクロード航空', code: 'HS', body: '#fff8f0', tail: '#d8a020', accent: '#9a2f4a', fleet: ['b752', 'a339', 'a321xlr'], rank: 7, cities: ['kathmandu', 'tashkent', 'delhi', 'colombo', 'male', 'ulaanbaatar'], desc: '山と砂漠の国々をめぐる航空会社。' },
+  savanna:  { name: 'サバンナ・ワールド航空', code: 'SV', body: '#ffffff', tail: '#c0702a', accent: '#2a2a36', fleet: ['a339', 'b78x', 'b779'], rank: 9, cities: ['nairobi', 'cairo', 'lima', 'saopaulo', 'madrid', 'munich', 'boston', 'toronto'], desc: '世界のはしからはしまで飛ぶ長距離の航空会社。' },
+});
+
+// ---------- お客さん 6 ----------
+Object.assign(PAX, {
+  fisher:    { name: '釣り人', speed: 0.95, money: 1.0, needs: { food: .6, shop: .5, toilet: .5, rest: .4, fun: .2 }, desc: '大きな竿ケースを持って島へ。釣り具店があるとうれしい。' },
+  chef:      { name: '料理人', speed: 1.05, money: 1.4, needs: { food: .9, shop: .6, toilet: .3, rest: .3, fun: .1 }, desc: '食材の買いつけ旅行。おいしいお店にきびしい。' },
+  reporter:  { name: '記者', speed: 1.2, money: 1.1, needs: { food: .5, shop: .2, toilet: .4, rest: .6, fun: .2 }, desc: '取材でいそがしい。コワーキングスペースが好き。' },
+  scientist: { name: '研究者', speed: 1.0, money: 1.2, needs: { food: .5, shop: .3, toilet: .3, rest: .6, fun: .3 }, desc: '学会に向かう途中。本屋と静かな場所が好き。' },
+  monk:      { name: 'お坊さん', speed: 0.9, money: 0.8, needs: { food: .5, shop: .2, toilet: .4, rest: .7, fun: .1 }, desc: '修行の旅。静かな庭があると心がやすらぐ。' },
+  dancer:    { name: 'ダンサー', speed: 1.15, money: 1.2, needs: { food: .5, shop: .6, toilet: .3, rest: .3, fun: .8 }, desc: '公演ツアー中。カラオケで歌うのも好き。' },
+});
+MIX.island.fisher = 5; MIX.resort.fisher = 2; MIX.asia.chef = 3; MIX.dom.chef = 1; MIX.dom.reporter = 2; MIX.long.reporter = 2;
+MIX.long.scientist = 3; MIX.asia.scientist = 2; MIX.dom.monk = 1; MIX.asia.monk = 2; MIX.lcc.dancer = 2; MIX.long.dancer = 1;
+Object.assign(PAX_LOOKS, {
+  fisher:    { hair: ['cap'], top: ['#6a7a5a', '#f39a3c', '#3a5080'], bottom: ['#5a4a3a', '#4a4a58'], acc: ['board', 'bigpack'] },
+  chef:      { hair: ['short', 'bun'], top: ['#ffffff'], bottom: ['#2a2a36', '#4a4a58'], acc: ['bag', 'suitcase'], hat: 0.6 },
+  reporter:  { hair: ['short', 'long'], top: ['#4a4a58', '#a0683c', '#3a5080'], bottom: ['#2a2a36', '#3a4a7a'], acc: ['camera', 'briefcase'], glasses: 'normal' },
+  scientist: { hair: ['short', 'bald', 'long'], hairc: ['#b0b0b8', '#2a1e1a', '#a06a3a'], top: ['#ffffff', '#e8e8f0'], bottom: ['#3a4a7a', '#4a4a58'], acc: ['briefcase', 'bag'], glasses: 'normal' },
+  monk:      { hair: ['bald'], top: ['#2a2a36', '#a0683c', '#f39a3c'], bottom: ['#2a2a36', '#a0683c'], acc: ['bag', 'none'] },
+  dancer:    { hair: ['pony', 'long', 'short'], hairc: ['#2a1e1a', '#c04030', '#e8d080', '#9a62d0'], top: ['#ff4080', '#40e0ff', '#ffd84a'], bottom: ['#2a2a36', '#ffffff'], skirt: 0.4, acc: ['bigpack', 'suitcase'] },
+});
+
+// ---------- 開発 10 ----------
+RESEARCH.push(
+  { id: 'rapidexit', name: '高速脱出誘導路の設計', icon: 'runway', dev: 45, cost: 3000000, rank: 4, desc: '着陸した飛行機が早く滑走路を出られる（滑走路の使用時間 -15%）。発着をたくさんさばける' },
+  { id: 'aman', name: '到着管理システム（AMAN）', icon: 'tower', dev: 55, cost: 4000000, rank: 5, desc: '管制塔が着陸の順番をもっと上手に決める（待機経路での待ち時間を短く）' },
+  { id: 'fasttug', name: '電動トーイングカー', icon: 'cargo', dev: 30, cost: 1500000, rank: 3, desc: 'プッシュバックが速くなる（+30%）' },
+  { id: 'rainshop', name: '雨の日フェア', icon: 'rain', dev: 20, cost: 800000, rank: 2, desc: '雨・雪の日のお店の売上 +15%' },
+  { id: 'chefsel', name: '有名シェフのお店', icon: 'fork', dev: 40, cost: 2500000, rank: 5, desc: 'レストラン系の売上 +10%（ステーキ・料亭・スカイバーなど）' },
+  { id: 'kidsmenu', name: 'お子さまメニュー', icon: 'onigiri', dev: 20, cost: 800000, rank: 2, desc: '子どもの満足度 +4' },
+  { id: 'quietzone', name: '静かなエリア', icon: 'zzz', dev: 25, cost: 1200000, rank: 3, desc: 'お年寄り・研究者・お坊さんの満足度 +4' },
+  { id: 'nightlight', name: 'ライトアップ演出', icon: 'moon', dev: 30, cost: 2000000, rank: 4, desc: '夜の見学客 +25%' },
+  { id: 'airportmap', name: '空港アプリの地図', icon: 'globe', dev: 30, cost: 1500000, rank: 3, desc: '迷わなくなる。海外のお客さん・お年寄りの満足度 +3' },
+  { id: 'groundsys', name: '地上走行支援システム', icon: 'taxiway', dev: 50, cost: 3500000, rank: 5, desc: '誘導路を走る速さ +15%' },
+);
+for (const r of RESEARCH) RESEARCH_BY[r.id] = r;
+
+// ---------- 組み合わせ 10 ----------
+COMBOS.push(
+  { id: 'osakafood', name: 'なにわの味', need: ['kushikatsu', 'takoyaki'], bonus: 0.3, desc: '串カツとたこ焼き。売上+30%' },
+  { id: 'tsukishima', name: '下町グルメ', need: ['monja', 'okonomi'], bonus: 0.25, desc: 'もんじゃとお好み焼き。売上+25%' },
+  { id: 'chinatown', name: '中華街', need: [['dimsum', 'chinese', 'tantan', 'gyoza'], 3], bonus: 0.35, desc: '中華のお店が3つ。売上+35%' },
+  { id: 'cafebreak', name: 'ひと休みカフェ', need: ['bagel', 'tea2'], bonus: 0.25, desc: 'ベーグルと紅茶。売上+25%' },
+  { id: 'nightview', name: '夜景ラウンジ', need: ['skybar', 'prayerhall'], bonus: 0.3, desc: 'スカイバーと展望ロビー。夜に大人気' },
+  { id: 'craftstreet', name: '職人通り', need: [['pottery', 'craft', 'kimono', 'kendama'], 3], bonus: 0.3, desc: '日本の手しごとが3つ。海外のお客さんが大よろこび' },
+  { id: 'kidsheaven', name: 'こどもの国', need: ['plushie', 'toy', 'kidsroom'], bonus: 0.3, desc: 'ぬいぐるみ・おもちゃ・キッズルーム' },
+  { id: 'anglers', name: '釣り人の港', need: ['fishingshop', 'fishmarket'], bonus: 0.3, desc: '釣り具と海産物。売上+30%' },
+  { id: 'officehub', name: 'ビジネスハブ', need: ['workspace', 'sleeppod', 'charging'], bonus: 0.25, desc: '働く・眠る・充電する。ビジネス客が大満足' },
+  { id: 'sendaiset', name: 'みやげの定番', need: ['steakbento', 'souvenir'], bonus: 0.25, desc: '牛たん弁当とおみやげ屋。売上+25%' },
+);
+
+// ---------- 実績 10 ----------
+ACHIEVEMENTS.push(
+  { id: 'cloud1', name: 'クラウドの相棒', desc: 'セーブコードを発行した', icon: 'save', c: () => !!(G.cloud && G.cloud.key) },
+  { id: 'land20', name: '大地主', desc: '土地を20区画持った', icon: 'flag', c: () => G.sectors.reduce((a, v) => a + v, 0) >= 20 },
+  { id: 'land50', name: '島ぜんぶが空港', desc: '土地を50区画持った', icon: 'flag', c: () => G.sectors.reduce((a, v) => a + v, 0) >= 50 },
+  { id: 'nohold', name: '完璧な管制', desc: '1日10便以上で、上空待機0回の日', icon: 'tower', c: () => RT.lastDay && RT.lastDay.flights >= 10 && (RT.lastDay.holds || 0) === 0 },
+  { id: 'oneway10', name: '交通整理', desc: '一方通行の矢印を10マスぬった', icon: 'taxiway', c: () => !!G.oneway && G.oneway.reduce((a, v) => a + (v ? 1 : 0), 0) >= 10 },
+  { id: 'autotaxi', name: 'おまかせ誘導路', desc: '誘導路の自動接続を使った', icon: 'taxiway', c: () => !!G.flags.autoTaxi },
+  { id: 'speed16', name: '時間の旅人', desc: '16倍速で遊んだ', icon: 'clock', c: () => Game.speed >= 16 },
+  { id: 'stand30', name: '翼の森', desc: '駐機場を30か所にした', icon: 'stand', c: () => countKind('stand') >= 30 },
+  { id: 'world', name: '世界の果てまで', desc: 'ナイロビ・リマ・マレのどれかへ路線を開いた', icon: 'globe', c: () => G.routes.some(r => ['nairobi', 'lima', 'male'].includes(r.city)) },
+  { id: 'paxtype40', name: '人種のるつぼ', desc: '40種類のお客さんが来た', icon: 'people', c: () => Object.keys(G.seenPax).length >= 40 },
+);
+
+// ============================================================
 //  サウンド（WebAudio で全部その場で作る）
 // ============================================================
 const Sound = {
@@ -2614,7 +2780,7 @@ function updateCamera(force) {
 function rotateCam(d) { Cam.rot = (Cam.rot + d + 4) % 4; Cam.yawT += d * Math.PI / 2; Sound.se('tab'); }
 function clampCam() {
   Cam.tx = clamp(Cam.tx, -4, W + 4); Cam.tz = clamp(Cam.tz, -4, H + 4);
-  Cam.zoom = clamp(Cam.zoom, 0.3, 5);
+  Cam.zoom = clamp(Cam.zoom, 0.2, 5);
 }
 function panCam(dxPix, dyPix) {
   // 画面のピクセル移動 → 地面の移動
@@ -3916,7 +4082,7 @@ function isFixedRoad(x, y) { return y <= 12 + OY && (x === 35 + OX || x === 36 +
 
 // ---------- 土地 ----------
 // 最初の1区画だけ無料。そのあとは買うほど高く、最初の土地から遠いほど高い
-const START_SECTORS = [[5, 3], [6, 3], [7, 3], [5, 4], [6, 4], [7, 4]];
+const START_SECTORS = [[8, 5], [9, 5], [10, 5], [8, 6], [9, 6], [10, 6]];
 function sectorDist(sx, sy) { let d = 99; for (const [a, b] of START_SECTORS) d = Math.min(d, Math.max(Math.abs(sx - a), Math.abs(sy - b))); return d; }
 function sectorPrice(sx, sy) {
   const k = G.landBought || 0;
@@ -5243,7 +5409,7 @@ function updateFlights(dt) {
         if (n > 0) { spawnDeparting(fl, n, fl.paxDep / fl.depSpr); fl.depSpawned += n; }
       }
     }
-    if (fl.status === 'sched' && now >= fl.arrT - 48) startApproach(fl);
+    if (fl.status === 'sched' && now >= fl.arrT - 34) startApproach(fl);
     if (fl.status === 'parked') {
       // 到着客
       if (!fl.cargo && fl.arrSpawned < fl.arrSpr) {
@@ -5263,6 +5429,8 @@ function updateFlights(dt) {
       }
     }
   }
+  // 管制塔の時間表（1分ごと）
+  ATC.t += dt; if (ATC.t >= 1) { ATC.t = 0; atcPlan(); }
   // 飛行機の動き
   for (const pl of RT.planes) updatePlane(pl, dt);
   RT.planes = RT.planes.filter(p => !p.gone);
@@ -5303,6 +5471,8 @@ function startApproach(fl) {
   const r = weightedPick(pairs.map(p => p[0]), r => 1 / (1 + (r._load || 0)));
   pl.runway = r.uid; r._load = (r._load || 0) + 1;
   setApproachPath(pl, r);
+  assignStand(pl, G.min + natCommit(pl, r) + 3);
+  ATC.t = 99;
   G.seenPlanes[fl.type + ':' + fl.airline] = 1;
   Bus.emit('approach', fl);
 }
@@ -5317,7 +5487,7 @@ function makePlane(fl) {
 // 速さ（マス/ゲーム分）。実際の進入速度の比率にあわせる
 const vApp = P => 3.6 * (P.vapp / 140);
 const vRot = P => vApp(P) * 1.08;
-const V_TAXI = 1.4, V_TAXI_TURN = 0.65, GLIDE = Math.tan(5 * Math.PI / 180); // 見やすさのため5°の進入角
+const V_TAXI = 2.0, V_TAXI_TURN = 0.9, GLIDE = Math.tan(5 * Math.PI / 180); // 見やすさのため5°の進入角
 function rwAxis(r, e) {
   // e: 0=始点側から進入
   const ri = runwayInfo(r);
@@ -5337,7 +5507,7 @@ function setApproachPath(pl, r) {
     pl.x = s.x + perp.x * side * 14; pl.z = s.z + perp.z * side * 14; pl.y = s.y + 1;
     pl.hdg = ax.hdg + side * 0.5 * (ax.ri.horiz ? (ax.dir > 0 ? -1 : 1) : (ax.dir > 0 ? 1 : -1));
   }
-  pl.faf = ax.P(-24, 24 * GLIDE);
+  pl.faf = ax.P(-24, 24 * GLIDE); pl.fafExt = 0; pl.outbound = null;
   pl.td = ax.P(clamp(ax.len * 0.12, 1.2, 3), 0);
   pl.state = 'approach'; pl.phase = 'base'; pl.spd = vApp(pl.P) * 1.1;
 }
@@ -5369,37 +5539,43 @@ function updatePlane(pl, dt) {
     case 'approach': {
       // 進入許可（駐機場・滑走路・霧）
       const dTD = Math.hypot(pl.td.x - pl.x, pl.td.z - pl.z);
-      if (!pl.cleared && dTD < 40) {
-        const fogBlock = G.weather === 'fog' && !hasKind('ils');
-        const stand = !fogBlock ? pickStand(pl) : null;
-        if (!stand) { startHold(pl); return; }
-        pl.cleared = true; pl.stand = stand.uid; stand.busy = fl.id; fl.stand = stand.uid; fl.gate = stand.gate || 0;
-        if (fl.gate && !fl.cargo) spawnCrew(fl, G.blds[fl.gate]);
-      }
-      // 管制塔：前の飛行機との間隔（速度を落とす／間に合わなければ早めに上空待機）
+      const fogBlock = G.weather === 'fog' && !hasKind('ils');
+      if (!pl.cleared && (pl.standTry || 0) <= G.min) { pl.standTry = G.min + 1; assignStand(pl, G.min + natCommit(pl, r) + 3); if (pl.cleared) ATC.t = 99; }
+      if ((!pl.cleared || fogBlock) && dTD < 40) { if (fogBlock) pl.holdWhy = 'fog'; startHold(pl); return; }
+      if (pl.cleared && !standIsMine(pl) && (pl.reTry || 0) <= G.min) { pl.reTry = G.min + 1; reassignStand(pl); }
+      // 管制塔の時間表にあわせて速度を調整（大きく遅らせるときは待機経路へ）
       if (r.busy !== pl) {
-        const sp = atcSpacing(pl, r);
+        const sp = atcArrivalControl(pl, r);
         if (sp === 'hold') { pl.holdWhy = 'seq'; startHold(pl); return; }
       }
       if (pl.phase === 'base') {
         pl.spd = lerp(pl.spd, vApp(P) * 1.1 * (pl.spdK || 1), Math.min(1, dt * 0.3));
-        // FAF へ向かいながら旋回
-        const dx = pl.faf.x - pl.x, dz = pl.faf.z - pl.z, d = Math.hypot(dx, dz);
-        const want = Math.atan2(dx, dz);
-        // 中心線の延長上の点（FAF）へ向かい、着いたら最終進入へ
-        const turn = turnToward(pl, want, 0.42, dt);
-        targetBank = clamp(-turn * 1.4, -0.45, 0.45);
-        pl.x += Math.sin(pl.hdg) * pl.spd * dt; pl.z += Math.cos(pl.hdg) * pl.spd * dt;
-        pl.y += (Math.max(pl.faf.y, 1.5) - pl.y) * Math.min(1, dt * 0.15);
+        // 進入の誘導：滑走路の延長線に、遠くから浅い角度で合流する（近すぎるときは一度外へ出る）
         const hx0 = Math.sin(pl.ax.hdg), hz0 = Math.cos(pl.ax.hdg);
         const al0 = (pl.x - pl.td.x) * hx0 + (pl.z - pl.td.z) * hz0, cr0 = (pl.x - pl.td.x) * hz0 - (pl.z - pl.td.z) * hx0;
+        const D = 24 + (pl.fafExt || 0), herr = Math.abs(angDiff(pl.hdg, pl.ax.hdg));
+        const onCourse = Math.abs(cr0) < 1.2 && herr < 0.35;
+        // 浅い角度で合流できる点（前方）。近すぎて合流できないときは、一度外へ出てから入りなおす
+        const iAl = al0 + 5 + Math.abs(cr0) * 1.7;
+        if (pl.outbound == null || pl.extSeen !== (pl.fafExt || 0)) { pl.extSeen = pl.fafExt || 0; pl.outbound = !onCourse && (iAl > -16 || al0 > -D + 2); }
+        if (!pl.outbound && !onCourse && iAl > -16) pl.outbound = true;
+        if (pl.outbound && iAl < -22 && al0 < -D) pl.outbound = false;
+        let tAl;
+        if (pl.outbound) tAl = Math.min(-D, al0) - 10 - Math.abs(cr0);         // 外側へ
+        else tAl = Math.min(iAl, -14);                                       // 前方の延長線上の点を追う
+        const tx = pl.td.x + hx0 * tAl, tz = pl.td.z + hz0 * tAl;
+        const want = Math.atan2(tx - pl.x, tz - pl.z);
+        const turn = turnToward(pl, want, 0.45, dt);
+        targetBank = clamp(-turn * 1.4, -0.45, 0.45);
+        pl.x += Math.sin(pl.hdg) * pl.spd * dt; pl.z += Math.cos(pl.hdg) * pl.spd * dt;
+        pl.y += (Math.max(Math.max(-al0, D) * GLIDE, 1.5) - pl.y) * Math.min(1, dt * 0.15);
         pl.baseT = (pl.baseT || 0) + dt;
-        if (d < 3.5 || (Math.abs(cr0) < 2 && al0 > -45 && al0 < -8 && Math.abs(angDiff(pl.hdg, pl.ax.hdg)) < 0.6)) {
+        if (onCourse && al0 < -14 && !pl.outbound) {
           // 最終進入の前に、降りたあと誘導路を進めるか確かめる（だめなら上空待機）
-          if (!gcCanExit(pl, r)) { pl.holdWhy = 'ground'; startHold(pl); return; }
+          if ((!standIsMine(pl) && !reassignStand(pl)) || !gcCanExit(pl, r, true)) { pl.holdWhy = 'ground'; startHold(pl); return; }
           pl.phase = 'final'; pl.baseT = 0;
         }
-        else if (pl.baseT > 30) { pl.baseT = 0; const st0 = pl.state; pl.state = 'x'; setApproachPath(pl, r); }
+        else if (pl.baseT > 70 + (pl.fafExt || 0) * 2 / vApp(P)) { pl.baseT = 0; pl.holdWhy = 'seqT'; startHold(pl); return; }
         pl.pitch = lerp(pl.pitch, 0.03, 0.1);
       } else {
         // 最終進入：滑走路の中心線にのり、5°で降下
@@ -5413,9 +5589,11 @@ function updatePlane(pl, dt) {
         pl.spd = lerp(pl.spd, vApp(P) * (r.busy === pl ? 1 : (pl.spdK || 1)), Math.min(1, dt * 0.3));
         pl.x += Math.sin(pl.hdg) * pl.spd * dt; pl.z += Math.cos(pl.hdg) * pl.spd * dt;
         const gs = Math.max(0, -along) * GLIDE;
+        // 中心線にのれないまま近づいたら、早めに進入をやめてやり直す（滑走路の横に降りたりしない）
+        if (along > -14 && Math.abs(cross) > 1.6 && r.busy !== pl) { goAround(pl, 'align' + cross.toFixed(1)); break; }
         // 滑走路が空いていなければ着陸やり直し（ゴーアラウンド）
-        if (along > -9 && r.busy !== pl) {
-          if (runwayFreeFor(r, pl) && gcCanExit(pl, r, true)) r.busy = pl;
+        if (along > -COMMIT_D && r.busy !== pl) {
+          if (runwayFreeFor(r, pl) && standIsMine(pl) && gcCanExit(pl, r, true)) { r.busy = pl; r.busyT = G.min; }
           else { if (runwayFreeFor(r, pl)) pl.gcGA = true; goAround(pl, runwayFreeFor(r, pl) ? 'ground' : 'busy:' + (r.busy ? r.busy.state : 'wake')); break; }
         }
         // フレア（接地直前に機首を上げて降下をゆるめる）
@@ -5438,16 +5616,19 @@ function updatePlane(pl, dt) {
     }
     case 'hold': {
       // 待機経路（だ円のレーストラック）
-      pl.holdT += dt;
+      pl.holdT += dt; pl.holdS1 = (pl.holdS1 || 0) + dt;
       pl.ha += dt * pl.spd / 12;
       const cx = pl.hc.x + Math.cos(pl.ha) * 14, cz = pl.hc.z + Math.sin(pl.ha) * 8;
       const want = Math.atan2(cx - pl.x, cz - pl.z);
       turnToward(pl, want, 0.5, dt);
       pl.x += Math.sin(pl.hdg) * pl.spd * dt; pl.z += Math.cos(pl.hdg) * pl.spd * dt;
-      pl.y = lerp(pl.y, 7, 0.02); targetBank = -0.4; pl.pitch = 0.02; pl.spd = vApp(P);
-      if (pl.holdT > 4 && Math.floor(pl.holdT * 2) % 6 === 0) {
+      pl.y = lerp(pl.y, pl.holdAlt || 7, 0.02); targetBank = -0.4; pl.pitch = 0.02; pl.spd = vApp(P);
+      if (!pl.cleared && (pl.standTry || 0) <= G.min) { pl.standTry = G.min + 1; assignStand(pl, G.min + natCommit(pl, r) + 3); if (pl.cleared) ATC.t = 99; }
+      if (pl.holdT > 2 && (pl.holdChk || 0) <= G.min) {
+        pl.holdChk = G.min + 0.5;
         const fogBlock = G.weather === 'fog' && !hasKind('ils');
-        if (!fogBlock && (pl.cleared || pickStand(pl)) && !landingClose(r, pl) && atcReapproachOk(pl, r) && gcCanExit(pl, r)) { setApproachPath(pl, r); pl.phase = 'base'; }
+        if (pl.cleared && !standIsMine(pl)) reassignStand(pl);
+        if (!fogBlock && pl.cleared && atcHoldDone(pl, r) && gcCanExit(pl, r)) { pl.fafExt = 0; setApproachPath(pl, r); pl.phase = 'base'; }
       }
       if (pl.holdT > Extra.holdLimit()) { // ダイバート
         removePlane(pl); fl.status = 'cancel'; fl.why = '着陸できず他の空港へ';
@@ -5476,16 +5657,15 @@ function updatePlane(pl, dt) {
       if (axS(pl.ax, pl) >= pl.rollHand || pl.rollT > pl.ax.len - 2.5) {
         const stand = G.blds[pl.stand];
         taxiInRail(pl, r, stand);
-        gcSetRoute(pl, [{ rail: pl.rail, off: 0 }]);
         pl.state = 'taxi_in'; pl.leaveRw = true;
-        gcTry(pl);
+        gcAdoptRoute(pl, [{ rail: pl.rail, off: 0 }]);
         Bus.emit('taxiIn', pl);
       }
       break;
     }
     case 'taxi_in': {
       // 滑走路を出たら使用中を解除
-      if (pl.leaveRw && r && r.busy === pl && !onRunway(pl, r)) { r.busy = null; pl.leaveRw = false; r.wakeUntil = G.min + (P.cls >= 3 ? 2.5 : 1); }
+      if (pl.leaveRw && r && r.busy === pl && !onRunway(pl, r)) { rwRelease(r, pl, true); pl.leaveRw = false; r.wakeUntil = G.min + (P.cls >= 3 ? 2.5 : 1); }
       const stand = G.blds[pl.stand];
       // 駐機場に入ったら誘導員の合図でゆっくり
       const inStand = stand && G.occ[idx(clamp(Math.floor(pl.x), 0, W - 1), clamp(Math.floor(pl.z), 0, H - 1))] === stand.uid;
@@ -5506,7 +5686,7 @@ function updatePlane(pl, dt) {
       const holding = !pl.rwCleared && pl.holdS != null;
       if (holding && pl.rs >= pl.holdS - 0.05 && pl.spd < 0.05) {
         pl.wait += dt;
-        if (atcDepartOk(pl, r)) { pl.rwCleared = true; r.busy = pl; }
+        if (atcDepartOk(pl, r)) { pl.rwCleared = true; r.busy = pl; r.busyT = G.min; }
         if (pl.wait > 220) removePlane(pl);
         break;
       }
@@ -5515,7 +5695,7 @@ function updatePlane(pl, dt) {
       if (pl.rs >= pl.rail.len - 0.02) {
         if (!pl.rwCleared) {
           pl.wait += dt;
-          if (atcDepartOk(pl, r)) { pl.rwCleared = true; r.busy = pl; }
+          if (atcDepartOk(pl, r)) { pl.rwCleared = true; r.busy = pl; r.busyT = G.min; }
           else break;
         }
         // 滑走路の中心線にのって正対 → 離陸滑走
@@ -5523,7 +5703,7 @@ function updatePlane(pl, dt) {
         pl.hdg = pl.ax.hdg; pl.x = tp.x; pl.z = tp.z;
         gcReleaseAll(pl); pl.gr = null;
         pl.state = 'takeoff'; pl.spd = Math.max(0.05, pl.spd); pl.rollT = pl.takeS || 1.2;
-        pl.acc = vRot(P) * vRot(P) / (2 * Math.max(4, (pl.ax.len - pl.rollT) * (P.eng === 'prop' ? 0.34 : 0.5)));
+        pl.acc = vRot(P) * vRot(P) / (2 * Math.max(4, (pl.ax.len - pl.rollT) * (P.eng === 'prop' ? 0.24 : 0.34)));
         Sound.se(P.eng === 'prop' ? 'prop' : 'jet');
       }
       break;
@@ -5552,8 +5732,8 @@ function updatePlane(pl, dt) {
         tugAt();
       } else if (pl.pbPhase === 1) {
         const lim = gcUpdate(pl, dt);
-        railFollow(pl, dt, { reverse: true, vmax: 0.22, stopS: lim });
-        if (pl.rs >= pl.rail.len - 0.02) { pl.pbPhase = 2; pl.pbT2 = 0; pl.spd = 0; gcPushDone(pl); const st0 = G.blds[pl.stand]; if (st0 && st0.busy === pl.fl.id) st0.busy = 0; }
+        railFollow(pl, dt, { reverse: true, vmax: G.research.fasttug ? 0.72 : 0.55, stopS: lim });
+        if (pl.rs >= pl.rail.len - 0.02) { pl.pbPhase = 2; pl.pbT2 = 0; pl.spd = 0; gcPushDone(pl); standLeave(G.blds[pl.stand], pl.fl.id); ATC.t = 99; }
         if (pl.rs > 0.5 && !pl.engines) { pl.engines = true; Sound.se(P.eng === 'prop' ? 'prop' : 'jet'); }
         tugAt();
       } else if (pl.pbPhase === 2) {
@@ -5561,11 +5741,11 @@ function updatePlane(pl, dt) {
         pl.pbT2 += dt; gcUpdate(pl, dt);
         if (!pl.engines) { pl.engines = true; Sound.se(P.eng === 'prop' ? 'prop' : 'jet'); }
         if (pl.tug) {
-          const k = Math.min(1, pl.pbT2 / 3), side = pl.hdg + Math.PI / 2;
+          const k = Math.min(1, pl.pbT2 / 2), side = pl.hdg + Math.PI / 2;
           const nx = pl.x + Math.sin(pl.hdg) * (P.len / 2 + 0.35 + k * 0.6) + Math.sin(side) * k * 1.6, nz = pl.z + Math.cos(pl.hdg) * (P.len / 2 + 0.35 + k * 0.6) + Math.cos(side) * k * 1.6;
           pl.tug.position.set(nx, 0, nz); pl.tug.rotation.y = pl.hdg + Math.PI + k * 1.2;
         }
-        if (pl.pbT2 > 3.5) {
+        if (pl.pbT2 > 2.2) {
           if (pl.tug) { R.scene.remove(pl.tug); pl.tug = null; }
           pl.state = 'taxi_out'; pl.rail = pl.fwdRail; pl.rs = 0; pl.ri = 0; pl.spd = 0; pl.wait = 0;
         }
@@ -5588,7 +5768,7 @@ function updatePlane(pl, dt) {
       pl.climbT += dt;
       pl.spd = Math.min(vApp(P) * 1.7, pl.spd + dt * 0.25);
       if (pl.y > 0.9 && pl.gearT > 0) pl.gearT = Math.max(0, pl.gearT - dt * 0.8);
-      if (r && r.busy === pl && pl.y > 1.2) { r.busy = null; r.wakeUntil = G.min + (P.cls >= 3 ? 2.5 : 1.2); }
+      if (r && r.busy === pl && pl.y > 0.7) { rwRelease(r, pl, false); r.wakeUntil = G.min + (P.cls >= 3 ? 2.5 : 1.2); }
       // 高度がとれたら行き先の方向へ旋回
       if (pl.y > 3.5 && Math.abs(pl.depTurn) > 0.02) { const t0 = pl.depTurn; const st2 = Math.sign(t0) * Math.min(Math.abs(t0), 0.12 * dt); pl.hdg += st2; pl.depTurn -= st2; targetBank = -Math.sign(t0) * 0.35; }
       const st = pl.spd * dt;
@@ -5648,6 +5828,7 @@ function tilePt(i) { return { x: i % W + 0.5, z: Math.floor(i / W) + 0.5 }; }
 function angDiff(a, b) { let d = b - a; while (d > Math.PI) d -= TAU; while (d < -Math.PI) d += TAU; return d; }
 function lerpAngle(a, b, t) { return a + angDiff(a, b) * t; }
 function goAround(pl, why) {
+  { const r0 = G.blds[pl.runway]; if (r0 && r0.busy === pl) r0.busy = null; }
   pl.exitPlan = null;
   (RT.gaLog = RT.gaLog || []).push(why || '?'); if (RT.gaLog.length > 50) RT.gaLog.shift();
   gcReleaseAll(pl); pl.gr = null;
@@ -5657,11 +5838,17 @@ function goAround(pl, why) {
 }
 function startHold(pl) {
   const why = pl.holdWhy; pl.holdWhy = null;
+  G.stat.today.holds = (G.stat.today.holds || 0) + 1;
   (RT.holdLog = RT.holdLog || []).push((why || (pl.cleared ? 'other' : 'nostand')) + '@' + Math.floor(G.min % 1440 / 60)); if (RT.holdLog.length > 50) RT.holdLog.shift();
   if (why) { if (!RT.holdSeqT || G.min - RT.holdSeqT > 60) { RT.holdSeqT = G.min; Bus.emit('holdSeq', pl.fl, why); } }
   else if (!pl.cleared && (!RT.holdMsgT || G.min - RT.holdMsgT > 90)) { RT.holdMsgT = G.min; Bus.emit('holdNoStand', pl.fl); }
-  pl.state = 'hold'; pl.holdT = pl.holdT || 0;
-  pl.hc = { x: clamp(pl.x, 8, W - 8), z: clamp(pl.z, 6, H - 6) };
+  pl.state = 'hold'; pl.holdT = pl.holdT || 0; pl.holdS1 = 0;
+  const rr = G.blds[pl.runway], ax = rr ? rwAxis(rr, G.windDir || 0) : null;
+  if (ax) {
+    const side = pl.holdSide || (pl.holdSide = Math.random() < 0.5 ? -1 : 1), f = ax.P(-34, 0), perp = ax.ri.horiz ? { x: 0, z: 1 } : { x: 1, z: 0 };
+    pl.hc = { x: f.x + perp.x * side * 16, z: f.z + perp.z * side * 16 };
+  } else pl.hc = { x: clamp(pl.x, 8, W - 8), z: clamp(pl.z, 6, H - 6) };
+  pl.holdAlt = 6 + RT.planes.filter(o => o !== pl && o.state === 'hold').length * 0.9;
   pl.ha = Math.atan2((pl.z - pl.hc.z) / 8, (pl.x - pl.hc.x) / 14);
   pl.fl.status = 'hold';
 }
@@ -5671,7 +5858,7 @@ function removePlane(pl) {
   for (const v of pl.vehicles) R.scene.remove(v.mesh);
   if (pl.tug) R.scene.remove(pl.tug);
   pl.vehicles = [];
-  const s = G.blds[pl.stand]; if (s && s.busy === pl.fl.id) s.busy = 0;
+  standLeave(G.blds[pl.stand], pl.fl.id);
   const r = G.blds[pl.runway]; if (r) { if (r.busy === pl) r.busy = null; r._load = Math.max(0, (r._load || 1) - 1); }
 }
 function onLanded(fl) {
@@ -5902,7 +6089,7 @@ function clearAmbient() {
 // ============================================================
 //  地上走行のレール（誘導路の中心線を、角を丸めた曲線でたどる）
 // ============================================================
-const TAXI_ACC = 0.35, TAXI_DEC = 0.9, A_LAT = 0.42;
+const TAXI_ACC = 0.5, TAXI_DEC = 1.2, A_LAT = 0.6;
 
 // 折れ線 → 角を円弧で丸めた、0.1マスごとの点列
 function buildRail(poly, radius) {
@@ -5965,7 +6152,7 @@ function railFollow(pl, dt, opt) {
   const rail = pl.rail; if (!rail) return true;
   const end = Math.max(pl.rs, Math.min(rail.len, opt.stopS != null ? opt.stopS : rail.len));
   const remain = end - pl.rs;
-  let vt = opt.vmax || V_TAXI;
+  let vt = (opt.vmax || V_TAXI) * (G.research.groundsys && !opt.reverse ? 1.15 : 1);
   // 先のカーブにそなえて減速
   const look = (vt * vt) / (2 * TAXI_DEC) + 0.5;
   for (let i = pl.ri || 0; i < rail.n && rail.S[i] - pl.rs < look; i++) {
@@ -6063,10 +6250,10 @@ function laneQ(g, lanePt) {
 // 接地したら、どの出口で滑走路を出るか決めて、そこまでに減速する
 function planRollout(pl, r) {
   const ax = pl.ax, s0 = axS(ax, pl), v = pl.spd;
-  const minRoll = (v * v - V_TAXI * V_TAXI) / (2 * 1.1);         // 強めのブレーキでも必要な距離
+  const minRoll = (v * v - V_TAXI * V_TAXI) / (2 * 1.5);         // 強めのブレーキでも必要な距離
   const ex = rwExits(r, ax).map(e => e.s).filter(s => s - 2 >= s0 + minRoll).sort((a, b) => a - b);
   // ちょうどよい出口（ゆるいブレーキで届く最初の出口）
-  const want = s0 + (v * v - V_TAXI * V_TAXI) / (2 * 0.55);
+  const want = s0 + (v * v - V_TAXI * V_TAXI) / (2 * (G.research.rapidexit ? 1.2 : 0.9));
   let exitS = ex.find(s => s - 2 >= want) || ex[ex.length - 1];
   if (pl.exitPlan) exitS = pl.exitPlan.ahead ? Math.max(pl.exitPlan.ex.s, s0 + minRoll + 2) : ax.len - 0.8;
   if (exitS == null) exitS = ax.len - 0.8;
@@ -6202,6 +6389,14 @@ function gcTiles(rail, off) {
     return { t: e.t, s0: e.s0, s1: Math.max(e.s1, e.s0 + 0.05), dx, dz, st: 0 };   // st: 0=未予約 1=予約中 2=通過ずみ
   });
 }
+// 着陸前に押さえておいた道（仮の予約）は、本当の経路の予約がとれるまで持っておく
+function gcAdoptRoute(pl, rails) {
+  const old = pl.gr; pl.gr = null;
+  gcSetRoute(pl, rails);
+  if (old) pl.grOld = old;
+  if (gcTry(pl)) gcDropOld(pl);
+}
+function gcDropOld(pl) { if (pl.grOld) { for (const e of pl.grOld.tiles) if (e.st === 1) { gcDrop(e); e.st = 2; } pl.grOld = null; } }
 // 経路をセット（rails：[{rail, off}]、全体の長さでつなぐ）
 function gcSetRoute(pl, rails) {
   gcReleaseAll(pl);
@@ -6248,7 +6443,7 @@ function gcTry(pl) {
   return true;
 }
 function gcDrop(e) { const L = GC.tile[e.t]; if (!L) return; const i = L.indexOf(e); if (i >= 0) L.splice(i, 1); }
-function gcReleaseAll(pl) { if (!pl.gr) return; for (const e of pl.gr.tiles) if (e.st === 1) { gcDrop(e); e.st = 2; } }
+function gcReleaseAll(pl) { gcDropOld(pl); if (!pl.gr) return; for (const e of pl.gr.tiles) if (e.st === 1) { gcDrop(e); e.st = 2; } }
 // 通りすぎたマスを返す
 function gcReleaseBehind(pl) {
   const gr = pl.gr; if (!gr) return;
@@ -6268,6 +6463,7 @@ function gcUpdate(pl, dt) {
   if (!pl.gr) return null;
   gcReleaseBehind(pl);
   const ok = gcTry(pl);
+  if (ok && pl.grOld) gcDropOld(pl);
   const lim = gcLimit(pl);
   if (!ok && pl.spd < 0.05) {
     pl.gr.waitT += dt;
@@ -6289,8 +6485,8 @@ function gcPushDone(pl) {
 // 着陸機の出口の候補：前方（止まれる距離より先）の出口だけ。前方に出口がまったくないときだけ、Uターンして戻る
 function orderedExits(pl, r, ax, target, allow) {
   const P = pl.P, v = vApp(P), tdS = pl.td ? axS(ax, pl.td) : Math.min(3, ax.len * 0.12);
-  const sMin = tdS + (v * v - V_TAXI * V_TAXI) / (2 * 1.1) + 2;
-  const sWant = tdS + (v * v - V_TAXI * V_TAXI) / (2 * 0.55) + 2;
+  const sMin = tdS + (v * v - V_TAXI * V_TAXI) / (2 * 1.5) + 2;
+  const sWant = tdS + (v * v - V_TAXI * V_TAXI) / (2 * 0.9) + 2;
   const all = [];
   for (const ex of rwExits(r, ax)) { const path = target >= 0 ? planePath(ex.tile, target, allow, true) : [ex.tile]; if (path) all.push({ ex, path, ahead: ex.s >= sMin }); }
   const ahead = all.filter(e => e.ahead);
@@ -6342,7 +6538,7 @@ function gcDepartOk(pl, r) {
   if (!r) return true;
   const b = r.busy;
   if (b && b !== pl && (b.state === 'approach' || b.state === 'roll')) return false;
-  return !landingClose(r, pl);
+  return true;
 }
 // 情報パネル用
 function gcStatus(pl) {
@@ -6415,79 +6611,224 @@ function updateOneway() {
 { const _wc = worldChanged; worldChanged = function (d) { _wc(d); RT.owDirty = true; }; }
 
 // ============================================================
-//  管制塔の滑走路の順番づけ（ゴーアラウンドを減らす）
-//  ・着陸機は、前の飛行機が滑走路を空ける時間から逆算して速度を落とす（間隔をあける）
-//  ・どうしても間に合わないときは、早めに上空待機（ぎりぎりのゴーアラウンドにしない）
-//  ・出発機は、次の着陸機が来るまでに離陸できるときだけ滑走路に入れる
+//  管制塔（到着・出発の順番づけ）
+//  ・到着機には、着陸の時刻（スロット）と駐機場を早めに決める
+//    - 駐機場は「いま空いている」だけでなく「着くころに空く」ものも予約する（次の便として）
+//    - 滑走路は、到着と出発を1本の時間表にならべて、すき間に入れていく（先に来た順を守る）
+//  ・遅らせる量が小さいときは速度を落とし、大きいときは待機経路で「進入予定時刻」まで待つ
+//  ・出発機は、時間表で自分の番のときだけ滑走路に入る
 // ============================================================
-// 接地までの時間
+const ATC = { t: 0 };
+const COMMIT_D = 6;   // 着陸許可を出す点（接地の何マス手前か）
+
+// ---------- 時間の見積もり（単位：ゲーム内の分） ----------
 function arrETA(p) {
   if (p.state !== 'approach' || !p.td) return Infinity;
   const v = Math.max(0.2, p.spd);
   if (p.phase === 'base') return (Math.hypot(p.faf.x - p.x, p.faf.z - p.z) + Math.hypot(p.faf.x - p.td.x, p.faf.z - p.td.z)) / v;
   return Math.hypot(p.td.x - p.x, p.td.z - p.z) / v;
 }
-// 着陸してから滑走路を出るまでの時間
+// ふつうの速さで飛んだとき、着陸許可の点（接地の9マス手前）まであと何分か
+function natCommit(pl, r) {
+  const v = vApp(pl.P);
+  if (pl.state === 'approach' && pl.td) {
+    if (pl.phase === 'final') return Math.max(0, Math.hypot(pl.td.x - pl.x, pl.td.z - pl.z) - COMMIT_D) / v;
+    return Math.hypot(pl.faf.x - pl.x, pl.faf.z - pl.z) / (v * 1.1) + Math.max(0, Math.hypot(pl.faf.x - pl.td.x, pl.faf.z - pl.td.z) - COMMIT_D) / v;
+  }
+  const ax = rwAxis(r, G.windDir || 0), faf = ax.P(-24, 0);
+  return Math.hypot(faf.x - pl.x, faf.z - pl.z) / (v * 1.1) + 15 / v + 1.5;
+}
+// 着陸してから滑走路を出るまで
 function arrOccupy(p) {
-  const ax = p.ax; if (!ax) return 10;
+  const ax = p.ax; if (!ax) return 6;
   const v = vApp(p.P), tdS = p.td ? axS(ax, p.td) : 2;
   const exitS = p.exitPlan && p.exitPlan.ahead ? p.exitPlan.ex.s : ax.len * 0.8;
   return Math.max(2, exitS - tdS) / ((v + V_TAXI) / 2) + 1.5;
 }
-// 離陸の許可から、滑走路を空けるまでの時間
-function depOccupy(pl) {
-  const ax = pl.ax; if (!ax) return 20;
-  const remain = pl.rail && pl.state === 'taxi_out' ? Math.max(0, pl.rail.len - pl.rs) : 2;
-  const roll = Math.max(4, ax.len - (pl.takeS || 1.2));
-  return remain / 0.7 + roll / Math.max(0.3, vRot(pl.P)) + 2;
+function wakeOf(P) { return P.cls >= 3 ? 2.5 : 1; }
+// 到着機が滑走路を使う時間（許可 → 滑走路を出る → 後方乱気流の間隔）
+function arrRunwayDur(pl) {
+  const r = G.blds[pl.runway], est = COMMIT_D / vApp(pl.P) + arrOccupy(pl);
+  return (Math.max(est, r && r.occA ? r.occA * 1.05 : 0) + wakeOf(pl.P) + 0.5) * (G.research.rapidexit ? 0.85 : 1);
 }
+// 出発機が滑走路を使う時間（手前で待つ所 → 離陸 → 上昇）
+function depRunwayDur(pl) {
+  const ax = pl.ax; if (!ax) return 8;
+  let line = 2;
+  if (pl.fwdRail) line = Math.max(1, pl.fwdRail.len - (pl.holdS != null ? pl.holdS : pl.fwdRail.len - 2));
+  const roll = Math.max(4, ax.len - (pl.takeS || 1.2));
+  const est = line / 1.0 + roll * 0.7 / Math.max(0.3, vRot(pl.P)) + 1;
+  const r = G.blds[pl.runway];
+  return Math.max(est, r && r.occD ? r.occD * 1.05 : 0) + wakeOf(pl.P) * 0.6 + 0.5;
+}
+function depOccupy(pl) { return depRunwayDur(pl); }
 // いま滑走路を使っている飛行機が、空けるまであとどれくらいか
 function rwFreeIn(r, except) {
   const b = r.busy; if (!b || b === except || b.gone) return Math.max(0, (r.wakeUntil || 0) - G.min);
   if (b.state === 'approach') return arrETA(b) + arrOccupy(b);
-  if (b.state === 'roll') { const s = axS(b.ax, b); return Math.max(0, (b.rollHand || b.ax.len) - s) / Math.max(0.3, (b.spd + V_TAXI) / 2) + 5; }
-  if (b.state === 'taxi_in') return 5;
-  if (b.state === 'taxi_out') return depOccupy(b);
-  if (b.state === 'takeoff') return Math.max(0, (b.ax.len - b.rollT)) / Math.max(0.3, b.spd) + 3;
-  if (b.state === 'climb') return 2;
-  return 6;
+  if (b.state === 'roll') { const s = axS(b.ax, b); return Math.max(0, (b.rollHand || b.ax.len) - s) / Math.max(0.3, (b.spd + V_TAXI) / 2) + 2; }
+  if (b.state === 'taxi_in') return b.spd < 0.05 ? 6 : 2;
+  if (b.state === 'taxi_out') return Math.max(1, b.rail ? (b.rail.len - b.rs) / 0.7 : 2) + Math.max(4, b.ax.len - (b.takeS || 1.2)) * 0.7 / Math.max(0.3, vRot(b.P)) + 1;
+  if (b.state === 'takeoff') return Math.max(0, (b.ax.len - b.rollT)) / Math.max(0.3, b.spd) + 2;
+  if (b.state === 'climb') return 1;
+  return 4;
 }
-// 着陸機ごとに、間隔のための速度の係数を決める。'hold' を返したら上空待機
-function atcSpacing(pl, r) {
-  const commitIn = arrETA(pl) - 9 / Math.max(0.2, pl.spd);
-  let need = 0;
-  // 滑走路を使っている飛行機
-  if (r.busy && r.busy !== pl) need = Math.max(need, rwFreeIn(r, pl));
-  // 先に降りる着陸機
-  for (const o of RT.planes) {
-    if (o === pl || o.gone || o.runway !== pl.runway || o.state !== 'approach') continue;
-    const eo = arrETA(o); if (eo >= arrETA(pl)) continue;
-    need = Math.max(need, eo + arrOccupy(o));
+
+// 滑走路を空けたら、実際にかかった時間を覚えておく（次からの見積もりに使う）
+function rwRelease(r, pl, arr) {
+  if (r.busy !== pl) return;
+  r.busy = null;
+  if (r.busyT != null) {
+    const d = G.min - r.busyT, k = arr ? 'occA' : 'occD';
+    r[k] = r[k] ? r[k] * 0.7 + d * 0.3 : d;
   }
-  if (need <= 0) { pl.spdK = 1; return null; }
-  if (commitIn >= need + 1) { pl.spdK = Math.min(1, (pl.spdK || 1) + 0.02); return null; }
-  // 速度を落として間に合うか（最低で進入速度の72%）
-  const k = clamp(commitIn / (need + 1), 0.72, 1);
-  pl.spdK = Math.min(pl.spdK || 1, k);
-  if (commitIn / 0.72 < need + 1 && (pl.phase === 'base' || commitIn > 12)) return 'hold';
+}
+// ---------- 駐機場の予約 ----------
+function flightById(id) {
+  for (const p of RT.planes) if (p.fl.id === id) return p.fl;
+  return RT.todayFlights.find(f => f.id === id) || null;
+}
+// その駐機場が空く見こみの時刻
+function standFreeAt(s) {
+  const now = G.min;
+  if (!s.busy) return s.next ? Infinity : now;
+  if (s.next) return Infinity;
+  const fl = flightById(s.busy); if (!fl) return now;
+  const pl = fl.plane;
+  if (!pl || pl.gone) return now;
+  if (pl.state === 'pushback') return now + (pl.pbPhase === 0 ? 7 : 3);
+  if (pl.state === 'taxi_out' || pl.state === 'takeoff' || pl.state === 'climb') return now;
+  // まだ到着前・駐機中：出発予定（遅れていればいま）＋押し出しの時間
+  const park = fl.parkT != null ? fl.parkT : now + 12;
+  // 出発時刻をすぎても出ていない（お客さん待ちなど）ときは、少し先と見こむ
+  const late = now > fl.depT ? 6 : 0;
+  return Math.max(now, fl.depT, park + turnTime(fl.type)) + 6 + late;
+}
+// 到着機に駐機場を決める（着く時刻 tLand のころに空いているもの）
+function assignStand(pl, tLand) {
+  const fl = pl.fl, r = G.blds[pl.runway], P = PLANES[fl.type], sc = P.stand || P.cls;
+  let best = null, bs = 1e9;
+  for (const s of eligibleStands(fl)) {
+    if (!standReachable(s, r)) continue;
+    const free = standFreeAt(s); if (!isFinite(free)) continue;
+    const wait = Math.max(0, free - (tLand + 6));
+    const score = wait * 10 + (B[s.id].cls - sc) * 4 + (s.gate && G.blds[s.gate] && B[G.blds[s.gate].id].bus ? 3 : 0) + Math.random() * 0.5;
+    if (score < bs) { bs = score; best = s; }
+  }
+  if (!best) return null;
+  if (!best.busy) best.busy = fl.id; else best.next = fl.id;
+  pl.stand = best.uid; fl.stand = best.uid; fl.gate = best.gate || 0; pl.cleared = true;
+  if (fl.gate && !fl.cargo) spawnCrew(fl, G.blds[fl.gate]);
+  return best;
+}
+// 飛行機が駐機場を出たら、次の便に渡す
+function standLeave(s, flId) {
+  if (!s) return;
+  if (s.busy === flId) { s.busy = s.next || 0; s.next = 0; }
+  else if (s.next === flId) s.next = 0;
+}
+// いまの駐機場がまだ空かないとき、すぐ使える別の駐機場があれば乗りかえる
+function reassignStand(pl) {
+  const cur = G.blds[pl.stand]; if (!cur || cur.busy === pl.fl.id) return false;
+  const fl = pl.fl, r = G.blds[pl.runway], P = PLANES[fl.type], sc = P.stand || P.cls;
+  const alt = eligibleStands(fl).filter(s => s !== cur && !s.busy && !s.next && standReachable(s, r)).sort((a, b) => (B[a.id].cls - sc) - (B[b.id].cls - sc))[0];
+  if (!alt) return false;
+  standLeave(cur, fl.id);
+  alt.busy = fl.id; pl.stand = alt.uid; fl.stand = alt.uid; fl.gate = alt.gate || 0;
+  if (fl.gate && !fl.cargo) spawnCrew(fl, G.blds[fl.gate]);
+  ATC.t = 99;
+  return true;
+}
+function standIsMine(pl) { const s = G.blds[pl.stand]; return !!s && s.busy === pl.fl.id; }
+
+// ---------- 滑走路の時間表 ----------
+function atcPlan() {
+  for (const r of Object.values(G.blds)) {
+    if (B[r.id].kind !== 'runway') continue;
+    const now = G.min, items = [];
+    for (const p of RT.planes) {
+      if (p.gone || p.runway !== r.uid || r.busy === p) continue;
+      if (p.state === 'approach' || p.state === 'hold' || p.state === 'climb_ga') {
+        if (!p.cleared) continue;
+        const s = G.blds[p.stand];
+        // 時刻表どおり（到着予定の少し前）に降りるよう、早すぎるときは遅らせる
+        let ready = Math.max(now + natCommit(p, r), p.fl.arrT - 14);
+        // 駐機場が空くまで降りても待つだけなので、着陸をそのぶん遅らせる
+        const nat = ready;
+        if (s && s.busy !== p.fl.id) ready = Math.max(ready, standFreeAt(s) - 8);
+        p.planWhy = ready > nat + 0.5 ? 'stand' : 'rw';
+        if (p.seqKey == null) p.seqKey = ready;
+        items.push({ p, arr: true, key: p.seqKey, ready, dur: arrRunwayDur(p) });
+      } else if (p.state === 'taxi_out' && !p.rwCleared) {
+        // 出発機：滑走路の手前に着いた（またはもうすぐ着く）ものだけ時間表に入れる
+        const toHold = p.holdS != null ? Math.max(0, p.holdS - p.rs) / 1.0 : Math.max(0, p.rail.len - p.rs) / 1.0;
+        if (toHold > 0.3 && (p.spd < 0.1 || toHold > 6)) continue;
+        const ready = now + toHold;
+        if (p.seqKey == null) p.seqKey = ready;
+        items.push({ p, arr: false, key: p.seqKey, ready, dur: depRunwayDur(p) });
+      }
+    }
+    // 用意ができた順（3分以内なら先に来た順）
+    items.sort((a, b) => Math.round(a.ready / 3) - Math.round(b.ready / 3) || a.key - b.key || (a.arr ? -1 : 1));
+    // 先に来た順に、空いている時間のすき間へ入れる
+    const busy = [[-1e9, now + rwFreeIn(r)]];
+    for (const it of items) {
+      let t = it.ready;
+      for (let k = 0; k < 40; k++) {
+        const hit = busy.find(([a, b]) => t < b && t + it.dur > a);
+        if (!hit) break;
+        t = hit[1];
+      }
+      busy.push([t, t + it.dur]);
+      it.p.planT = t; it.p.planDelay = t - it.ready;
+      if (it.arr && t > it.ready + 0.5) it.p.planWhy = 'runway';
+    }
+    r.plan = items.map(it => ({ p: it.p, t: it.p.planT, arr: it.arr, dur: it.dur }));
+  }
+}
+// 着陸機：時間表にあわせて速度を決める。'hold' を返したら待機経路へ
+function atcArrivalControl(pl, r) {
+  if (pl.planT == null) { pl.spdK = 1; return null; }
+  const nat = natCommit(pl, r), need = pl.planT - G.min;
+  if (need <= nat + 0.3) { pl.spdK = Math.min(1, (pl.spdK || 1) + 0.03); return null; }
+  const k = nat / need;
+  const kMin = G.research.aman ? 0.68 : 0.74;
+  if (k >= kMin) { pl.spdK = Math.max(kMin, Math.min(1, k)); return null; }
+  pl.spdK = kMin;
+  // 速度だけでは間に合わない：進入の道すじをのばす（レーダー誘導）。それでも足りなければ待機経路
+  if (pl.phase === 'base') {
+    // 延長線を外へ出て戻る分（行き帰りで2倍）だけ、合流点を遠くする
+    const v = vApp(pl.P), want = (need * 0.78 - nat) * v / 2;
+    const ext = pl.fafExt || 0, extMax = G.research.aman ? 55 : 40;
+    if (want > 3 && ext < extMax && want > ext + 3) {
+      pl.fafExt = Math.min(extMax, want);
+      pl.faf = pl.ax.P(-24 - pl.fafExt, (24 + pl.fafExt) * GLIDE);
+      return null;
+    }
+    if (ext > 0 && want <= ext + 3) return null;
+    if (nat > 6 && need - nat > 4) return 'hold';
+  }
   return null;
 }
-// 上空待機からもう一度進入してよいか（ほかの着陸機と重ならないか）
-function atcReapproachOk(pl, r) {
-  if (rwFreeIn(r, pl) > 20) return false;
-  for (const o of RT.planes) if (o !== pl && !o.gone && o.runway === pl.runway && o.state === 'approach' && arrETA(o) < 26) return false;
-  return true;
+// 待機経路から出る時刻になったか
+function atcHoldDone(pl, r) {
+  if (pl.planT == null) return false;
+  const nat = natCommit(pl, r);
+  return G.min >= pl.planT - nat / 0.9;
 }
-// 出発機を滑走路に入れてよいか
+// 出発機を滑走路に入れてよいか（時間表で、次の着陸機より前に離陸し終わるか）
 function atcDepartOk(pl, r) {
   if (!runwayFreeFor(r, pl)) return false;
-  const T = depOccupy(pl);
+  const T = depRunwayDur(pl);
   for (const o of RT.planes) {
     if (o === pl || o.gone || o.runway !== pl.runway || o.state !== 'approach') continue;
-    if (arrETA(o) - 9 / Math.max(0.2, o.spd) < T) return false;
+    const commitIn = arrETA(o) - COMMIT_D / Math.max(0.2, o.spd);
+    if (commitIn < T) return false;
   }
   return true;
 }
+// 古い関数名の互換
+function atcReapproachOk(pl, r) { return atcHoldDone(pl, r); }
 
 // ============================================================
 //  シミュレーション（時間・お金・評価・ランク・天気・イベント）
@@ -6583,7 +6924,7 @@ function closeDay() {
     if (d.kind === 'hotel') { const v = (t.paxArr + t.paxDep) * 60 * d.income * (1 + comboBonus(b)) * (1 + (b.lv - 1) * 0.2) + 20000 * d.income; earn(v, 'hotel', b); }
   }
   const inc = Object.values(t.income).reduce((a, b) => a + b, 0), exp = Object.values(t.expense).reduce((a, b) => a + b, 0);
-  G.hist.push({ day: G.day, pax: t.paxArr + t.paxDep, inc, exp, sat, flights: t.flights, visitors: t.visitors, cancel: t.cancel + t.divert, income: Object.assign({}, t.income), ontime: t.ontime, late: t.late, unmet: Object.assign({}, t.unmet), missed: t.missed, expense: Object.assign({}, t.expense), paxArr: t.paxArr, paxDep: t.paxDep, divert: t.divert, money: G.money });
+  G.hist.push({ day: G.day, pax: t.paxArr + t.paxDep, inc, exp, sat, flights: t.flights, visitors: t.visitors, cancel: t.cancel + t.divert, income: Object.assign({}, t.income), ontime: t.ontime, late: t.late, unmet: Object.assign({}, t.unmet), missed: t.missed, holds: t.holds || 0, expense: Object.assign({}, t.expense), paxArr: t.paxArr, paxDep: t.paxDep, divert: t.divert, money: G.money });
   if (G.hist.length > 72) G.hist.shift();
   if (t.satW > 0) G.satHist.push(sat);
   if (G.satHist.length > 4) G.satHist.shift();
@@ -7378,8 +7719,8 @@ function initInput() {
     if (k === '1') setSpeed(1); if (k === '2') setSpeed(2); if (k === '3') setSpeed(4); if (k === '4') setSpeed(8); if (k === '5') setSpeed(16);
     if (k === 'b') toolbarAction('build');
     if (k === 'delete' || k === 'x') toolbarAction('demolish');
-    if (k === '+' || k === '=') Cam.zoom = clamp(Cam.zoom * 1.2, 0.4, 5);
-    if (k === '-') Cam.zoom = clamp(Cam.zoom / 1.2, 0.4, 5);
+    if (k === '+' || k === '=') Cam.zoom = clamp(Cam.zoom * 1.2, 0.2, 5);
+    if (k === "-") Cam.zoom = clamp(Cam.zoom / 1.2, 0.2, 5);
   });
   window.addEventListener('keyup', e => { Inp.keys[e.key.toLowerCase()] = false; });
   window.addEventListener('blur', () => { Inp.keys = {}; });
@@ -7578,6 +7919,7 @@ function renderInfo() {
     else rows.push(['貨物', P.cargo + 'トン']);
     h += rows.map(([k, v]) => `<div class="row"><b>${k}</b><span>${v}</span></div>`).join('');
     const gs = gcStatus(pl); if (gs) h += `<div class="warn">🗼 ${gs}</div>`;
+    if ((pl.state === 'approach' || pl.state === 'hold') && pl.planT != null) h += `<div class="sub">🗼 管制塔の着陸予定 ${fmtTime(pl.planT + 2)}${pl.state === 'hold' ? '（それまで待機経路で待ちます）' : pl.spdK < 0.97 ? '（間隔をあけるため速度を落としています）' : ''}</div>`;
     showRouteLine(pl);
     if (pl.rail && pl.y < 0.5 && pl.gr) h += `<div class="sub">🗼 線：<b style="color:#3fae5a">緑</b>＝管制塔の許可が出た道　<b style="color:#e5484d">赤</b>＝許可まち</div>`;
     h += `<div class="sub" style="margin-top:6px">${P.desc}</div><div class="btns"><button class="pbtn sm blue" id="iFollow">${UI.follow === pl ? '追いかけるのをやめる' : '📷 カメラで追いかける'}</button></div>`;
@@ -7928,7 +8270,7 @@ function openMenu() {
     <div class="sub" style="margin-top:6px">夜（飛行機のない時間）は自動でとばす</div><div class="seg" id="sN"><button data-v="1" class="${o.nightSkip ? 'on' : ''}">する</button><button data-v="0" class="${o.nightSkip ? '' : 'on'}">しない</button></div>
     <div class="sub" style="margin-top:6px">一日の終わりに「一日のまとめ」を表示</div><div class="seg" id="sD"><button data-v="1" class="${o.dayReport !== false ? 'on' : ''}">する</button><button data-v="0" class="${o.dayReport === false ? 'on' : ''}">しない</button></div>
     <div class="sec">${iconImg('save', 's')}セーブ</div>
-    <div class="sub">自動で毎日セーブされます（スロット${Game.slot + 1}）。</div>
+    <div class="sub">5分ごとと毎日0時に自動でセーブされます（スロット${Game.slot + 1}）。</div>${Cloud.available() ? `<div class="card" style="margin-top:6px;text-align:center">${Cloud.code() ? `クラウドのセーブコード<div style="font-size:30px;letter-spacing:8px;font-family:monospace;font-weight:900">${Cloud.code()}</div><div class="sub">ずっと同じコードです（5分ごとに自動で上書き保存）</div>` : '<div class="sub">「クラウドに保存」を押すと、5けたのセーブコードが発行されます（そのあとは5分ごとに自動保存）</div>'}</div>` : ''}
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="pbtn sm blue" id="mSave">${iconImg('save', 's')}いまセーブ</button><button class="pbtn sm" id="mExport">引きつぎコードを作る</button><button class="pbtn sm" id="mImport">引きつぎコードを入力</button>${Cloud.available() ? '<button class="pbtn sm" id="mCloud">クラウドに保存</button>' : ''}</div>
     <div class="sec">${iconImg('flag', 's')}空港の名前</div><input type="text" id="mName" maxlength="16" value="${esc(G.name)}">
     <div style="display:flex;gap:6px;margin-top:12px"><button class="pbtn" id="mTitleBtn">タイトルへ</button></div>`;
@@ -8090,6 +8432,7 @@ function confirmAutoTaxi(tiles, what, after) {
   for (const i of tiles) { G.floor[i] = FLOOR.TAXI; G.trees[i] = 0; markChunk(i % W, Math.floor(i / W)); }
   worldChanged(B.taxiway); World.dirtyWalls = true;
   pushUndo({ type: 'paint', tiles: UI.lastPaint, cost: G.free ? 0 : cost });
+  G.flags.autoTaxi = true;
   Sound.se('place'); toast(`${what}を誘導路でつなぎました（${tiles.length}マス ${fmtYen(cost)}）`, 'good', 'taxiway');
   after && after();
 }
@@ -8474,7 +8817,7 @@ function initStoryEvents() {
   Bus.on('routeOpened', r => toast(`${CITIES[r.city].name}行きの路線が開きました！（${AIRLINES[r.airline].name}）`, 'good', 'globe'));
   Bus.on('cancel', (fl, why) => toast(`${fl.code} ${CITIES[fl.city].name}便 欠航：${why}`, 'bad', 'anger'));
   Bus.on('divert', fl => toast(`${fl.code} 着陸できず他の空港へ…`, 'bad', 'anger'));
-  Bus.on('holdSeq', (fl, why) => toast(`${fl.code} 管制塔の指示で上空待機（${why === 'ground' ? '誘導路が混んでいるため' : '前の飛行機との間隔をあけるため'}）`, '', 'tower'));
+  Bus.on('holdSeq', (fl, why) => toast(`${fl.code} 管制塔の指示で上空待機（${why === 'ground' ? '駐機場や誘導路が空くのを待つため' : why === 'fog' ? '霧で着陸できないため（ILSがあれば降りられます）' : '前の飛行機との間隔をあけるため'}）`, '', 'tower'));
   Bus.on('holdNoStand', fl => { toast(`${fl.code} 空いている駐機場がなく上空で待機中…（駐機場・搭乗口を増やそう）`, 'bad', 'plane'); if (!G.free) { G.hints = G.hints || {}; if (!G.hints.hold) { G.hints.hold = 1; Dialog.show([{ who: 'jii', t: '飛行機が空の上でぐるぐる回っておる！ 駐機場がいっぱいなんじゃ。駐機場と搭乗口を増やすか、便数を見直すんじゃ。大きな機材は大型駐機場にしか入れんぞ。' }]); } } });
   Bus.on('goAround', fl => { const g = fl.plane && fl.plane.gcGA; if (fl.plane) fl.plane.gcGA = false; toast(g ? `${fl.code} 管制塔の指示で着陸やり直し（着陸しても誘導路がふさがっていて進めないため）` : `${fl.code} 滑走路が空いていないため着陸やり直し（ゴーアラウンド）`, '', 'tower'); });
   Bus.on('firstFlight', fl => { Sound.se('levelup'); toast('はじめての飛行機が到着しました！', 'gold', 'plane'); });
@@ -8635,8 +8978,8 @@ function deserialize(json) {
   genMap(seed);
   const W0 = g.mapW || 72, H0 = g.mapH || 48;   // セーブしたときのマップの大きさ
   const oldMap = W0 !== W || H0 !== H;
-  // 古いマップの座標 → いまの座標のずれ（72x48 → OX,OY ／ 108x72 → OX-12,OY-12）
-  const DX = W0 === 72 ? OX : OX - 12, DY = W0 === 72 ? OY : OY - 12;
+  // 古いマップの座標 → いまの座標のずれ（72x48 → OX,OY ／ それより後のマップは、まん中にそろえる）
+  const DX = W0 === 72 ? OX : (W - W0) / 2, DY = W0 === 72 ? OY : (H - H0) / 2;
   if (oldMap) {
     const old = genTerrain(seed, W0, H0);
     const f0 = unrle(keep.floor, Uint8Array, W0 * H0), t0 = unrle(keep.trees, Uint8Array, W0 * H0);
@@ -8728,23 +9071,61 @@ function importCode(code) {
     return true;
   } catch (e) { return false; }
 }
-// GAS のクラウド保存
+// ---------- 圧縮（gzip → base64） ----------
+async function packSave(str) {
+  try {
+    if (typeof CompressionStream === 'undefined') return str;
+    const cs = new Blob([str]).stream().pipeThrough(new CompressionStream('gzip'));
+    const buf = new Uint8Array(await new Response(cs).arrayBuffer());
+    let bin = ''; for (let i = 0; i < buf.length; i += 8192) bin += String.fromCharCode.apply(null, buf.subarray(i, i + 8192));
+    return 'GZ1:' + btoa(bin);
+  } catch (e) { return str; }
+}
+async function unpackSave(str) {
+  if (typeof str !== 'string' || !str.startsWith('GZ1:')) return str;
+  const bin = atob(str.slice(4)), buf = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+  const ds = new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'));
+  return await new Response(ds).text();
+}
+// ---------- GAS のクラウド保存（5けたのコード。最初に1回だけ発行して、あとはずっと同じコード） ----------
 const Cloud = {
+  busy: false,
   available() { return !!(window.google && google.script && google.script.run); },
-  save() {
-    if (!this.available()) return;
-    const data = serialize();
-    toast('クラウドに保存中…');
-    google.script.run.withSuccessHandler(key => {
-      if (!key || key.err) { toast('保存できませんでした：' + (key && key.err || ''), 'bad'); return; }
-      openModal('クラウド保存', `<div style="text-align:center"><p>別の端末で、タイトルの「クラウドから読みこむ」にこのコードを入力してください。</p><div style="font-size:34px;letter-spacing:6px;font-family:monospace">${key}</div><p class="sub">（30日間保存されます）</p></div>`, { narrow: true });
-    }).withFailureHandler(e => toast('保存できませんでした', 'bad')).cloudSave(data);
+  code() { return G && G.cloud && G.cloud.key || null; },
+  async save(silent) {
+    if (!this.available() || Game.demo || !G || this.busy) return;
+    this.busy = true;
+    const first = !this.code();
+    let data;
+    try { data = await packSave(serialize()); } catch (e) { this.busy = false; return; }
+    if (!silent) toast('クラウドに保存中…');
+    const c = G.cloud || {};
+    google.script.run.withSuccessHandler(res => {
+      this.busy = false;
+      if (!res || res.err) {
+        if (res && /別のセーブ/.test(res.err)) { G.cloud = null; toast('このコードは使えなくなっていたので、新しいコードを発行します', 'bad'); setTimeout(() => this.save(false), 500); return; }
+        if (!silent) toast('クラウドに保存できませんでした：' + (res && res.err || ''), 'bad'); return;
+      }
+      G.cloud = { key: res.key, token: res.token, t: Date.now() };
+      saveGame();
+      if (first) this.showCode(true);
+      else if (!silent) toast(`クラウドに保存しました（コード ${res.key}）`, 'good', 'save');
+      else toast(`自動でクラウドに保存しました（コード ${res.key}）`, '', 'save');
+    }).withFailureHandler(() => { this.busy = false; if (!silent) toast('クラウドに保存できませんでした', 'bad'); }).cloudSave(data, c.key || '', c.token || '');
+  },
+  showCode(isNew) {
+    const k = this.code(); if (!k) return;
+    openModal('セーブコード', `<div style="text-align:center"><p>${isNew ? 'セーブコードを発行しました！' : 'この空港のセーブコード'}</p><div style="font-size:44px;letter-spacing:10px;font-family:monospace;font-weight:900">${k}</div><p class="sub">このコードは<b>ずっと同じ</b>です。5分ごとに自動でクラウドに保存されます。<br>別の端末では、タイトルの「クラウドから読みこむ」にこのコードを入れてください。</p></div>`, { narrow: true });
   },
   load(key, slot, done) {
     if (!this.available()) return;
-    google.script.run.withSuccessHandler(data => {
-      if (!data || data.err) { toast('見つかりませんでした', 'bad'); return; }
-      try { JSON.parse(data); localStorage.setItem(SAVE_KEY + slot, data); done && done(); } catch (e) { toast('データがこわれています', 'bad'); }
+    key = String(key || '').replace(/[^0-9]/g, '');
+    if (key.length !== 5) { toast('5けたの数字を入れてください', 'bad'); return; }
+    toast('読みこみ中…');
+    google.script.run.withSuccessHandler(async data => {
+      if (!data || data.err) { toast('そのコードは見つかりませんでした', 'bad'); return; }
+      try { const json = await unpackSave(data); JSON.parse(json); localStorage.setItem(SAVE_KEY + slot, json); done && done(); } catch (e) { toast('データがこわれています', 'bad'); }
     }).withFailureHandler(() => toast('読みこめませんでした', 'bad')).cloudLoad(key);
   }
 };
@@ -9239,6 +9620,97 @@ Bus.on('moved', () => { G.flags.moves = (G.flags.moves || 0) + 1; });
 Bus.on('departed', () => { G.flags.pushbacks = (G.flags.pushbacks || 0) + 1; });
 
 // ============================================================
+//  追加その3：建物モデル・イベント4・つぶやき2・開発の効果
+// ============================================================
+const MORE3_SHOPC = {
+  kushikatsu: ['#5a3a24', '#e5484d', ['#d8a050', '#ffd84a']], monja: ['#e8d8b8', '#2f4f9a', ['#a0683c', '#4cb85c']],
+  tantan: ['#fff0e8', '#c02838', ['#e5484d', '#ffd84a']], bagel: ['#f4e8d0', '#7a4c2c', ['#d8a050', '#ffffff']],
+  dimsum: ['#fff8f0', '#c02838', ['#ffffff', '#4cb85c']], gelato: ['#f0fff4', '#3fc9b8', ['#f59ac0', '#ffd84a']],
+  steakbento: ['#ffffff', '#7a2030', ['#a0683c', '#ffffff']], skybar: ['#1a1a2a', '#c9a0ff', ['#2a2a40', '#c9a0ff']],
+  pottery: ['#e8d8c0', '#7a4c2c', ['#a0683c', '#3a5080', '#e8e0d0']], kendama: ['#fff8e0', '#e5484d', ['#e5484d', '#4a8fe0', '#ffd84a']],
+  fishingshop: ['#e8f4f8', '#2f6a9a', ['#4cb85c', '#f39a3c', '#2a2a36']], tea2: ['#f8f0e0', '#2e5a3a', ['#a0683c', '#ffffff']],
+  bookstore2: ['#f4f2ee', '#3a5080', ['#e5484d', '#ffd84a', '#4cb85c']], plushie: ['#fff0f8', '#ff80c0', ['#a0683c', '#ffd84a', '#f59ac0']],
+  umbrella: ['#f0f8ff', '#4a8fe0', ['#e5484d', '#4a8fe0', '#ffd84a']], luxwatch2: ['#1a1a22', '#d8a020', ['#2a2a36', '#d8a020']],
+};
+for (const [id, [wall, awn, cols]] of Object.entries(MORE3_SHOPC)) {
+  const def = B[id];
+  shopModel(id, {
+    wall, awn, stripe: !['skybar', 'luxwatch2', 'tea2'].includes(id), sign: awn, icon: def.icon,
+    signGlow: id === 'skybar' ? '#c9a0ff' : undefined, floor: id === 'skybar' ? '#2a2a40' : '#efe6d6',
+    props: (mb, w, d) => {
+      if (def.cat === 'food') {
+        if (d >= 2) tables(mb, w, d, w >= 3 ? 4 : 2, id === 'skybar' ? '#3a3a50' : '#ffffff', cols[0], -0.15);
+        else { mb.box(0, 0, 0.05, w - 0.3, 0.6, 0.35, cols[0]); mb.box(0, 0.6, 0.05, w - 0.35, 0.05, 0.38, '#d8d8d8'); }
+        if (id === 'skybar') for (let i = 0; i < 3; i++) mb.box(-0.8 + i * 0.8, 0.9, -d / 2 + 0.2, 0.06, 0.2, 0.06, '#ffe8a0', { glow: '#ffd060' });
+        if (id === 'kushikatsu') mb.box(0, 0.62, -d / 2 + 0.3, 0.6, 0.05, 0.2, '#ff8040', { glow: '#ff6020' });
+      } else if (id === 'luxwatch2') {
+        mb.box(0, 0, -0.1, w - 0.4, 0.6, 0.4, '#2a2a36'); mb.box(0, 0.6, -0.1, w - 0.45, 0.18, 0.38, '#f0f8ff', { glow: '#ffffff' });
+      } else shelves(mb, w, d, cols);
+    }
+  });
+}
+MODELS.sleeppod = (mb, w) => { for (let i = 0; i < 2; i++) { mb.box(-0.45 + i * 0.9, 0, -0.1, 0.8, 0.55, 0.7, '#f4f2ee'); mb.cyl(-0.45 + i * 0.9, 0.12, 0.25, 0.22, 0.22, 0.03, '#203040', 10, { glow: '#80c8ff' }); } mb.icon('zzz', 0, 0.9, -0.3, 0.3, 0); };
+MODELS.workspace = (mb, w, d) => { booth(mb, w, d, { wall: '#e8e4dc', floor: '#d8d4cc', awn: '#3a5080', sign: '#3a5080', icon: 'board', noCounter: true }); for (let i = 0; i < 3; i++) { mb.box(-0.9 + i * 0.9, 0, -0.1, 0.7, 0.42, 0.45, '#a0683c'); mb.box(-0.9 + i * 0.9, 0.42, -0.2, 0.3, 0.2, 0.03, '#203040', { glow: '#80c8ff' }); } };
+MODELS.petroom = (mb, w, d) => { booth(mb, w, d, { wall: '#fff8e8', floor: '#f0e0c8', awn: '#f39a3c', sign: '#f39a3c', icon: 'heart', noCounter: true }); for (let i = 0; i < 2; i++) { mb.box(-0.4 + i * 0.8, 0, -0.3, 0.6, 0.45, 0.5, '#ffffff'); mb.box(-0.4 + i * 0.8, 0.05, -0.04, 0.5, 0.35, 0.02, '#9a9aa6'); } };
+MODELS.prayerhall = (mb, w, d) => { mb.box(0, 0, 0, w - 0.04, 0.05, d - 0.04, '#d8d4cc'); mb.box(0, 0, -d / 2 + 0.08, w - 0.04, 1.4, 0.1, '#8fc8e8', { glow: '#ffe8a0' }); for (let i = 0; i < 4; i++) mb.box(-1.3 + i * 0.87, 0, 0.3, 0.6, 0.25, 0.3, '#3a5080'); mb.icon('binocular', 0, 1.2, -d / 2 + 0.15, 0.32, 0); };
+MODELS.infodesk2 = (mb, w) => { mb.box(0, 0, -0.1, w - 0.2, 0.6, 0.45, '#ffffff'); mb.box(0, 0.6, -0.1, w - 0.1, 0.05, 0.5, '#3fae5a'); mb.box(0, 0.9, -0.35, 1.2, 0.35, 0.05, '#203040', { glow: '#80ffa0' }); mb.icon('info', 0, 1.3, -0.35, 0.3, 0); };
+MODELS.cargo2 = (mb, w, d) => { mb.box(0, 0, -0.3, w - 0.1, 1.5, d - 0.7, '#c8ccd8'); mb.box(0, 1.5, -0.3, w, 0.1, d - 0.6, '#f08a24'); for (let i = 0; i < 4; i++) mb.box(-1.5 + i, 0, d / 2 - 0.66, 0.8, 1.1, 0.04, '#7a7a86'); for (let i = 0; i < 3; i++) mb.box(-1.2 + i * 1.2, 0, d / 2 - 0.25, 0.8, 0.5, 0.4, ['#e5484d', '#4a8fe0', '#ffd84a'][i]); mb.icon('cargo', 0, 1.2, d / 2 - 0.62, 0.34, 0); };
+MODELS.rescue = (mb, w, d) => { mb.box(0, 0, 0, w - 0.1, 0.05, d - 0.1, '#5a5a66'); mb.cyl(0, 0.05, 0, 1.1, 1.1, 0.02, '#f4f2ee', 16); mb.cyl(0, 0.06, 0, 0.9, 0.9, 0.02, '#5a5a66', 16); mb.box(0, 0.08, 0, 0.12, 0.01, 0.8, '#f4f2ee'); mb.box(0, 0.08, 0, 0.6, 0.01, 0.12, '#f4f2ee'); mb.box(-0.2, 0.1, 0.1, 0.35, 0.35, 0.9, '#e5484d'); mb.box(-0.2, 0.47, 0.1, 1.4, 0.03, 0.08, '#2a2a36'); mb.box(-0.2, 0.3, -0.55, 0.08, 0.2, 0.4, '#e5484d'); };
+MODELS.glidepath = (mb, w, d) => { for (let i = 0; i < 3; i++) { mb.box(0, 0, -d / 2 + 0.5 + i, 0.06, 0.4, 0.06, '#9a9aa6'); mb.box(0, 0.4, -d / 2 + 0.5 + i, 0.8, 0.06, 0.1, '#5a5a66'); for (let k = 0; k < 3; k++) mb.box(-0.3 + k * 0.3, 0.46, -d / 2 + 0.5 + i, 0.08, 0.06, 0.08, '#fff8e0', { glow: '#fff0a0' }); } };
+MODELS.ferryport = (mb, w, d) => { mb.box(0, 0, 0.3, w - 0.1, 0.1, d - 0.7, '#a0683c'); mb.box(0, 0, -0.6, w - 0.4, 0.8, 0.6, '#f4f2ee'); mb.box(0, 0.8, -0.6, w - 0.3, 0.08, 0.7, '#3a7bd5'); for (let i = 0; i < 4; i++) mb.cyl(-1.5 + i, 0, d / 2 - 0.15, 0.06, 0.06, 0.4, '#5a3a24', 6); mb.icon('fish', 0, 0.6, -0.29, 0.3, 0); };
+MODELS.campsite = (mb, w, d) => { mb.box(0, 0, 0, w - 0.1, 0.04, d - 0.1, '#6ab85a'); for (const [x, z, c] of [[-1.2, -0.6, '#f39a3c'], [0, -0.7, '#4a8fe0'], [1.2, -0.5, '#4cb85c']]) { mb.box(x, 0.04, z, 0.7, 0.45, 0.6, c); mb.box(x, 0.49, z, 0.1, 0.1, 0.62, c); } mb.cyl(0, 0.04, 0.6, 0.25, 0.25, 0.08, '#5a5a66', 8); mb.box(0, 0.12, 0.6, 0.15, 0.1, 0.15, '#ff8040', { glow: '#ff6020' }); treeShape(mb, -1.5, 0.9, 'pine', 1, 0.8); treeShape(mb, 1.5, 0.9, 'round', 1, 0.8); };
+MODELS.aviationpark = (mb, w, d) => { mb.box(0, 0, 0, w - 0.1, 0.35, d - 0.1, '#5fae4a'); mb.box(0, 0.35, 0, w - 1.0, 0.3, d - 1.0, '#6ab85a'); mb.box(0, 0.65, 0, 1.4, 0.04, 1.4, '#c8b090'); mb.box(-0.4, 0.69, 0, 0.8, 0.2, 0.2, '#a0683c'); mb.box(0.6, 0.69, 0.3, 0.06, 0.6, 0.06, '#3a3a48'); mb.box(0.6, 1.29, 0.3, 0.2, 0.15, 0.2, '#3a3a48'); treeShape(mb, -1.4, -1.4, 'round', 1, 0.8); treeShape(mb, 1.4, 1.3, 'sakura', 0, 0.8); };
+MODELS.lavender = (mb, w, d) => { mb.box(0, 0, 0, w - 0.1, 0.05, d - 0.1, '#4a7a3a'); for (let r = 0; r < 4; r++) mb.box(0, 0.05, -d / 2 + 0.3 + r * (d - 0.6) / 3, w - 0.3, 0.22, 0.25, '#9a62d0'); };
+MODELS.snowlantern = (mb) => { mb.box(0, 0, 0, 0.5, 0.35, 0.5, '#ffffff'); mb.box(0, 0.35, 0, 0.35, 0.3, 0.35, '#f4f8ff'); mb.box(0, 0.42, 0.18, 0.15, 0.15, 0.01, '#ffd060', { glow: '#ffc040' }); mb.box(0, 0.65, 0, 0.5, 0.12, 0.5, '#ffffff'); };
+MODELS.planestatue = (mb, w, d) => {
+  mb.box(0, 0, 0, w - 0.4, 0.3, d - 0.4, '#9a9aa6'); mb.box(0, 0.3, 0, 0.2, 1.0, 0.2, '#7a7a86');
+  mb.box(0, 1.3, 0, 0.28, 0.28, 2.2, '#d8d0b8'); mb.box(0, 1.38, 0.1, 2.4, 0.05, 0.45, '#d8d0b8'); mb.box(0, 1.5, -1.0, 0.04, 0.4, 0.3, '#e5484d'); mb.box(0, 1.35, -0.95, 0.9, 0.04, 0.25, '#d8d0b8');
+  mb.box(0, 1.3, 1.12, 0.05, 0.7, 0.04, '#3a3a44');
+};
+
+// ---------- イベント 4 ----------
+EVENTS.push(
+  { id: 'setsubun', name: '節分', when: d => d.month === 2 && d.part === 0, desc: '福は内！ 空港に豆まきの声', visitors: 1.2 },
+  { id: 'hinamatsuri', name: 'ひなまつり', when: d => d.month === 3 && d.part === 0, desc: '家族づれのお客さんが増える', demand: 1.05, visitors: 1.2 },
+);
+RANDOM_EVENTS.push(
+  { id: 'foodtv', name: 'グルメ番組のロケ', p: 0.03, minRank: 3, desc: '今日は飲食店の売上 +25%', apply: () => { G.flags.foodtv = true; } },
+  { id: 'spotterday', name: '撮影会', p: 0.03, minRank: 2, desc: '飛行機ファンが大集合！ 見学客が増える', visitors: 1.7 },
+);
+// ---------- つぶやき 2 ----------
+VOICES.push(
+  { t: '管制塔の人たち、いい仕事してるね', c: p => p.kind === 'visit' || p.type === 'maniac' },
+  { t: '大物が釣れるといいなぁ', c: p => p.type === 'fisher' },
+);
+
+// ---------- 開発・建物の効果 ----------
+{
+  const E = Extra;
+  const _price = E.priceMul, _rate = E.ratingAdd, _vis = E.visitorMul, _mood = E.moodStart, _daily = E.daily;
+  E.priceMul = (b, p) => {
+    const def = B[b.id]; let k = _price(b, p);
+    const wet = G.weather === 'rain' || G.weather === 'snow' || G.weather === 'typhoon';
+    if (G.research.rainshop && wet && (def.cat === 'shop' || def.cat === 'food')) k *= 1.15;
+    if (b.id === 'umbrella' && wet) k *= 2;
+    if (G.research.chefsel && ['steak', 'kaiseki', 'restaurant', 'skybar', 'yakiniku', 'unagi', 'tempura'].includes(b.id)) k *= 1.1;
+    if (G.flags.foodtv && def.cat === 'food') k *= 1.25;
+    if (p && p.type === 'chef' && def.cat === 'food') k *= 1.2;
+    return k;
+  };
+  E.ratingAdd = () => _rate() + (hasKindId('rescue') ? 0.05 : 0);
+  E.visitorMul = () => _vis() * (G.research.nightlight && ((G.min % 1440) > 18 * 60) ? 1.25 : 1);
+  E.moodStart = p => {
+    let m = _mood(p);
+    if (G.research.kidsmenu && p.type === 'kid') m += 4;
+    if (G.research.quietzone && ['elder', 'scientist', 'monk'].includes(p.type)) m += 4;
+    if (G.research.airportmap && ['foreign', 'elder', 'abroad'].includes(p.type)) m += 3;
+    return m;
+  };
+  E.daily = () => { _daily(); G.flags.foodtv = false; };
+}
+function hasKindId(id) { for (const b of Object.values(G.blds)) if (b.id === id) return true; return false; }
+
+// ============================================================
 //  一日のまとめ・銀行（借入）
 // ============================================================
 const INC_NAMES = { landing: '着陸料', pfc: '旅客の使用料', food: '飲食', shop: 'ショップ', svc: 'サービス・娯楽', park: '駐車場・レンタカー', hotel: '宿泊', cargo: '貨物', fuel: '燃料', other: 'そのほか' };
@@ -9536,9 +10008,9 @@ function showTitle() {
   $('#tFree').onclick = () => { first(); chooseSlot('free'); };
   $('#tHow').onclick = () => { first(); howTo(); };
   const cl = $('#tCloud'); if (cl) cl.onclick = () => {
-    openModal('クラウドから読みこむ', `<p>保存したときのコードを入力してください。</p><input type="text" id="clK" maxlength="8" style="text-transform:uppercase"><div class="sub" style="margin:6px 0">読みこむスロット</div><div class="seg" id="clS"><button data-s="0" class="on">1</button><button data-s="1">2</button><button data-s="2">3</button></div><button class="pbtn blue" id="clGo" style="margin-top:8px">読みこむ</button>`, { narrow: true });
+    openModal('クラウドから読みこむ', `<p>5けたのセーブコードを入力してください。</p><input type="text" id="clK" maxlength="5" inputmode="numeric" pattern="[0-9]*" style="font-size:28px;letter-spacing:8px;text-align:center;font-family:monospace"><div class="sub" style="margin:6px 0">読みこむスロット</div><div class="seg" id="clS"><button data-s="0" class="on">1</button><button data-s="1">2</button><button data-s="2">3</button></div><button class="pbtn blue" id="clGo" style="margin-top:8px">読みこむ</button>`, { narrow: true });
     let sl = 0; $('#clS').onclick = e => { const b = e.target.closest('button'); if (!b) return; sl = +b.dataset.s; $$('#clS button').forEach(x => x.classList.toggle('on', x === b)); };
-    $('#clGo').onclick = () => Cloud.load($('#clK').value.trim().toUpperCase(), sl, () => { closeModal(); startGame(sl, null); });
+    $('#clGo').onclick = () => Cloud.load($('#clK').value.trim(), sl, () => { closeModal(); startGame(sl, null); });
   };
 }
 function chooseSlot(mode) {
@@ -9682,6 +10154,11 @@ function loop(now) {
   updateFX(dtReal);
   if (!Game.demo || true) updateExtras(spd > 0 ? dtReal / REAL_SEC_PER_GMIN * Math.min(spd, 4) : 0, dtReal);
   DayReport.tick(); updateOneway();
+  // 5分ごとに自動保存（GAS ならクラウドにも）
+  if (!Game.demo && Game.started) {
+    Game.autoT = (Game.autoT || 0) + dtReal;
+    if (Game.autoT >= 300) { Game.autoT = 0; saveGame(); Cloud.save(true); }
+  }
   if (Cam.shake > 0) Cam.shake = Math.max(0, Cam.shake - dtReal);
   renderFrame();
   // UI
@@ -9707,7 +10184,7 @@ function loop(now) {
   }
 }
 window.addEventListener('load', boot);
-window.__sora = { serialize, planeModel, PLANES, get G() { return G; }, dbg: { planePath, GC, showInfo, autoConnectStand, autoConnectRunway, standReachable, taxiInRail, departRails, rwAxis, planRollout, standGeom, axPt, relocateBuilding, rotateInPlace, openDayReport, openBank, Bank, DayReport, getField, accessTiles, findFacility, findKind, get WALKABLE() { return WALKABLE; }, People, Story, CHAPTERS, Dialog, routeCheck, checkWarnings, relinkGates }, setTool, tryPlace, RT, simStep, World, Cam, R, startGame, placeBuilding, paintApply, openRoute, B, Game, UI };
+window.__sora = { OX, OY, W, H, serialize, planeModel, PLANES, get G() { return G; }, dbg: { Cloud, rwFreeIn, standFreeAt, planePath, GC, showInfo, autoConnectStand, autoConnectRunway, standReachable, taxiInRail, departRails, rwAxis, planRollout, standGeom, axPt, relocateBuilding, rotateInPlace, openDayReport, openBank, Bank, DayReport, getField, accessTiles, findFacility, findKind, get WALKABLE() { return WALKABLE; }, People, Story, CHAPTERS, Dialog, routeCheck, checkWarnings, relinkGates }, setTool, tryPlace, RT, simStep, World, Cam, R, startGame, placeBuilding, paintApply, openRoute, B, Game, UI };
 
 })();
 </script>

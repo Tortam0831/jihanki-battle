@@ -29,6 +29,14 @@ function gcTiles(rail, off) {
     return { t: e.t, s0: e.s0, s1: Math.max(e.s1, e.s0 + 0.05), dx, dz, st: 0 };   // st: 0=未予約 1=予約中 2=通過ずみ
   });
 }
+// 着陸前に押さえておいた道（仮の予約）は、本当の経路の予約がとれるまで持っておく
+function gcAdoptRoute(pl, rails) {
+  const old = pl.gr; pl.gr = null;
+  gcSetRoute(pl, rails);
+  if (old) pl.grOld = old;
+  if (gcTry(pl)) gcDropOld(pl);
+}
+function gcDropOld(pl) { if (pl.grOld) { for (const e of pl.grOld.tiles) if (e.st === 1) { gcDrop(e); e.st = 2; } pl.grOld = null; } }
 // 経路をセット（rails：[{rail, off}]、全体の長さでつなぐ）
 function gcSetRoute(pl, rails) {
   gcReleaseAll(pl);
@@ -75,7 +83,7 @@ function gcTry(pl) {
   return true;
 }
 function gcDrop(e) { const L = GC.tile[e.t]; if (!L) return; const i = L.indexOf(e); if (i >= 0) L.splice(i, 1); }
-function gcReleaseAll(pl) { if (!pl.gr) return; for (const e of pl.gr.tiles) if (e.st === 1) { gcDrop(e); e.st = 2; } }
+function gcReleaseAll(pl) { gcDropOld(pl); if (!pl.gr) return; for (const e of pl.gr.tiles) if (e.st === 1) { gcDrop(e); e.st = 2; } }
 // 通りすぎたマスを返す
 function gcReleaseBehind(pl) {
   const gr = pl.gr; if (!gr) return;
@@ -95,6 +103,7 @@ function gcUpdate(pl, dt) {
   if (!pl.gr) return null;
   gcReleaseBehind(pl);
   const ok = gcTry(pl);
+  if (ok && pl.grOld) gcDropOld(pl);
   const lim = gcLimit(pl);
   if (!ok && pl.spd < 0.05) {
     pl.gr.waitT += dt;
@@ -116,8 +125,8 @@ function gcPushDone(pl) {
 // 着陸機の出口の候補：前方（止まれる距離より先）の出口だけ。前方に出口がまったくないときだけ、Uターンして戻る
 function orderedExits(pl, r, ax, target, allow) {
   const P = pl.P, v = vApp(P), tdS = pl.td ? axS(ax, pl.td) : Math.min(3, ax.len * 0.12);
-  const sMin = tdS + (v * v - V_TAXI * V_TAXI) / (2 * 1.1) + 2;
-  const sWant = tdS + (v * v - V_TAXI * V_TAXI) / (2 * 0.55) + 2;
+  const sMin = tdS + (v * v - V_TAXI * V_TAXI) / (2 * 1.5) + 2;
+  const sWant = tdS + (v * v - V_TAXI * V_TAXI) / (2 * 0.9) + 2;
   const all = [];
   for (const ex of rwExits(r, ax)) { const path = target >= 0 ? planePath(ex.tile, target, allow, true) : [ex.tile]; if (path) all.push({ ex, path, ahead: ex.s >= sMin }); }
   const ahead = all.filter(e => e.ahead);
@@ -169,7 +178,7 @@ function gcDepartOk(pl, r) {
   if (!r) return true;
   const b = r.busy;
   if (b && b !== pl && (b.state === 'approach' || b.state === 'roll')) return false;
-  return !landingClose(r, pl);
+  return true;
 }
 // 情報パネル用
 function gcStatus(pl) {

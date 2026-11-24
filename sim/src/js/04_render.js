@@ -159,7 +159,7 @@ function updateCamera(force) {
 function rotateCam(d) { Cam.rot = (Cam.rot + d + 4) % 4; Cam.yawT += d * Math.PI / 2; Sound.se('tab'); }
 function clampCam() {
   Cam.tx = clamp(Cam.tx, -4, W + 4); Cam.tz = clamp(Cam.tz, -4, H + 4);
-  Cam.zoom = clamp(Cam.zoom, 0.3, 5);
+  Cam.zoom = clamp(Cam.zoom, 0.2, 5);
 }
 function panCam(dxPix, dyPix) {
   // 画面のピクセル移動 → 地面の移動

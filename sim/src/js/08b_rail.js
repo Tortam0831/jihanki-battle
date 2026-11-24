@@ -1,7 +1,7 @@
 // ============================================================
 //  地上走行のレール（誘導路の中心線を、角を丸めた曲線でたどる）
 // ============================================================
-const TAXI_ACC = 0.35, TAXI_DEC = 0.9, A_LAT = 0.42;
+const TAXI_ACC = 0.5, TAXI_DEC = 1.2, A_LAT = 0.6;
 
 // 折れ線 → 角を円弧で丸めた、0.1マスごとの点列
 function buildRail(poly, radius) {
@@ -64,7 +64,7 @@ function railFollow(pl, dt, opt) {
   const rail = pl.rail; if (!rail) return true;
   const end = Math.max(pl.rs, Math.min(rail.len, opt.stopS != null ? opt.stopS : rail.len));
   const remain = end - pl.rs;
-  let vt = opt.vmax || V_TAXI;
+  let vt = (opt.vmax || V_TAXI) * (G.research.groundsys && !opt.reverse ? 1.15 : 1);
   // 先のカーブにそなえて減速
   const look = (vt * vt) / (2 * TAXI_DEC) + 0.5;
   for (let i = pl.ri || 0; i < rail.n && rail.S[i] - pl.rs < look; i++) {
@@ -162,10 +162,10 @@ function laneQ(g, lanePt) {
 // 接地したら、どの出口で滑走路を出るか決めて、そこまでに減速する
 function planRollout(pl, r) {
   const ax = pl.ax, s0 = axS(ax, pl), v = pl.spd;
-  const minRoll = (v * v - V_TAXI * V_TAXI) / (2 * 1.1);         // 強めのブレーキでも必要な距離
+  const minRoll = (v * v - V_TAXI * V_TAXI) / (2 * 1.5);         // 強めのブレーキでも必要な距離
   const ex = rwExits(r, ax).map(e => e.s).filter(s => s - 2 >= s0 + minRoll).sort((a, b) => a - b);
   // ちょうどよい出口（ゆるいブレーキで届く最初の出口）
-  const want = s0 + (v * v - V_TAXI * V_TAXI) / (2 * 0.55);
+  const want = s0 + (v * v - V_TAXI * V_TAXI) / (2 * (G.research.rapidexit ? 1.2 : 0.9));
   let exitS = ex.find(s => s - 2 >= want) || ex[ex.length - 1];
   if (pl.exitPlan) exitS = pl.exitPlan.ahead ? Math.max(pl.exitPlan.ex.s, s0 + minRoll + 2) : ax.len - 0.8;
   if (exitS == null) exitS = ax.len - 0.8;

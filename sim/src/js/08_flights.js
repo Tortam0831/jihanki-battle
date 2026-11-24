@@ -110,7 +110,7 @@ function updateFlights(dt) {
         if (n > 0) { spawnDeparting(fl, n, fl.paxDep / fl.depSpr); fl.depSpawned += n; }
       }
     }
-    if (fl.status === 'sched' && now >= fl.arrT - 48) startApproach(fl);
+    if (fl.status === 'sched' && now >= fl.arrT - 34) startApproach(fl);
     if (fl.status === 'parked') {
       // 到着客
       if (!fl.cargo && fl.arrSpawned < fl.arrSpr) {
@@ -130,6 +130,8 @@ function updateFlights(dt) {
       }
     }
   }
+  // 管制塔の時間表（1分ごと）
+  ATC.t += dt; if (ATC.t >= 1) { ATC.t = 0; atcPlan(); }
   // 飛行機の動き
   for (const pl of RT.planes) updatePlane(pl, dt);
   RT.planes = RT.planes.filter(p => !p.gone);
@@ -170,6 +172,8 @@ function startApproach(fl) {
   const r = weightedPick(pairs.map(p => p[0]), r => 1 / (1 + (r._load || 0)));
   pl.runway = r.uid; r._load = (r._load || 0) + 1;
   setApproachPath(pl, r);
+  assignStand(pl, G.min + natCommit(pl, r) + 3);
+  ATC.t = 99;
   G.seenPlanes[fl.type + ':' + fl.airline] = 1;
   Bus.emit('approach', fl);
 }
@@ -184,7 +188,7 @@ function makePlane(fl) {
 // 速さ（マス/ゲーム分）。実際の進入速度の比率にあわせる
 const vApp = P => 3.6 * (P.vapp / 140);
 const vRot = P => vApp(P) * 1.08;
-const V_TAXI = 1.4, V_TAXI_TURN = 0.65, GLIDE = Math.tan(5 * Math.PI / 180); // 見やすさのため5°の進入角
+const V_TAXI = 2.0, V_TAXI_TURN = 0.9, GLIDE = Math.tan(5 * Math.PI / 180); // 見やすさのため5°の進入角
 function rwAxis(r, e) {
   // e: 0=始点側から進入
   const ri = runwayInfo(r);
@@ -204,7 +208,7 @@ function setApproachPath(pl, r) {
     pl.x = s.x + perp.x * side * 14; pl.z = s.z + perp.z * side * 14; pl.y = s.y + 1;
     pl.hdg = ax.hdg + side * 0.5 * (ax.ri.horiz ? (ax.dir > 0 ? -1 : 1) : (ax.dir > 0 ? 1 : -1));
   }
-  pl.faf = ax.P(-24, 24 * GLIDE);
+  pl.faf = ax.P(-24, 24 * GLIDE); pl.fafExt = 0; pl.outbound = null;
   pl.td = ax.P(clamp(ax.len * 0.12, 1.2, 3), 0);
   pl.state = 'approach'; pl.phase = 'base'; pl.spd = vApp(pl.P) * 1.1;
 }
@@ -236,37 +240,43 @@ function updatePlane(pl, dt) {
     case 'approach': {
       // 進入許可（駐機場・滑走路・霧）
       const dTD = Math.hypot(pl.td.x - pl.x, pl.td.z - pl.z);
-      if (!pl.cleared && dTD < 40) {
-        const fogBlock = G.weather === 'fog' && !hasKind('ils');
-        const stand = !fogBlock ? pickStand(pl) : null;
-        if (!stand) { startHold(pl); return; }
-        pl.cleared = true; pl.stand = stand.uid; stand.busy = fl.id; fl.stand = stand.uid; fl.gate = stand.gate || 0;
-        if (fl.gate && !fl.cargo) spawnCrew(fl, G.blds[fl.gate]);
-      }
-      // 管制塔：前の飛行機との間隔（速度を落とす／間に合わなければ早めに上空待機）
+      const fogBlock = G.weather === 'fog' && !hasKind('ils');
+      if (!pl.cleared && (pl.standTry || 0) <= G.min) { pl.standTry = G.min + 1; assignStand(pl, G.min + natCommit(pl, r) + 3); if (pl.cleared) ATC.t = 99; }
+      if ((!pl.cleared || fogBlock) && dTD < 40) { if (fogBlock) pl.holdWhy = 'fog'; startHold(pl); return; }
+      if (pl.cleared && !standIsMine(pl) && (pl.reTry || 0) <= G.min) { pl.reTry = G.min + 1; reassignStand(pl); }
+      // 管制塔の時間表にあわせて速度を調整（大きく遅らせるときは待機経路へ）
       if (r.busy !== pl) {
-        const sp = atcSpacing(pl, r);
+        const sp = atcArrivalControl(pl, r);
         if (sp === 'hold') { pl.holdWhy = 'seq'; startHold(pl); return; }
       }
       if (pl.phase === 'base') {
         pl.spd = lerp(pl.spd, vApp(P) * 1.1 * (pl.spdK || 1), Math.min(1, dt * 0.3));
-        // FAF へ向かいながら旋回
-        const dx = pl.faf.x - pl.x, dz = pl.faf.z - pl.z, d = Math.hypot(dx, dz);
-        const want = Math.atan2(dx, dz);
-        // 中心線の延長上の点（FAF）へ向かい、着いたら最終進入へ
-        const turn = turnToward(pl, want, 0.42, dt);
-        targetBank = clamp(-turn * 1.4, -0.45, 0.45);
-        pl.x += Math.sin(pl.hdg) * pl.spd * dt; pl.z += Math.cos(pl.hdg) * pl.spd * dt;
-        pl.y += (Math.max(pl.faf.y, 1.5) - pl.y) * Math.min(1, dt * 0.15);
+        // 進入の誘導：滑走路の延長線に、遠くから浅い角度で合流する（近すぎるときは一度外へ出る）
         const hx0 = Math.sin(pl.ax.hdg), hz0 = Math.cos(pl.ax.hdg);
         const al0 = (pl.x - pl.td.x) * hx0 + (pl.z - pl.td.z) * hz0, cr0 = (pl.x - pl.td.x) * hz0 - (pl.z - pl.td.z) * hx0;
+        const D = 24 + (pl.fafExt || 0), herr = Math.abs(angDiff(pl.hdg, pl.ax.hdg));
+        const onCourse = Math.abs(cr0) < 1.2 && herr < 0.35;
+        // 浅い角度で合流できる点（前方）。近すぎて合流できないときは、一度外へ出てから入りなおす
+        const iAl = al0 + 5 + Math.abs(cr0) * 1.7;
+        if (pl.outbound == null || pl.extSeen !== (pl.fafExt || 0)) { pl.extSeen = pl.fafExt || 0; pl.outbound = !onCourse && (iAl > -16 || al0 > -D + 2); }
+        if (!pl.outbound && !onCourse && iAl > -16) pl.outbound = true;
+        if (pl.outbound && iAl < -22 && al0 < -D) pl.outbound = false;
+        let tAl;
+        if (pl.outbound) tAl = Math.min(-D, al0) - 10 - Math.abs(cr0);         // 外側へ
+        else tAl = Math.min(iAl, -14);                                       // 前方の延長線上の点を追う
+        const tx = pl.td.x + hx0 * tAl, tz = pl.td.z + hz0 * tAl;
+        const want = Math.atan2(tx - pl.x, tz - pl.z);
+        const turn = turnToward(pl, want, 0.45, dt);
+        targetBank = clamp(-turn * 1.4, -0.45, 0.45);
+        pl.x += Math.sin(pl.hdg) * pl.spd * dt; pl.z += Math.cos(pl.hdg) * pl.spd * dt;
+        pl.y += (Math.max(Math.max(-al0, D) * GLIDE, 1.5) - pl.y) * Math.min(1, dt * 0.15);
         pl.baseT = (pl.baseT || 0) + dt;
-        if (d < 3.5 || (Math.abs(cr0) < 2 && al0 > -45 && al0 < -8 && Math.abs(angDiff(pl.hdg, pl.ax.hdg)) < 0.6)) {
+        if (onCourse && al0 < -14 && !pl.outbound) {
           // 最終進入の前に、降りたあと誘導路を進めるか確かめる（だめなら上空待機）
-          if (!gcCanExit(pl, r)) { pl.holdWhy = 'ground'; startHold(pl); return; }
+          if ((!standIsMine(pl) && !reassignStand(pl)) || !gcCanExit(pl, r, true)) { pl.holdWhy = 'ground'; startHold(pl); return; }
           pl.phase = 'final'; pl.baseT = 0;
         }
-        else if (pl.baseT > 30) { pl.baseT = 0; const st0 = pl.state; pl.state = 'x'; setApproachPath(pl, r); }
+        else if (pl.baseT > 70 + (pl.fafExt || 0) * 2 / vApp(P)) { pl.baseT = 0; pl.holdWhy = 'seqT'; startHold(pl); return; }
         pl.pitch = lerp(pl.pitch, 0.03, 0.1);
       } else {
         // 最終進入：滑走路の中心線にのり、5°で降下
@@ -280,9 +290,11 @@ function updatePlane(pl, dt) {
         pl.spd = lerp(pl.spd, vApp(P) * (r.busy === pl ? 1 : (pl.spdK || 1)), Math.min(1, dt * 0.3));
         pl.x += Math.sin(pl.hdg) * pl.spd * dt; pl.z += Math.cos(pl.hdg) * pl.spd * dt;
         const gs = Math.max(0, -along) * GLIDE;
+        // 中心線にのれないまま近づいたら、早めに進入をやめてやり直す（滑走路の横に降りたりしない）
+        if (along > -14 && Math.abs(cross) > 1.6 && r.busy !== pl) { goAround(pl, 'align' + cross.toFixed(1)); break; }
         // 滑走路が空いていなければ着陸やり直し（ゴーアラウンド）
-        if (along > -9 && r.busy !== pl) {
-          if (runwayFreeFor(r, pl) && gcCanExit(pl, r, true)) r.busy = pl;
+        if (along > -COMMIT_D && r.busy !== pl) {
+          if (runwayFreeFor(r, pl) && standIsMine(pl) && gcCanExit(pl, r, true)) { r.busy = pl; r.busyT = G.min; }
           else { if (runwayFreeFor(r, pl)) pl.gcGA = true; goAround(pl, runwayFreeFor(r, pl) ? 'ground' : 'busy:' + (r.busy ? r.busy.state : 'wake')); break; }
         }
         // フレア（接地直前に機首を上げて降下をゆるめる）
@@ -305,16 +317,19 @@ function updatePlane(pl, dt) {
     }
     case 'hold': {
       // 待機経路（だ円のレーストラック）
-      pl.holdT += dt;
+      pl.holdT += dt; pl.holdS1 = (pl.holdS1 || 0) + dt;
       pl.ha += dt * pl.spd / 12;
       const cx = pl.hc.x + Math.cos(pl.ha) * 14, cz = pl.hc.z + Math.sin(pl.ha) * 8;
       const want = Math.atan2(cx - pl.x, cz - pl.z);
       turnToward(pl, want, 0.5, dt);
       pl.x += Math.sin(pl.hdg) * pl.spd * dt; pl.z += Math.cos(pl.hdg) * pl.spd * dt;
-      pl.y = lerp(pl.y, 7, 0.02); targetBank = -0.4; pl.pitch = 0.02; pl.spd = vApp(P);
-      if (pl.holdT > 4 && Math.floor(pl.holdT * 2) % 6 === 0) {
+      pl.y = lerp(pl.y, pl.holdAlt || 7, 0.02); targetBank = -0.4; pl.pitch = 0.02; pl.spd = vApp(P);
+      if (!pl.cleared && (pl.standTry || 0) <= G.min) { pl.standTry = G.min + 1; assignStand(pl, G.min + natCommit(pl, r) + 3); if (pl.cleared) ATC.t = 99; }
+      if (pl.holdT > 2 && (pl.holdChk || 0) <= G.min) {
+        pl.holdChk = G.min + 0.5;
         const fogBlock = G.weather === 'fog' && !hasKind('ils');
-        if (!fogBlock && (pl.cleared || pickStand(pl)) && !landingClose(r, pl) && atcReapproachOk(pl, r) && gcCanExit(pl, r)) { setApproachPath(pl, r); pl.phase = 'base'; }
+        if (pl.cleared && !standIsMine(pl)) reassignStand(pl);
+        if (!fogBlock && pl.cleared && atcHoldDone(pl, r) && gcCanExit(pl, r)) { pl.fafExt = 0; setApproachPath(pl, r); pl.phase = 'base'; }
       }
       if (pl.holdT > Extra.holdLimit()) { // ダイバート
         removePlane(pl); fl.status = 'cancel'; fl.why = '着陸できず他の空港へ';
@@ -343,16 +358,15 @@ function updatePlane(pl, dt) {
       if (axS(pl.ax, pl) >= pl.rollHand || pl.rollT > pl.ax.len - 2.5) {
         const stand = G.blds[pl.stand];
         taxiInRail(pl, r, stand);
-        gcSetRoute(pl, [{ rail: pl.rail, off: 0 }]);
         pl.state = 'taxi_in'; pl.leaveRw = true;
-        gcTry(pl);
+        gcAdoptRoute(pl, [{ rail: pl.rail, off: 0 }]);
         Bus.emit('taxiIn', pl);
       }
       break;
     }
     case 'taxi_in': {
       // 滑走路を出たら使用中を解除
-      if (pl.leaveRw && r && r.busy === pl && !onRunway(pl, r)) { r.busy = null; pl.leaveRw = false; r.wakeUntil = G.min + (P.cls >= 3 ? 2.5 : 1); }
+      if (pl.leaveRw && r && r.busy === pl && !onRunway(pl, r)) { rwRelease(r, pl, true); pl.leaveRw = false; r.wakeUntil = G.min + (P.cls >= 3 ? 2.5 : 1); }
       const stand = G.blds[pl.stand];
       // 駐機場に入ったら誘導員の合図でゆっくり
       const inStand = stand && G.occ[idx(clamp(Math.floor(pl.x), 0, W - 1), clamp(Math.floor(pl.z), 0, H - 1))] === stand.uid;
@@ -373,7 +387,7 @@ function updatePlane(pl, dt) {
       const holding = !pl.rwCleared && pl.holdS != null;
       if (holding && pl.rs >= pl.holdS - 0.05 && pl.spd < 0.05) {
         pl.wait += dt;
-        if (atcDepartOk(pl, r)) { pl.rwCleared = true; r.busy = pl; }
+        if (atcDepartOk(pl, r)) { pl.rwCleared = true; r.busy = pl; r.busyT = G.min; }
         if (pl.wait > 220) removePlane(pl);
         break;
       }
@@ -382,7 +396,7 @@ function updatePlane(pl, dt) {
       if (pl.rs >= pl.rail.len - 0.02) {
         if (!pl.rwCleared) {
           pl.wait += dt;
-          if (atcDepartOk(pl, r)) { pl.rwCleared = true; r.busy = pl; }
+          if (atcDepartOk(pl, r)) { pl.rwCleared = true; r.busy = pl; r.busyT = G.min; }
           else break;
         }
         // 滑走路の中心線にのって正対 → 離陸滑走
@@ -390,7 +404,7 @@ function updatePlane(pl, dt) {
         pl.hdg = pl.ax.hdg; pl.x = tp.x; pl.z = tp.z;
         gcReleaseAll(pl); pl.gr = null;
         pl.state = 'takeoff'; pl.spd = Math.max(0.05, pl.spd); pl.rollT = pl.takeS || 1.2;
-        pl.acc = vRot(P) * vRot(P) / (2 * Math.max(4, (pl.ax.len - pl.rollT) * (P.eng === 'prop' ? 0.34 : 0.5)));
+        pl.acc = vRot(P) * vRot(P) / (2 * Math.max(4, (pl.ax.len - pl.rollT) * (P.eng === 'prop' ? 0.24 : 0.34)));
         Sound.se(P.eng === 'prop' ? 'prop' : 'jet');
       }
       break;
@@ -419,8 +433,8 @@ function updatePlane(pl, dt) {
         tugAt();
       } else if (pl.pbPhase === 1) {
         const lim = gcUpdate(pl, dt);
-        railFollow(pl, dt, { reverse: true, vmax: 0.22, stopS: lim });
-        if (pl.rs >= pl.rail.len - 0.02) { pl.pbPhase = 2; pl.pbT2 = 0; pl.spd = 0; gcPushDone(pl); const st0 = G.blds[pl.stand]; if (st0 && st0.busy === pl.fl.id) st0.busy = 0; }
+        railFollow(pl, dt, { reverse: true, vmax: G.research.fasttug ? 0.72 : 0.55, stopS: lim });
+        if (pl.rs >= pl.rail.len - 0.02) { pl.pbPhase = 2; pl.pbT2 = 0; pl.spd = 0; gcPushDone(pl); standLeave(G.blds[pl.stand], pl.fl.id); ATC.t = 99; }
         if (pl.rs > 0.5 && !pl.engines) { pl.engines = true; Sound.se(P.eng === 'prop' ? 'prop' : 'jet'); }
         tugAt();
       } else if (pl.pbPhase === 2) {
@@ -428,11 +442,11 @@ function updatePlane(pl, dt) {
         pl.pbT2 += dt; gcUpdate(pl, dt);
         if (!pl.engines) { pl.engines = true; Sound.se(P.eng === 'prop' ? 'prop' : 'jet'); }
         if (pl.tug) {
-          const k = Math.min(1, pl.pbT2 / 3), side = pl.hdg + Math.PI / 2;
+          const k = Math.min(1, pl.pbT2 / 2), side = pl.hdg + Math.PI / 2;
           const nx = pl.x + Math.sin(pl.hdg) * (P.len / 2 + 0.35 + k * 0.6) + Math.sin(side) * k * 1.6, nz = pl.z + Math.cos(pl.hdg) * (P.len / 2 + 0.35 + k * 0.6) + Math.cos(side) * k * 1.6;
           pl.tug.position.set(nx, 0, nz); pl.tug.rotation.y = pl.hdg + Math.PI + k * 1.2;
         }
-        if (pl.pbT2 > 3.5) {
+        if (pl.pbT2 > 2.2) {
           if (pl.tug) { R.scene.remove(pl.tug); pl.tug = null; }
           pl.state = 'taxi_out'; pl.rail = pl.fwdRail; pl.rs = 0; pl.ri = 0; pl.spd = 0; pl.wait = 0;
         }
@@ -455,7 +469,7 @@ function updatePlane(pl, dt) {
       pl.climbT += dt;
       pl.spd = Math.min(vApp(P) * 1.7, pl.spd + dt * 0.25);
       if (pl.y > 0.9 && pl.gearT > 0) pl.gearT = Math.max(0, pl.gearT - dt * 0.8);
-      if (r && r.busy === pl && pl.y > 1.2) { r.busy = null; r.wakeUntil = G.min + (P.cls >= 3 ? 2.5 : 1.2); }
+      if (r && r.busy === pl && pl.y > 0.7) { rwRelease(r, pl, false); r.wakeUntil = G.min + (P.cls >= 3 ? 2.5 : 1.2); }
       // 高度がとれたら行き先の方向へ旋回
       if (pl.y > 3.5 && Math.abs(pl.depTurn) > 0.02) { const t0 = pl.depTurn; const st2 = Math.sign(t0) * Math.min(Math.abs(t0), 0.12 * dt); pl.hdg += st2; pl.depTurn -= st2; targetBank = -Math.sign(t0) * 0.35; }
       const st = pl.spd * dt;
@@ -515,6 +529,7 @@ function tilePt(i) { return { x: i % W + 0.5, z: Math.floor(i / W) + 0.5 }; }
 function angDiff(a, b) { let d = b - a; while (d > Math.PI) d -= TAU; while (d < -Math.PI) d += TAU; return d; }
 function lerpAngle(a, b, t) { return a + angDiff(a, b) * t; }
 function goAround(pl, why) {
+  { const r0 = G.blds[pl.runway]; if (r0 && r0.busy === pl) r0.busy = null; }
   pl.exitPlan = null;
   (RT.gaLog = RT.gaLog || []).push(why || '?'); if (RT.gaLog.length > 50) RT.gaLog.shift();
   gcReleaseAll(pl); pl.gr = null;
@@ -524,11 +539,17 @@ function goAround(pl, why) {
 }
 function startHold(pl) {
   const why = pl.holdWhy; pl.holdWhy = null;
+  G.stat.today.holds = (G.stat.today.holds || 0) + 1;
   (RT.holdLog = RT.holdLog || []).push((why || (pl.cleared ? 'other' : 'nostand')) + '@' + Math.floor(G.min % 1440 / 60)); if (RT.holdLog.length > 50) RT.holdLog.shift();
   if (why) { if (!RT.holdSeqT || G.min - RT.holdSeqT > 60) { RT.holdSeqT = G.min; Bus.emit('holdSeq', pl.fl, why); } }
   else if (!pl.cleared && (!RT.holdMsgT || G.min - RT.holdMsgT > 90)) { RT.holdMsgT = G.min; Bus.emit('holdNoStand', pl.fl); }
-  pl.state = 'hold'; pl.holdT = pl.holdT || 0;
-  pl.hc = { x: clamp(pl.x, 8, W - 8), z: clamp(pl.z, 6, H - 6) };
+  pl.state = 'hold'; pl.holdT = pl.holdT || 0; pl.holdS1 = 0;
+  const rr = G.blds[pl.runway], ax = rr ? rwAxis(rr, G.windDir || 0) : null;
+  if (ax) {
+    const side = pl.holdSide || (pl.holdSide = Math.random() < 0.5 ? -1 : 1), f = ax.P(-34, 0), perp = ax.ri.horiz ? { x: 0, z: 1 } : { x: 1, z: 0 };
+    pl.hc = { x: f.x + perp.x * side * 16, z: f.z + perp.z * side * 16 };
+  } else pl.hc = { x: clamp(pl.x, 8, W - 8), z: clamp(pl.z, 6, H - 6) };
+  pl.holdAlt = 6 + RT.planes.filter(o => o !== pl && o.state === 'hold').length * 0.9;
   pl.ha = Math.atan2((pl.z - pl.hc.z) / 8, (pl.x - pl.hc.x) / 14);
   pl.fl.status = 'hold';
 }
@@ -538,7 +559,7 @@ function removePlane(pl) {
   for (const v of pl.vehicles) R.scene.remove(v.mesh);
   if (pl.tug) R.scene.remove(pl.tug);
   pl.vehicles = [];
-  const s = G.blds[pl.stand]; if (s && s.busy === pl.fl.id) s.busy = 0;
+  standLeave(G.blds[pl.stand], pl.fl.id);
   const r = G.blds[pl.runway]; if (r) { if (r.busy === pl) r.busy = null; r._load = Math.max(0, (r._load || 1) - 1); }
 }
 function onLanded(fl) {

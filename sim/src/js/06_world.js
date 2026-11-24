@@ -250,7 +250,7 @@ function isFixedRoad(x, y) { return y <= 12 + OY && (x === 35 + OX || x === 36 +
 
 // ---------- 土地 ----------
 // 最初の1区画だけ無料。そのあとは買うほど高く、最初の土地から遠いほど高い
-const START_SECTORS = [[5, 3], [6, 3], [7, 3], [5, 4], [6, 4], [7, 4]];
+const START_SECTORS = [[8, 5], [9, 5], [10, 5], [8, 6], [9, 6], [10, 6]];
 function sectorDist(sx, sy) { let d = 99; for (const [a, b] of START_SECTORS) d = Math.min(d, Math.max(Math.abs(sx - a), Math.abs(sy - b))); return d; }
 function sectorPrice(sx, sy) {
   const k = G.landBought || 0;

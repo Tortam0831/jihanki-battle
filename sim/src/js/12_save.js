@@ -35,8 +35,8 @@ function deserialize(json) {
   genMap(seed);
   const W0 = g.mapW || 72, H0 = g.mapH || 48;   // セーブしたときのマップの大きさ
   const oldMap = W0 !== W || H0 !== H;
-  // 古いマップの座標 → いまの座標のずれ（72x48 → OX,OY ／ 108x72 → OX-12,OY-12）
-  const DX = W0 === 72 ? OX : OX - 12, DY = W0 === 72 ? OY : OY - 12;
+  // 古いマップの座標 → いまの座標のずれ（72x48 → OX,OY ／ それより後のマップは、まん中にそろえる）
+  const DX = W0 === 72 ? OX : (W - W0) / 2, DY = W0 === 72 ? OY : (H - H0) / 2;
   if (oldMap) {
     const old = genTerrain(seed, W0, H0);
     const f0 = unrle(keep.floor, Uint8Array, W0 * H0), t0 = unrle(keep.trees, Uint8Array, W0 * H0);
@@ -128,23 +128,61 @@ function importCode(code) {
     return true;
   } catch (e) { return false; }
 }
-// GAS のクラウド保存
+// ---------- 圧縮（gzip → base64） ----------
+async function packSave(str) {
+  try {
+    if (typeof CompressionStream === 'undefined') return str;
+    const cs = new Blob([str]).stream().pipeThrough(new CompressionStream('gzip'));
+    const buf = new Uint8Array(await new Response(cs).arrayBuffer());
+    let bin = ''; for (let i = 0; i < buf.length; i += 8192) bin += String.fromCharCode.apply(null, buf.subarray(i, i + 8192));
+    return 'GZ1:' + btoa(bin);
+  } catch (e) { return str; }
+}
+async function unpackSave(str) {
+  if (typeof str !== 'string' || !str.startsWith('GZ1:')) return str;
+  const bin = atob(str.slice(4)), buf = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+  const ds = new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'));
+  return await new Response(ds).text();
+}
+// ---------- GAS のクラウド保存（5けたのコード。最初に1回だけ発行して、あとはずっと同じコード） ----------
 const Cloud = {
+  busy: false,
   available() { return !!(window.google && google.script && google.script.run); },
-  save() {
-    if (!this.available()) return;
-    const data = serialize();
-    toast('クラウドに保存中…');
-    google.script.run.withSuccessHandler(key => {
-      if (!key || key.err) { toast('保存できませんでした：' + (key && key.err || ''), 'bad'); return; }
-      openModal('クラウド保存', `<div style="text-align:center"><p>別の端末で、タイトルの「クラウドから読みこむ」にこのコードを入力してください。</p><div style="font-size:34px;letter-spacing:6px;font-family:monospace">${key}</div><p class="sub">（30日間保存されます）</p></div>`, { narrow: true });
-    }).withFailureHandler(e => toast('保存できませんでした', 'bad')).cloudSave(data);
+  code() { return G && G.cloud && G.cloud.key || null; },
+  async save(silent) {
+    if (!this.available() || Game.demo || !G || this.busy) return;
+    this.busy = true;
+    const first = !this.code();
+    let data;
+    try { data = await packSave(serialize()); } catch (e) { this.busy = false; return; }
+    if (!silent) toast('クラウドに保存中…');
+    const c = G.cloud || {};
+    google.script.run.withSuccessHandler(res => {
+      this.busy = false;
+      if (!res || res.err) {
+        if (res && /別のセーブ/.test(res.err)) { G.cloud = null; toast('このコードは使えなくなっていたので、新しいコードを発行します', 'bad'); setTimeout(() => this.save(false), 500); return; }
+        if (!silent) toast('クラウドに保存できませんでした：' + (res && res.err || ''), 'bad'); return;
+      }
+      G.cloud = { key: res.key, token: res.token, t: Date.now() };
+      saveGame();
+      if (first) this.showCode(true);
+      else if (!silent) toast(`クラウドに保存しました（コード ${res.key}）`, 'good', 'save');
+      else toast(`自動でクラウドに保存しました（コード ${res.key}）`, '', 'save');
+    }).withFailureHandler(() => { this.busy = false; if (!silent) toast('クラウドに保存できませんでした', 'bad'); }).cloudSave(data, c.key || '', c.token || '');
+  },
+  showCode(isNew) {
+    const k = this.code(); if (!k) return;
+    openModal('セーブコード', `<div style="text-align:center"><p>${isNew ? 'セーブコードを発行しました！' : 'この空港のセーブコード'}</p><div style="font-size:44px;letter-spacing:10px;font-family:monospace;font-weight:900">${k}</div><p class="sub">このコードは<b>ずっと同じ</b>です。5分ごとに自動でクラウドに保存されます。<br>別の端末では、タイトルの「クラウドから読みこむ」にこのコードを入れてください。</p></div>`, { narrow: true });
   },
   load(key, slot, done) {
     if (!this.available()) return;
-    google.script.run.withSuccessHandler(data => {
-      if (!data || data.err) { toast('見つかりませんでした', 'bad'); return; }
-      try { JSON.parse(data); localStorage.setItem(SAVE_KEY + slot, data); done && done(); } catch (e) { toast('データがこわれています', 'bad'); }
+    key = String(key || '').replace(/[^0-9]/g, '');
+    if (key.length !== 5) { toast('5けたの数字を入れてください', 'bad'); return; }
+    toast('読みこみ中…');
+    google.script.run.withSuccessHandler(async data => {
+      if (!data || data.err) { toast('そのコードは見つかりませんでした', 'bad'); return; }
+      try { const json = await unpackSave(data); JSON.parse(json); localStorage.setItem(SAVE_KEY + slot, json); done && done(); } catch (e) { toast('データがこわれています', 'bad'); }
     }).withFailureHandler(() => toast('読みこめませんでした', 'bad')).cloudLoad(key);
   }
 };
